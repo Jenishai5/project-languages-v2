@@ -1,0 +1,92 @@
+{
+  "data": [
+    {
+      "id": 14132454,
+      "text": "Cruzamos el puente y llegamos a un camino en medio de un bosque inmenso.",
+      "lang": "spa",
+      "script": null,
+      "license": "CC BY 2.0 FR",
+      "owner": "carlosalberto",
+      "is_unapproved": false,
+      "translations": [
+        {
+          "id": 14132398,
+          "text": "Мы перешли мост и оказались на дороге посреди обширного леса.",
+          "lang": "rus",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "carlosalberto",
+          "is_unapproved": false,
+          "is_direct": false
+        },
+        {
+          "id": 14132455,
+          "text": "We crossed the bridge and reached a road in the middle of an immense forest.",
+          "lang": "eng",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "carlosalberto",
+          "is_unapproved": false,
+          "is_direct": false
+        }
+      ]
+    },
+    {
+      "id": 14132322,
+      "text": "¿Estamos todos condenados a morir en una guerra nuclear?",
+      "lang": "spa",
+      "script": null,
+      "license": "CC BY 2.0 FR",
+      "owner": "carlosalberto",
+      "is_unapproved": false,
+      "translations": [
+        {
+          "id": 14132302,
+          "text": "Неужели мы все обречены на гибель в ядерной войне?",
+          "lang": "rus",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "carlosalberto",
+          "is_unapproved": false,
+          "is_direct": false
+        },
+        {
+          "id": 14132323,
+          "text": "Are we all doomed to die in a nuclear war?",
+          "lang": "eng",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "carlosalberto",
+          "is_unapproved": false,
+          "is_direct": false
+        }
+      ]
+    },
+    {
+      "id": 14132239,
+      "text": "Se supone que Tom debería estar en la oficina ahora.",
+      "lang": "spa",
+      "script": null,
+      "license": "CC BY 2.0 FR",
+      "owner": "purple_pulp",
+      "is_unapproved": false,
+      "translations": [
+        {
+          "id": 12430427,
+          "text": "Tom is supposed to be in his office now.",
+          "lang": "eng",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "Ergulis",
+          "is_unapproved": false,
+          "is_direct": true
+        }
+      ]
+    }
+  ],
+  "paging": {
+    "total": 356296,
+    "has_next": true,
+    "next": "https://api.tatoeba.org/v1/sentences?lang=spa&sort=created&limit=50&trans%3Alang=eng%2Crus&showtrans=matching&after=1795374357%2C14130827"
+  }
+}

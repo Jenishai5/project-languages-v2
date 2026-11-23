@@ -1,0 +1,26 @@
+{
+  "data": [
+    {
+      "id": 101,
+      "text": "  Hola,\n   mundo.  ",
+      "lang": "SPA",
+      "license": "",
+      "owner": "   ",
+      "is_unapproved": null,
+      "translations": [
+        {"id": 201, "text": "Hello, world.", "lang": "eng", "is_direct": true},
+        {"id": 201, "text": "Hello, world.", "lang": "eng", "is_direct": true},
+        {"id": 202, "text": "", "lang": "eng", "is_direct": false},
+        {"id": 101, "text": "Hola, mundo.", "lang": "spa", "is_direct": false}
+      ]
+    },
+    {"id": "abc", "text": "Id is not a number.", "lang": "spa"},
+    {"id": 103, "lang": "spa"},
+    {"id": 104, "text": "No language code.", "lang": null},
+    {"id": 105, "text": "Translations is not a list.", "lang": "spa", "translations": "oops"},
+    {"id": 101, "text": "Duplicate of the first record.", "lang": "spa"},
+    "not an object",
+    {"id": 106, "text": "Sin traducciones.", "lang": "spa"}
+  ],
+  "paging": {"total": 8, "has_next": false, "next": null}
+}
