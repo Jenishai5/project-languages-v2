@@ -15,6 +15,11 @@ class SentenceResult(BaseModel):
     correct: bool
 
 
+class LessonResult(BaseModel):
+    lesson_id: int = Field(gt=0)
+    correct: bool
+
+
 class WordResult(BaseModel):
     lemma: ShortText
     language: Annotated[str, StringConstraints(pattern=r"^[a-z]{2,3}-[a-z]{2,10}$")] = "en-es"
@@ -47,5 +52,22 @@ def sentence_progress(user: CurrentUser, repo: ProgressRepoDep) -> dict:
                 "next_review": row.next_review_at.isoformat(),
             }
             for row in repo.for_user(user.id, "sentence")
+        }
+    }
+
+
+@router.post("/lesson")
+def save_lesson_result(body: LessonResult, user: CurrentUser, repo: ProgressRepoDep) -> dict:
+    row = repo.record(user.id, "lesson", str(body.lesson_id), body.correct)
+    repo.session.commit()
+    return {"success": True, "mastery": row.mastery_level, "next_review_at": row.next_review_at.isoformat()}
+
+
+@router.get("/lessons")
+def lesson_progress(user: CurrentUser, repo: ProgressRepoDep) -> dict:
+    return {
+        "progress": {
+            row.item_key: {"attempts": row.attempts, "correct": row.correct_count, "mastery": row.mastery_level}
+            for row in repo.for_user(user.id, "lesson")
         }
     }

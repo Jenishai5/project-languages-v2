@@ -9,6 +9,7 @@ from langapp.auth import AuthError, AuthUser, SupabaseTokenVerifier
 from langapp.config import get_settings
 from langapp.db.session import get_session_factory
 from langapp.repositories.import_runs import ImportRunRepository
+from langapp.repositories.lessons import LessonRepository
 from langapp.repositories.progress import ProgressRepository
 from langapp.repositories.sentences import SentenceRepository
 from langapp.repositories.word_pairs import WordPairRepository
@@ -38,6 +39,10 @@ def get_progress_repository(session: SessionDep) -> ProgressRepository:
     return ProgressRepository(session)
 
 
+def get_lesson_repository(session: SessionDep) -> LessonRepository:
+    return LessonRepository(session)
+
+
 @lru_cache
 def get_token_verifier() -> SupabaseTokenVerifier | None:
     settings = get_settings()
@@ -64,4 +69,5 @@ SentenceRepoDep = Annotated[SentenceRepository, Depends(get_sentence_repository)
 ImportRunRepoDep = Annotated[ImportRunRepository, Depends(get_import_run_repository)]
 WordPairRepoDep = Annotated[WordPairRepository, Depends(get_word_pair_repository)]
 ProgressRepoDep = Annotated[ProgressRepository, Depends(get_progress_repository)]
+LessonRepoDep = Annotated[LessonRepository, Depends(get_lesson_repository)]
 CurrentUser = Annotated[AuthUser, Depends(get_current_user)]

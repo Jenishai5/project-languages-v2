@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-async function authHeaders(): Promise<HeadersInit> {
+export async function authHeaders(): Promise<HeadersInit> {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
   return {

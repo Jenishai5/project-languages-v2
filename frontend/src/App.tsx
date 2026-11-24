@@ -8,6 +8,8 @@ import Landing         from "./pages/Landing";
 import Dashboard       from "./pages/Dashboard";
 import Game            from "./pages/Game";
 import SentenceGame    from "./pages/SentenceGame";
+import Lessons         from "./pages/Lessons";
+import Lesson          from "./pages/Lesson";
 import ProtectedLayout from "./components/organisms/ProtectedLayout";
 import AppNavbar       from "./components/organisms/AppNavbar";
 
@@ -60,6 +62,8 @@ export default function App() {
               <Route path="/dashboard"         element={<Dashboard />} />
               <Route path="/game"             element={<Game />} />
               <Route path="/sentence-builder" element={<SentenceGame />} />
+              <Route path="/lessons"          element={<Lessons />} />
+              <Route path="/lessons/:lessonId" element={<Lesson />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

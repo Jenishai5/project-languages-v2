@@ -1,0 +1,599 @@
+{
+  "doctor": {
+    "data": [
+      {
+        "id": 10795522,
+        "text": "Call a doctor!",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "ddnktr",
+        "is_unapproved": false,
+        "audios": [],
+        "translations": [
+          {
+            "id": 9245842,
+            "text": "Позовите врача!",
+            "lang": "rus",
+            "script": null,
+            "license": "CC0 1.0",
+            "owner": "ZegPhig",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 8251508,
+        "text": "See your doctor.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "Amastan",
+        "is_unapproved": false,
+        "audios": [],
+        "translations": [
+          {
+            "id": 2243919,
+            "text": "Сходи к врачу.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "marafon",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          },
+          {
+            "id": 10537658,
+            "text": "Посоветуйся со своим врачом.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "marafon",
+            "is_unapproved": false,
+            "is_direct": false,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 5832686,
+        "text": "Excuse me, Doctor.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "OsoHombre",
+        "is_unapproved": false,
+        "audios": [],
+        "translations": [
+          {
+            "id": 6991801,
+            "text": "Доктор, простите.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "yurokudo",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 5152887,
+        "text": "Call the doctor.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "CarpeLanam",
+        "is_unapproved": false,
+        "audios": [
+          {
+            "id": 280945,
+            "created": null,
+            "author": "CK",
+            "license": "CC BY-NC-ND 3.0",
+            "attribution_url": "http://www.manythings.org/tatoeba",
+            "download_url": "https://api.tatoeba.org/v1/audio/280945/file",
+            "modified": null
+          }
+        ],
+        "translations": [
+          {
+            "id": 2578151,
+            "text": "Позови врача.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "Olya",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          },
+          {
+            "id": 2578153,
+            "text": "Позовите врача.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "Olya",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          },
+          {
+            "id": 4619678,
+            "text": "Вызови врача.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "marafon",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 3735710,
+        "text": "Consult your doctor.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "CK",
+        "is_unapproved": false,
+        "audios": [
+          {
+            "id": 227630,
+            "created": null,
+            "author": "CK",
+            "license": "CC BY-NC-ND 3.0",
+            "attribution_url": "http://www.manythings.org/tatoeba",
+            "download_url": "https://api.tatoeba.org/v1/audio/227630/file",
+            "modified": null
+          }
+        ],
+        "translations": [
+          {
+            "id": 4600490,
+            "text": "Consulta a tu doctor.",
+            "lang": "spa",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "cueyayotl",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          },
+          {
+            "id": 4600492,
+            "text": "Consulte a su doctor.",
+            "lang": "spa",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "cueyayotl",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          },
+          {
+            "id": 4600499,
+            "text": "Consulta a tu médico.",
+            "lang": "spa",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "cueyayotl",
+            "is_unapproved": false,
+            "is_direct": false,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 2986062,
+        "text": "Get a doctor.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "CK",
+        "is_unapproved": false,
+        "audios": [
+          {
+            "id": 177551,
+            "created": null,
+            "author": "CK",
+            "license": "CC BY-NC-ND 3.0",
+            "attribution_url": "http://www.manythings.org/tatoeba",
+            "download_url": "https://api.tatoeba.org/v1/audio/177551/file",
+            "modified": null
+          }
+        ],
+        "translations": [
+          {
+            "id": 4637553,
+            "text": "Сходи за доктором!",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "marafon",
+            "is_unapproved": false,
+            "is_direct": false,
+            "audios": []
+          },
+          {
+            "id": 4637554,
+            "text": "Сходите за доктором!",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "marafon",
+            "is_unapproved": false,
+            "is_direct": false,
+            "audios": []
+          },
+          {
+            "id": 4637555,
+            "text": "Сходи за врачом!",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "marafon",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 2245225,
+        "text": "Consult a doctor.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "CK",
+        "is_unapproved": false,
+        "audios": [
+          {
+            "id": 113054,
+            "created": null,
+            "author": "CK",
+            "license": "CC BY-NC-ND 3.0",
+            "attribution_url": "http://www.manythings.org/tatoeba",
+            "download_url": "https://api.tatoeba.org/v1/audio/113054/file",
+            "modified": null
+          }
+        ],
+        "translations": [
+          {
+            "id": 2608318,
+            "text": "Проконсультируйся с врачом.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "Olya",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          },
+          {
+            "id": 2608322,
+            "text": "Проконсультируйтесь с врачом.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "Olya",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          },
+          {
+            "id": 4325357,
+            "text": "Consulte a un médico.",
+            "lang": "spa",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "pchamorro",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 2245023,
+        "text": "Call a doctor.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "CK",
+        "is_unapproved": false,
+        "audios": [
+          {
+            "id": 112919,
+            "created": null,
+            "author": "CK",
+            "license": "CC BY-NC-ND 3.0",
+            "attribution_url": "http://www.manythings.org/tatoeba",
+            "download_url": "https://api.tatoeba.org/v1/audio/112919/file",
+            "modified": null
+          }
+        ],
+        "translations": [
+          {
+            "id": 473257,
+            "text": "Пошлите за доктором.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "Iolanda",
+            "is_unapproved": false,
+            "is_direct": false,
+            "audios": []
+          },
+          {
+            "id": 2418241,
+            "text": "Llamá a un médico.",
+            "lang": "spa",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "hayastan",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          },
+          {
+            "id": 2578151,
+            "text": "Позови врача.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "Olya",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      }
+    ],
+    "paging": {
+      "total": 865,
+      "has_next": true,
+      "next": null
+    }
+  },
+  "paper": {
+    "data": [
+      {
+        "id": 13966833,
+        "text": "This is paper.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "rul",
+        "is_unapproved": false,
+        "audios": [],
+        "translations": [
+          {
+            "id": 13975993,
+            "text": "Esto es papel.",
+            "lang": "spa",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "Tom9358",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 12093334,
+        "text": "It's paper.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "CK",
+        "is_unapproved": false,
+        "audios": [
+          {
+            "id": 1146974,
+            "created": "2023-10-03T23:49:13+00:00",
+            "author": "CK",
+            "license": "CC BY-NC-ND 3.0",
+            "attribution_url": "http://www.manythings.org/tatoeba",
+            "download_url": "https://api.tatoeba.org/v1/audio/1146974/file",
+            "modified": "2023-10-03T23:49:13+00:00"
+          }
+        ],
+        "translations": [
+          {
+            "id": 12093342,
+            "text": "Это бумага.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "marafon",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 11900183,
+        "text": "I sell paper.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "CK",
+        "is_unapproved": false,
+        "audios": [
+          {
+            "id": 1126656,
+            "created": "2023-07-03T00:31:37+00:00",
+            "author": "CK",
+            "license": "CC BY-NC-ND 3.0",
+            "attribution_url": "http://www.manythings.org/tatoeba",
+            "download_url": "https://api.tatoeba.org/v1/audio/1126656/file",
+            "modified": "2023-07-03T00:31:37+00:00"
+          }
+        ],
+        "translations": [
+          {
+            "id": 13595805,
+            "text": "Vendo papel.",
+            "lang": "spa",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "Serrot",
+            "is_unapproved": false,
+            "is_direct": false,
+            "audios": []
+          },
+          {
+            "id": 14115069,
+            "text": "Я продаю бумагу.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "marafon",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 11421036,
+        "text": "You need paper.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "Agestur",
+        "is_unapproved": false,
+        "audios": [],
+        "translations": [
+          {
+            "id": 12264777,
+            "text": "Тебе нужна бумага.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "Grigoriy",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 11329038,
+        "text": "Read the paper!",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "ddnktr",
+        "is_unapproved": false,
+        "audios": [],
+        "translations": [
+          {
+            "id": 10271322,
+            "text": "Читай газету!",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "marafon",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 9306590,
+        "text": "I need paper.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "Lillith",
+        "is_unapproved": false,
+        "audios": [],
+        "translations": [
+          {
+            "id": 1314564,
+            "text": "Necesito papel.",
+            "lang": "spa",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "Shishir",
+            "is_unapproved": false,
+            "is_direct": false,
+            "audios": []
+          },
+          {
+            "id": 2134437,
+            "text": "Мне нужна бумага.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "sismic",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      },
+      {
+        "id": 9044837,
+        "text": "Paper absorbs oil.",
+        "lang": "eng",
+        "script": null,
+        "license": "CC BY 2.0 FR",
+        "owner": "Amastan",
+        "is_unapproved": false,
+        "audios": [
+          {
+            "id": 828927,
+            "created": "2021-03-02T00:18:19+00:00",
+            "author": "CK",
+            "license": "CC BY-NC-ND 3.0",
+            "attribution_url": "http://www.manythings.org/tatoeba",
+            "download_url": "https://api.tatoeba.org/v1/audio/828927/file",
+            "modified": "2021-03-02T00:18:19+00:00"
+          }
+        ],
+        "translations": [
+          {
+            "id": 10911334,
+            "text": "El papel absorbe el aceite.",
+            "lang": "spa",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "Eremon",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          },
+          {
+            "id": 12872504,
+            "text": "Бумага впитывает масло.",
+            "lang": "rus",
+            "script": null,
+            "license": "CC BY 2.0 FR",
+            "owner": "marafon",
+            "is_unapproved": false,
+            "is_direct": true,
+            "audios": []
+          }
+        ]
+      }
+    ],
+    "paging": {
+      "total": 352,
+      "has_next": true,
+      "next": null
+    }
+  }
+}

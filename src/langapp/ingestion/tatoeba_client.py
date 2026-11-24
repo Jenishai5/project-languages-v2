@@ -95,6 +95,27 @@ class TatoebaClient:
                 return
             url = next_url
 
+    def search_sentences(
+        self,
+        lang: str,
+        query: str,
+        target_langs: Sequence[str],
+        min_words: int = 3,
+        max_words: int = 7,
+        limit: int = 20,
+    ) -> dict:
+        params = {
+            "lang": lang,
+            "q": query,
+            "sort": "words",
+            "limit": min(limit, MAX_PAGE_SIZE),
+            "showtrans": "matching",
+            "trans:lang": ",".join(target_langs),
+            "word_count": f"{min_words}-{max_words}",
+            "include": "audios",
+        }
+        return self._get_json("/v1/sentences", params)
+
     def _get_json(self, url: str, params: dict | None) -> dict:
         for attempt in range(self._max_retries + 1):
             self._respect_rate_limit()

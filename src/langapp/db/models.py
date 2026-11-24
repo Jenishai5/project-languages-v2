@@ -114,7 +114,7 @@ class WordPair(Base):
 class UserProgress(Base):
     __tablename__ = "user_progress"
     __table_args__ = (
-        CheckConstraint("item_type IN ('sentence', 'word')", name="valid_item_type"),
+        CheckConstraint("item_type IN ('sentence', 'word', 'lesson')", name="valid_item_type"),
         CheckConstraint("mastery_level BETWEEN 0 AND 5", name="valid_mastery"),
     )
 
@@ -126,3 +126,61 @@ class UserProgress(Base):
     mastery_level: Mapped[int] = mapped_column(SmallInteger)
     last_attempted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     next_review_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class Concept(Base):
+    __tablename__ = "concepts"
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    slug: Mapped[str] = mapped_column(String(100), unique=True)
+    category: Mapped[str] = mapped_column(String(64), index=True)
+    emoji: Mapped[str | None] = mapped_column(String(16))
+    image_url: Mapped[str | None] = mapped_column(Text)
+    image_approved: Mapped[bool] = mapped_column(Boolean, server_default=false())
+
+    terms: Mapped[list["ConceptTerm"]] = relationship(back_populates="concept", cascade="all, delete-orphan")
+
+
+class ConceptTerm(Base):
+    __tablename__ = "concept_terms"
+
+    concept_id: Mapped[int] = mapped_column(Integer, ForeignKey("concepts.id", ondelete="CASCADE"), primary_key=True)
+    lang: Mapped[str] = mapped_column(String(8), primary_key=True)
+    text: Mapped[str] = mapped_column(Text)
+
+    concept: Mapped[Concept] = relationship(back_populates="terms")
+
+
+class Lesson(Base):
+    __tablename__ = "lessons"
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    slug: Mapped[str] = mapped_column(String(100), unique=True)
+    title: Mapped[str] = mapped_column(String(100))
+    position: Mapped[int] = mapped_column(Integer, unique=True)
+
+
+class LessonConcept(Base):
+    __tablename__ = "lesson_concepts"
+
+    lesson_id: Mapped[int] = mapped_column(Integer, ForeignKey("lessons.id", ondelete="CASCADE"), primary_key=True)
+    concept_id: Mapped[int] = mapped_column(Integer, ForeignKey("concepts.id", ondelete="CASCADE"), primary_key=True)
+    position: Mapped[int] = mapped_column(Integer)
+
+
+class LessonSentence(Base):
+    __tablename__ = "lesson_sentences"
+
+    lesson_id: Mapped[int] = mapped_column(Integer, ForeignKey("lessons.id", ondelete="CASCADE"), primary_key=True)
+    sentence_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("sentences.id", ondelete="CASCADE"), primary_key=True)
+    concept_id: Mapped[int] = mapped_column(Integer, ForeignKey("concepts.id", ondelete="CASCADE"), index=True)
+
+
+class UserSettings(Base):
+    __tablename__ = "user_settings"
+    __table_args__ = (CheckConstraint("native_lang <> learning_lang", name="different_languages"),)
+
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    native_lang: Mapped[str] = mapped_column(String(8))
+    learning_lang: Mapped[str] = mapped_column(String(8))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

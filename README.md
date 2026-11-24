@@ -150,6 +150,59 @@ For login and progress, add `SUPABASE_URL` and `SUPABASE_ANON_KEY` to `.env` (ba
 - **Audio licences differ per recording** (CC BY 4.0, CC BY-NC-ND 3.0…), so each recording's author and licence are stored and shown.
 - **Audio timestamps** come with a time zone (`2026-09-26T05:43:42+00:00`) and are stored as `timestamptz`.
 
+## Lessons
+
+A lesson teaches 4–7 words, then uses them: **Learn → Match → Build sentences → Listen**.
+
+### How lessons are made
+
+1. **Concepts.** `make import-concepts` turns the dictionary files into *concepts*: one row per meaning, with its words in every language (`concepts` + `concept_terms`). So any native language works with any learning language, instead of needing one file per language pair. Then it groups the concepts into lessons by category (`lessons` + `lesson_concepts`): 353 concepts, 70 lessons.
+2. **Sentences.** `make build-lessons` searches Tatoeba for short sentences (3–7 words) that contain each lesson word (`q==doctor`) and have a translation in the learner's language. It picks the best ones and links them to the lesson (`lesson_sentences`). It is run once, not while people play.
+3. **Choosing good sentences** (`services/lesson_builder.py`):
+   - the exact word must appear (*doctor*, not *doctors*);
+   - **coverage**: at least 60% of the words must be known (lesson words or very common words), so "Call a doctor." wins over "The doctor prescribed antibiotics.";
+   - sentences with a recording come first, then shorter ones;
+   - the best sentences are picked **per native language**, so Spanish and Russian speakers both get sentences.
+4. **The learner** picks "I speak" and "I want to learn". This is saved in the browser, and in `user_settings` when logged in.
+
+```bash
+make migrate
+make import-concepts
+make build-lessons
+```
+
+`make build-lessons` fills the first 10 lessons (about 50 Tatoeba requests at 1 per second). `make build-lessons LESSONS=0` fills all 70 (about 6 minutes). Running it again adds nothing new.
+
+### Images
+
+Each concept has `image_url` and `image_approved`. A picture is shown only after approval, because a wrong picture teaches the wrong word. Until then the emoji is shown (243 of 353 concepts have one).
+
+```bash
+.venv/bin/python -m langapp.cli set-image doctor https://…/doctor.png
+.venv/bin/python -m langapp.cli set-image doctor https://…/doctor.png --approve
+```
+
+The first command saves the picture, waiting for approval. The second saves it and shows it to learners.
+
+AI image generation is **not connected yet**: choose a provider first (account, key, terms of use). Then generate each picture once, store it, review it, and approve it with `set-image`.
+
+### Endpoints
+
+| Method | Path | What |
+|---|---|---|
+| GET | `/languages` | Languages with words available |
+| GET | `/lessons?learning=eng&native=spa` | Lesson list with word and sentence counts |
+| GET | `/lessons/{id}?learning=eng&native=spa` | Words, build exercises and listening exercises |
+| GET / PUT | `/settings` | The learner's languages (login required) |
+| POST | `/progress/lesson` · GET `/progress/lessons` | Lesson results (login required) |
+
+### Data notes
+
+- **Russian is thin:** only 69 of 353 concepts have a Russian word, because the old `en-ru` file was small. Russian speakers see fewer lessons until more translations are added.
+- **Odd categories:** some come from the old files (*paper* is in "family and relationships"). Fix the JSON and run `make import-concepts` again.
+- **Alternatives:** terms like *el médico / la médica* are shown in full, and searched by the first one.
+- **Production builds need the `VITE_*` values.** Vite writes them into the code at build time. Without `frontend/.env`, the Supabase check fails and Vite drops the whole app as unreachable code.
+
 ## Tests
 
 ```bash

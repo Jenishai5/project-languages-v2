@@ -1,4 +1,4 @@
-.PHONY: install db migrate import import-builder import-words api frontend test down
+.PHONY: install db migrate import import-builder import-words import-concepts build-lessons api frontend test down
 
 install:
 	python3 -m venv .venv
@@ -18,6 +18,12 @@ import-builder:
 
 import-words:
 	.venv/bin/python -m langapp.cli import-words
+
+import-concepts:
+	.venv/bin/python -m langapp.cli import-concepts
+
+build-lessons:
+	.venv/bin/python -m langapp.cli build-lessons --learning eng --natives spa rus --lessons $(or $(LESSONS),10)
 
 api:
 	.venv/bin/uvicorn langapp.api.main:app --reload --port 8000
