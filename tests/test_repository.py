@@ -1,8 +1,8 @@
 from sqlalchemy import func, select
 
 from langapp.db.models import Sentence, SentenceLink
-from langapp.ingestion.parser import parse_page
 from langapp.domain import ParsedSentence
+from langapp.ingestion.parser import parse_page
 from langapp.repositories.sentences import SentenceRepository, whole_word_pattern
 from tests.conftest import load_fixture
 

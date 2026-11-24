@@ -5,6 +5,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from langapp.db.models import UserProgress
+from langapp.domain import ItemType
 
 MAX_MASTERY = 5
 
@@ -17,7 +18,7 @@ class ProgressRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def record(self, user_id: uuid.UUID, item_type: str, item_key: str, correct: bool) -> UserProgress:
+    def record(self, user_id: uuid.UUID, item_type: ItemType, item_key: str, correct: bool) -> UserProgress:
         step = 1 if correct else -1
         first_mastery = 1 if correct else 0
         new_mastery = func.least(MAX_MASTERY, func.greatest(0, UserProgress.mastery_level + step))
@@ -44,7 +45,7 @@ class ProgressRepository:
         ).returning(UserProgress)
         return self.session.scalars(stmt).one()
 
-    def for_user(self, user_id: uuid.UUID, item_type: str) -> list[UserProgress]:
+    def for_user(self, user_id: uuid.UUID, item_type: ItemType) -> list[UserProgress]:
         stmt = (
             select(UserProgress)
             .where(UserProgress.user_id == user_id, UserProgress.item_type == item_type)

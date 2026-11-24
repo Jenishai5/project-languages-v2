@@ -29,17 +29,28 @@ Tatoeba API ──HTTP──▶ ingestion/tatoeba_client.py   timeouts, retries 
                               ▼
                      PostgreSQL in Docker ◀── migrations/ (Alembic)
 
-FastAPI (api/) ──▶ repositories/ ──▶ PostgreSQL
+HTTP request ──▶ api/routes      thin: validate input (Pydantic schemas), call one service, return a schema
+                    │ api/deps.py builds services and opens ONE transaction per request
+                    ▼
+                services/       use cases and rules (LessonService, GameService, ProgressService, …)
+                    │           raise domain errors (NotFound, InvalidRequest) — no HTTP inside
+                    ▼
+                repositories/   SQL only, one repository per aggregate
+                    ▼
+                PostgreSQL
 ```
+
+The dependency rule is enforced by `tests/test_architecture.py`: routes may not import repositories or SQLAlchemy, services may not import FastAPI, repositories may not import services, and `domain.py` imports none of them.
 
 | Folder | Layer | Knows about |
 |---|---|---|
-| `src/langapp/domain.py` | Domain models (Pydantic) | nothing else |
-| `src/langapp/ingestion/` | Talking to Tatoeba and cleaning its data | domain |
+| `src/langapp/domain.py` | Domain models and value types (`ItemType`, `ParsedSentence`, `PlannedLesson`) | nothing else |
+| `src/langapp/errors.py` | Domain errors; each knows its HTTP status | nothing else |
+| `src/langapp/ingestion/` | Adapters: Tatoeba client, parsers, dictionary files | domain, errors |
 | `src/langapp/db/` | SQLAlchemy tables and DB connection | — |
-| `src/langapp/repositories/` | Database reads/writes | db, domain |
-| `src/langapp/services/` | Use cases (the import) | ingestion, repositories |
-| `src/langapp/api/` | HTTP endpoints | repositories |
+| `src/langapp/repositories/` | Database reads/writes: sentences, word pairs, concepts, lessons, user settings, progress, import runs | db, domain |
+| `src/langapp/services/` | Use cases. `ports.py` holds the interfaces (Protocols) the services need from outside, e.g. a sentence source | repositories, domain, errors |
+| `src/langapp/api/` | HTTP: routes, request/response schemas, dependency wiring, one error handler | services |
 | `migrations/` | Versioned schema changes (Alembic) | db models |
 
 ## Database schema
@@ -227,10 +238,13 @@ AI image generation is **not connected yet**: choose a provider first (account, 
 
 ```bash
 make test
+make lint
 ```
 
 - `test_parser.py`: a real saved Tatoeba response, plus a hand-made messy one (wrong types, empty text, duplicates…).
 - `test_client.py`: fake HTTP with `respx`. Covers retries on 5xx, timeouts and 429 with `Retry-After`, no retry on 400, giving up, rate limiting and paging. Uses no real network and no real waiting.
+- `test_services.py`: services with fake repositories, no database. Possible because services receive their repositories in the constructor.
+- `test_architecture.py`: fails if a layer imports a layer it must not know about.
 - `test_repository.py`, `test_import_service.py`, `test_api.py`: run against the real `langapp_test` database in Docker. They prove that importing twice creates no duplicates and that a failure halfway keeps the pages already saved.
 
 ## Reliability

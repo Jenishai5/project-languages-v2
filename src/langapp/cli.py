@@ -6,7 +6,7 @@ from pathlib import Path
 from langapp.config import get_settings
 from langapp.db.session import get_session_factory
 from langapp.ingestion.tatoeba_client import TatoebaClient
-from langapp.repositories.lessons import LessonRepository
+from langapp.repositories.concepts import ConceptRepository
 from langapp.services.import_service import SentenceImporter
 from langapp.services.lesson_builder import LessonSentenceBuilder, import_concepts
 from langapp.services.word_import import import_word_files
@@ -44,16 +44,19 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def run_import(source: str, targets: list[str], pages: int, max_words: int | None, with_audio: bool) -> int:
+def make_client() -> TatoebaClient:
     settings = get_settings()
-    client = TatoebaClient(
+    return TatoebaClient(
         base_url=settings.tatoeba_base_url,
         timeout_seconds=settings.tatoeba_timeout_seconds,
         max_retries=settings.tatoeba_max_retries,
         min_interval_seconds=settings.tatoeba_min_interval_seconds,
         user_agent=settings.tatoeba_user_agent,
     )
-    with client:
+
+
+def run_import(source: str, targets: list[str], pages: int, max_words: int | None, with_audio: bool) -> int:
+    with make_client() as client:
         summary = SentenceImporter(client, get_session_factory()).run(
             source, targets, pages, max_words=max_words, with_audio=with_audio
         )
@@ -70,8 +73,12 @@ def run_import(source: str, targets: list[str], pages: int, max_words: int | Non
     return 0 if run.status == "succeeded" else 1
 
 
+def dictionary_files() -> list[Path]:
+    return sorted(DEFAULT_DICTIONARY_DIR.glob("dictionary-*.json"))
+
+
 def run_import_words(files: list[Path]) -> int:
-    paths = files or sorted(DEFAULT_DICTIONARY_DIR.glob("dictionary-*.json"))
+    paths = files or dictionary_files()
     if not paths:
         print(f"No dictionary files found in {DEFAULT_DICTIONARY_DIR}")
         return 1
@@ -87,19 +94,8 @@ def run_import_words(files: list[Path]) -> int:
     return 1 if failed else 0
 
 
-def make_client() -> TatoebaClient:
-    settings = get_settings()
-    return TatoebaClient(
-        base_url=settings.tatoeba_base_url,
-        timeout_seconds=settings.tatoeba_timeout_seconds,
-        max_retries=settings.tatoeba_max_retries,
-        min_interval_seconds=settings.tatoeba_min_interval_seconds,
-        user_agent=settings.tatoeba_user_agent,
-    )
-
-
 def run_import_concepts(words_per_lesson: int) -> int:
-    paths = sorted(DEFAULT_DICTIONARY_DIR.glob("dictionary-*.json"))
+    paths = dictionary_files()
     if not paths:
         print(f"No dictionary files found in {DEFAULT_DICTIONARY_DIR}")
         return 1
@@ -126,7 +122,7 @@ def run_build_lessons(learning: str, natives: list[str], lessons: int, per_word:
 
 def run_set_image(slug: str, url: str, approve: bool) -> int:
     with get_session_factory().begin() as session:
-        found = LessonRepository(session).set_image(slug, url, approve)
+        found = ConceptRepository(session).set_image(slug, url, approve)
     if not found:
         print(f"No concept called '{slug}'")
         return 1
@@ -138,18 +134,14 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
     args = build_parser().parse_args(argv)
-    if args.command == "import":
-        return run_import(args.source, args.targets, args.pages, args.max_words, args.with_audio)
-    if args.command == "import-words":
-        return run_import_words(args.files)
-    if args.command == "import-concepts":
-        return run_import_concepts(args.words_per_lesson)
-    if args.command == "build-lessons":
-        return run_build_lessons(args.learning, args.natives, args.lessons, args.per_word)
-    if args.command == "set-image":
-        return run_set_image(args.slug, args.url, args.approve)
-    return 2
-
+    commands = {
+        "import": lambda: run_import(args.source, args.targets, args.pages, args.max_words, args.with_audio),
+        "import-words": lambda: run_import_words(args.files),
+        "import-concepts": lambda: run_import_concepts(args.words_per_lesson),
+        "build-lessons": lambda: run_build_lessons(args.learning, args.natives, args.lessons, args.per_word),
+        "set-image": lambda: run_set_image(args.slug, args.url, args.approve),
+    }
+    return commands[args.command]()
 
 if __name__ == "__main__":
     sys.exit(main())

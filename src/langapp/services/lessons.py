@@ -1,42 +1,17 @@
 import random
 
-from langapp.db.models import Concept, Sentence
-from langapp.services.games import estimate_level, pick_audio, tokenize
+from langapp.db.models import Concept, Lesson, Sentence
+from langapp.errors import NotFound
+from langapp.repositories.lessons import LessonRepository
+from langapp.repositories.sentences import SentenceRepository
+from langapp.services.games import estimate_level, recording_view, tiles_view, tokenize
+from langapp.services.languages import LanguageCatalog
 
 SENTENCES_PER_LESSON = 5
 PICTURE_OPTIONS = 4
 
-LANGUAGE_NAMES = {"eng": "English", "spa": "Spanish", "rus": "Russian", "cat": "Catalan"}
-
-
-class LanguageNotSupported(Exception):
-    pass
-
-
-def language_list(counts: dict[str, int]) -> list[dict]:
-    return [
-        {"code": code, "name": LANGUAGE_NAMES.get(code, code), "words": count}
-        for code, count in sorted(counts.items(), key=lambda item: -item[1])
-    ]
-
-
-def check_languages(learning: str, native: str, available: set[str]) -> None:
-    if learning == native:
-        raise LanguageNotSupported("Native and learning language must be different.")
-    for code in (learning, native):
-        if code not in available:
-            raise LanguageNotSupported(f"Language '{code}' is not available yet.")
-
-
 def _term(concept: Concept, lang: str) -> str | None:
     return next((t.text for t in concept.terms if t.lang == lang), None)
-
-
-def _audio(sentence: Sentence) -> dict | None:
-    audio = pick_audio(sentence.audios)
-    if audio is None:
-        return None
-    return {"url": audio.download_url, "author": audio.author, "license": audio.license, "attribution_url": audio.attribution_url}
 
 
 def pick_sentences(exercises: list[dict], limit: int) -> list[dict]:
@@ -78,24 +53,13 @@ def picture_rounds(words: list[dict], rng: random.Random) -> list[dict]:
     return rounds
 
 
-def lesson_view(
-    lesson,
-    concepts: list[Concept],
-    sentences: list[tuple[Sentence, int]],
-    translations: dict[int, dict[str, list[str]]],
-    learning: str,
-    native: str,
-    rng: random.Random | None = None,
-) -> dict:
-    rng = rng or random.Random()
-    words = []
-    slug_by_id = {}
+def word_cards(concepts: list[Concept], learning: str, native: str) -> list[dict]:
+    cards = []
     for concept in concepts:
         term, translation = _term(concept, learning), _term(concept, native)
         if term is None or translation is None:
             continue
-        slug_by_id[concept.id] = concept.slug
-        words.append(
+        cards.append(
             {
                 "concept_id": concept.id,
                 "slug": concept.slug,
@@ -105,28 +69,47 @@ def lesson_view(
                 "image_url": concept.image_url if concept.image_approved else None,
             }
         )
+    return cards
 
+
+def shuffle_exercises(
+    sentences: list[tuple[Sentence, int]],
+    translations: dict[int, dict[str, list[str]]],
+    slug_by_concept: dict[int, str],
+    native: str,
+) -> list[dict]:
     exercises = []
     for sentence, concept_id in sentences:
         prompts = translations.get(sentence.id, {}).get(native)
-        if not prompts or concept_id not in slug_by_id:
+        if not prompts or concept_id not in slug_by_concept:
             continue
         tokens = tokenize(sentence.text)
         exercises.append(
             {
                 "id": sentence.id,
-                "concept_slug": slug_by_id[concept_id],
+                "concept_slug": slug_by_concept[concept_id],
                 "full_text": sentence.text,
                 "prompt": prompts[0],
-                "words": [{"form": t.form, "position": t.position, "word_type": t.word_type} for t in tokens],
+                "words": tiles_view(tokens),
                 "level": estimate_level(len(tokens)),
-                "audio": _audio(sentence),
+                "audio": recording_view(sentence),
             }
         )
+    return exercises
 
-    chosen = pick_sentences(exercises, SENTENCES_PER_LESSON)
-    pictures = picture_rounds(words, rng)
 
+def lesson_view(
+    lesson: Lesson,
+    concepts: list[Concept],
+    sentences: list[tuple[Sentence, int]],
+    translations: dict[int, dict[str, list[str]]],
+    learning: str,
+    native: str,
+    rng: random.Random | None = None,
+) -> dict:
+    words = word_cards(concepts, learning, native)
+    slug_by_concept = {word["concept_id"]: word["slug"] for word in words}
+    exercises = shuffle_exercises(sentences, translations, slug_by_concept, native)
     return {
         "id": lesson.id,
         "slug": lesson.slug,
@@ -135,6 +118,34 @@ def lesson_view(
         "learning": learning,
         "native": native,
         "words": words,
-        "sentences": chosen,
-        "pictures": pictures,
+        "sentences": pick_sentences(exercises, SENTENCES_PER_LESSON),
+        "pictures": picture_rounds(words, rng or random.Random()),
     }
+
+
+class LessonService:
+    def __init__(
+        self,
+        lessons: LessonRepository,
+        sentences: SentenceRepository,
+        catalog: LanguageCatalog,
+        rng: random.Random | None = None,
+    ) -> None:
+        self._lessons = lessons
+        self._sentences = sentences
+        self._catalog = catalog
+        self._rng = rng or random.Random()
+
+    def list(self, learning: str, native: str) -> list[dict]:
+        self._catalog.ensure_pair(learning, native)
+        return [lesson for lesson in self._lessons.list_lessons(learning, native) if lesson["word_count"] > 0]
+
+    def detail(self, lesson_id: int, learning: str, native: str) -> dict:
+        self._catalog.ensure_pair(learning, native)
+        lesson = self._lessons.get_lesson(lesson_id)
+        if lesson is None:
+            raise NotFound(f"Lesson {lesson_id} not found")
+        sentences = self._lessons.lesson_sentences(lesson_id, learning)
+        translations = self._sentences.translations_for([s.id for s, _ in sentences], [native])
+        concepts = self._lessons.lesson_concepts(lesson_id)
+        return lesson_view(lesson, concepts, sentences, translations, learning, native, self._rng)

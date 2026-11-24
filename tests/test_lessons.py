@@ -10,12 +10,13 @@ from fastapi.testclient import TestClient
 from langapp.api.deps import get_session, get_token_verifier
 from langapp.api.main import app
 from langapp.auth import AuthError, AuthUser
-from langapp.ingestion.concepts import ParsedConcept, PlannedLesson, build_concepts, core_word, normalize_category, plan_lessons
+from langapp.domain import ParsedConcept, PlannedLesson
+from langapp.ingestion.concepts import build_concepts, core_word, normalize_category, plan_lessons
 from langapp.ingestion.dictionary_parser import load_dictionary_file, pair_from_file_name
 from langapp.ingestion.parser import parse_page
 from langapp.ingestion.tatoeba_client import TatoebaClient
+from langapp.repositories.concepts import ConceptRepository
 from langapp.repositories.lessons import LessonRepository
-from langapp.services.lessons import pick_sentences, picture_rounds
 from langapp.services.lesson_builder import (
     LessonSentenceBuilder,
     coverage,
@@ -24,6 +25,7 @@ from langapp.services.lesson_builder import (
     rank_candidates,
     search_query,
 )
+from langapp.services.lessons import pick_sentences, picture_rounds
 from tests.conftest import load_fixture
 
 DICTIONARIES = Path(__file__).resolve().parent.parent / "data" / "dictionaries"
@@ -106,7 +108,7 @@ def seed_doctor_paper_lesson(session_factory) -> int:
     ]
     with session_factory.begin() as session:
         repo = LessonRepository(session)
-        ids = repo.upsert_concepts(concepts)
+        ids = ConceptRepository(session).upsert_concepts(concepts)
         repo.upsert_lessons([PlannedLesson(slug="work-1", title="Work 1", position=1, concept_slugs=("doctor", "paper"))], ids)
         return repo.list_lessons("eng", "spa")[0]["id"]
 
@@ -159,7 +161,7 @@ class FakeVerifier:
 @pytest.fixture
 def api(session_factory):
     def override_session():
-        with session_factory() as session:
+        with session_factory.begin() as session:
             yield session
 
     app.dependency_overrides[get_session] = override_session
@@ -239,11 +241,11 @@ def test_lesson_progress(api, built_lesson):
 
 def test_image_shows_only_after_approval(api, built_lesson, session_factory):
     with session_factory.begin() as session:
-        LessonRepository(session).set_image("paper", "https://example.org/paper.png", approved=False)
+        ConceptRepository(session).set_image("paper", "https://example.org/paper.png", approved=False)
     hidden = api.get(f"/lessons/{built_lesson}").json()["words"][1]["image_url"]
 
     with session_factory.begin() as session:
-        LessonRepository(session).set_image("paper", "https://example.org/paper.png", approved=True)
+        ConceptRepository(session).set_image("paper", "https://example.org/paper.png", approved=True)
     shown = api.get(f"/lessons/{built_lesson}").json()["words"][1]["image_url"]
 
     assert hidden is None
@@ -276,7 +278,7 @@ def test_reimporting_with_a_new_plan_replaces_old_lessons(session_factory):
     concepts = real_concepts()
     with session_factory.begin() as session:
         repo = LessonRepository(session)
-        ids = repo.upsert_concepts(concepts)
+        ids = ConceptRepository(session).upsert_concepts(concepts)
         repo.upsert_lessons(plan_lessons(concepts, 5), ids)
     with session_factory.begin() as session:
         repo = LessonRepository(session)

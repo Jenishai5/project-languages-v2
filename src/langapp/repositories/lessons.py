@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -8,8 +7,8 @@ from sqlalchemy import delete, func, select, tuple_, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, selectinload
 
-from langapp.db.models import Concept, ConceptTerm, Lesson, LessonConcept, LessonSentence, Sentence, UserSettings
-from langapp.ingestion.concepts import ParsedConcept, PlannedLesson
+from langapp.db.models import Concept, ConceptTerm, Lesson, LessonConcept, LessonSentence, Sentence
+from langapp.domain import PlannedLesson
 
 
 @dataclass(frozen=True)
@@ -23,33 +22,6 @@ class LessonWord:
 class LessonRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
-
-    def upsert_concepts(self, concepts: Sequence[ParsedConcept]) -> dict[str, int]:
-        if not concepts:
-            return {}
-        stmt = insert(Concept).values(
-            [{"slug": c.slug, "category": c.category, "emoji": c.emoji} for c in concepts]
-        )
-        stmt = stmt.on_conflict_do_update(
-            index_elements=[Concept.slug],
-            set_={"category": stmt.excluded.category, "emoji": stmt.excluded.emoji},
-        ).returning(Concept.slug, Concept.id)
-        ids = {slug: concept_id for slug, concept_id in self.session.execute(stmt)}
-
-        term_rows = [
-            {"concept_id": ids[c.slug], "lang": lang, "text": text}
-            for c in concepts
-            for lang, text in c.terms.items()
-        ]
-        if term_rows:
-            terms = insert(ConceptTerm).values(term_rows)
-            terms = terms.on_conflict_do_update(
-                index_elements=[ConceptTerm.concept_id, ConceptTerm.lang],
-                set_={"text": terms.excluded.text},
-                where=ConceptTerm.text.is_distinct_from(terms.excluded.text),
-            )
-            self.session.execute(terms)
-        return ids
 
     def upsert_lessons(self, lessons: Sequence[PlannedLesson], concept_ids: dict[str, int]) -> int:
         if not lessons:
@@ -95,21 +67,17 @@ class LessonRepository:
         )
         return [LessonWord(*row) for row in self.session.execute(stmt)]
 
-    def all_terms(self, lang: str) -> list[str]:
-        return list(self.session.scalars(select(ConceptTerm.text).where(ConceptTerm.lang == lang)))
-
     def add_lesson_sentences(self, rows: Sequence[tuple[int, int, int]]) -> int:
         if not rows:
             return 0
         stmt = insert(LessonSentence).values(
-            [{"lesson_id": lesson_id, "sentence_id": sentence_id, "concept_id": concept_id} for lesson_id, sentence_id, concept_id in rows]
+            [
+                {"lesson_id": lesson_id, "sentence_id": sentence_id, "concept_id": concept_id}
+                for lesson_id, sentence_id, concept_id in rows
+            ]
         )
         stmt = stmt.on_conflict_do_nothing().returning(LessonSentence.sentence_id)
         return len(list(self.session.scalars(stmt)))
-
-    def languages(self) -> dict[str, int]:
-        stmt = select(ConceptTerm.lang, func.count()).group_by(ConceptTerm.lang)
-        return {lang: count for lang, count in self.session.execute(stmt)}
 
     def list_lessons(self, learning_lang: str, native_lang: str) -> list[dict]:
         learning_term = select(ConceptTerm.concept_id).where(ConceptTerm.lang == learning_lang)
@@ -167,22 +135,3 @@ class LessonRepository:
             .options(selectinload(Sentence.audios))
         )
         return [(sentence, concept_id) for sentence, concept_id in self.session.execute(stmt)]
-
-    def set_image(self, slug: str, image_url: str, approved: bool) -> bool:
-        concept = self.session.scalars(select(Concept).where(Concept.slug == slug)).first()
-        if concept is None:
-            return False
-        concept.image_url = image_url
-        concept.image_approved = approved
-        return True
-
-    def get_settings(self, user_id: uuid.UUID) -> UserSettings | None:
-        return self.session.get(UserSettings, user_id)
-
-    def save_settings(self, user_id: uuid.UUID, native_lang: str, learning_lang: str) -> UserSettings:
-        stmt = insert(UserSettings).values(user_id=user_id, native_lang=native_lang, learning_lang=learning_lang)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=[UserSettings.user_id],
-            set_={"native_lang": native_lang, "learning_lang": learning_lang, "updated_at": func.now()},
-        ).returning(UserSettings)
-        return self.session.scalars(stmt).one()

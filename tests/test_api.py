@@ -14,7 +14,7 @@ def api(session_factory):
         SentenceRepository(session).upsert_many(parse_page(load_fixture("tatoeba_page.json")).sentences)
 
     def override_session():
-        with session_factory() as session:
+        with session_factory.begin() as session:
             yield session
 
     app.dependency_overrides[get_session] = override_session
