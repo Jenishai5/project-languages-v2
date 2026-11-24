@@ -150,6 +150,17 @@ For login and progress, add `SUPABASE_URL` and `SUPABASE_ANON_KEY` to `.env` (ba
 - **Audio licences differ per recording** (CC BY 4.0, CC BY-NC-ND 3.0…), so each recording's author and licence are stored and shown.
 - **Audio timestamps** come with a time zone (`2026-09-26T05:43:42+00:00`) and are stored as `timestamptz`.
 
+## Two ways to learn
+
+The home screen has two parts:
+
+| Part | What it is | Order | Data | Progress saved |
+|---|---|---|---|---|
+| 📚 **Learning path** | Lessons of 10 words; each lesson has 4 trainings (Match, Shuffle, Pronounce, Picture) | Fixed: Lesson 1, 2, 3… The home card shows the next unfinished lesson | Only the lesson's words and the sentences linked to them (`/lessons/{id}`) | Per lesson (`user_progress`, `item_type = 'lesson'`) |
+| 🎯 **Free practice** | Independent trainings: 🧩 Match and 🔀 Sentence shuffle | Any time, any order | Random words from all dictionaries (`/game/wordmatch`) and random sentences (`/game/sentences`) | Per word / sentence (`item_type = 'word'` / `'sentence'`) |
+
+Both parts reuse the same tables, so a word learned in a lesson is the same word you meet in free practice.
+
 ## Lessons
 
 A lesson has about **10 words**. Opening a lesson shows its words (tap to hear) and **four training buttons**. Every training uses the same 10 words, the learner can do them in any order, and the lesson is complete when all four are done:
