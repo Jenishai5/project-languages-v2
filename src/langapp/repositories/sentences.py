@@ -9,6 +9,7 @@ from langapp.db.models import Sentence, SentenceLink
 from langapp.domain import ParsedSentence, ParsedTranslation
 
 UPDATABLE_COLUMNS = ("lang", "text", "license", "owner", "is_unapproved")
+REGEX_SPECIAL = set(r"\.^$*+?()[]{}|")
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,11 @@ class UpsertStats:
     inserted: int = 0
     updated: int = 0
     unchanged: int = 0
+
+
+def whole_word_pattern(search: str) -> str:
+    escaped = "".join(f"\\{char}" if char in REGEX_SPECIAL else char for char in search.strip())
+    return rf"\m{escaped}\M"
 
 
 def _row(item: ParsedSentence | ParsedTranslation) -> dict:
@@ -126,7 +132,7 @@ class SentenceRepository:
         if lang:
             filters.append(Sentence.lang == lang)
         if search:
-            filters.append(Sentence.text.ilike(f"%{search}%"))
+            filters.append(Sentence.text.op("~*")(whole_word_pattern(search)))
         if translation_lang:
             target = aliased(Sentence)
             filters.append(

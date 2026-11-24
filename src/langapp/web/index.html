@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TurtleTalk · Sentences</title>
+<style>
+  :root {
+    --bg: #f7f6f2; --card: #ffffff; --text: #1f1e1b; --muted: #6b6a64; --line: #e4e2da;
+    --accent: #0f6e56; --accent-soft: #e1f5ee; --warn: #993c1d; --warn-soft: #faece7;
+    --radius: 12px; --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1b1b19; --card: #262624; --text: #ecebe6; --muted: #a3a29b; --line: #3a3936;
+      --accent: #5dcaa5; --accent-soft: #0b3b30; --warn: #f0997b; --warn-soft: #4a1b0c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 var(--font); }
+  main { max-width: 880px; margin: 0 auto; padding: 32px 20px 64px; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+  h1 { font-size: 24px; font-weight: 600; margin: 0; }
+  h1 span { color: var(--muted); font-weight: 400; }
+  h2 { font-size: 18px; font-weight: 600; margin: 0 0 16px; }
+  .pill { font-size: 13px; padding: 4px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+  .pill.error { background: var(--warn-soft); color: var(--warn); }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .spacer { flex: 1; }
+  button, select, input {
+    font: inherit; font-size: 14px; color: var(--text); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px;
+  }
+  button { cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--muted); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--card); }
+  input[type=search] { flex: 1; min-width: 180px; }
+  .flashcard { text-align: center; padding: 28px 12px 20px; }
+  .spanish { font-size: 26px; line-height: 1.4; margin: 0 0 18px; }
+  .translation { font-size: 19px; color: var(--muted); min-height: 32px; margin: 0 0 20px; }
+  .translation.hidden { visibility: hidden; }
+  .meta { font-size: 13px; color: var(--muted); }
+  .meta a { color: var(--muted); }
+  ul.sentences { list-style: none; padding: 0; margin: 16px 0 0; }
+  ul.sentences li { padding: 14px 0; border-top: 1px solid var(--line); }
+  ul.sentences .es { font-weight: 500; }
+  ul.sentences .tr { font-size: 15px; color: var(--muted); margin-top: 2px; }
+  .tag { display: inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--accent); margin-right: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 6px; border-top: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; border-top: none; }
+  .ok { color: var(--accent); }
+  .failed { color: var(--warn); }
+  .empty { color: var(--muted); font-size: 15px; padding: 12px 0; }
+  footer { font-size: 13px; color: var(--muted); text-align: center; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>TurtleTalk <span>· Spanish sentences</span></h1>
+    <span id="health" class="pill">Checking…</span>
+  </header>
+
+  <section>
+    <div class="row">
+      <h2 style="margin:0">Practice</h2>
+      <div class="spacer"></div>
+      <select id="practice-lang" aria-label="Translation language">
+        <option value="eng">English</option>
+        <option value="rus">Russian</option>
+      </select>
+    </div>
+    <div class="flashcard">
+      <p id="card-text" class="spanish">…</p>
+      <p id="card-translation" class="translation hidden"></p>
+      <div class="row" style="justify-content:center">
+        <button id="listen" type="button">Listen</button>
+        <button id="reveal" type="button">Show translation</button>
+        <button id="next" type="button" class="primary">Next sentence</button>
+      </div>
+      <p id="card-meta" class="meta"></p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Browse</h2>
+    <form id="search-form" class="row">
+      <input id="search" type="search" placeholder="Search Spanish text, e.g. casa" minlength="2" maxlength="100">
+      <select id="browse-lang" aria-label="Show translations in">
+        <option value="">All translations</option>
+        <option value="eng">English only</option>
+        <option value="rus">Russian only</option>
+      </select>
+      <button type="submit">Search</button>
+    </form>
+    <ul id="list" class="sentences"></ul>
+    <div class="row" style="margin-top:12px">
+      <span id="page-info" class="meta"></span>
+      <div class="spacer"></div>
+      <button id="prev" type="button">Previous</button>
+      <button id="more" type="button">Next</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Import runs</h2>
+    <div id="runs"></div>
+  </section>
+
+  <footer>
+    Sentences from <a href="https://tatoeba.org" target="_blank" rel="noopener">Tatoeba</a>, CC BY 2.0 FR ·
+    <a href="/docs">API docs</a>
+  </footer>
+</main>
+
+<script>
+const PAGE_SIZE = 10;
+const LANG_NAMES = { eng: "English", rus: "Russian" };
+const state = { offset: 0, total: 0, card: null };
+
+const $ = (id) => document.getElementById(id);
+
+async function getJson(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.detail || body.reason || `HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+async function loadHealth() {
+  const pill = $("health");
+  try {
+    const health = await getJson("/health");
+    pill.textContent = `Database ok · ${health.sentences} sentences`;
+    pill.className = "pill";
+  } catch (error) {
+    pill.textContent = `Database problem: ${error.message}`;
+    pill.className = "pill error";
+  }
+}
+
+async function loadCard() {
+  const lang = $("practice-lang").value;
+  $("card-translation").classList.add("hidden");
+  $("reveal").textContent = "Show translation";
+  try {
+    const card = await getJson(`/sentences/random?lang=spa&translation_lang=${lang}`);
+    state.card = card;
+    $("card-text").textContent = card.text;
+    $("card-translation").textContent = card.translations.map((t) => t.text).join("  ·  ");
+    $("card-meta").textContent = `#${card.id} · by ${card.owner || "unknown"}`;
+  } catch (error) {
+    state.card = null;
+    $("card-text").textContent = "No sentence yet";
+    $("card-translation").textContent = "";
+    $("card-meta").textContent = `${error.message} — try "make import".`;
+  }
+}
+
+function toggleTranslation() {
+  const box = $("card-translation");
+  box.classList.toggle("hidden");
+  $("reveal").textContent = box.classList.contains("hidden") ? "Show translation" : "Hide translation";
+}
+
+function speak() {
+  if (!state.card || !("speechSynthesis" in window)) return;
+  const utterance = new SpeechSynthesisUtterance(state.card.text);
+  utterance.lang = "es-ES";
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
+}
+
+async function loadList() {
+  const params = new URLSearchParams({ lang: "spa", limit: PAGE_SIZE, offset: state.offset });
+  const query = $("search").value.trim();
+  const translationLang = $("browse-lang").value;
+  if (query.length >= 2) params.set("q", query);
+  if (translationLang) params.set("translation_lang", translationLang);
+
+  const list = $("list");
+  list.replaceChildren();
+  try {
+    const page = await getJson(`/sentences?${params}`);
+    state.total = page.total;
+    if (page.items.length === 0) {
+      list.append(el("li", "empty", "No sentences found."));
+    }
+    for (const item of page.items) {
+      const li = el("li");
+      li.append(el("div", "es", item.text));
+      for (const translation of item.translations) {
+        const line = el("div", "tr");
+        line.append(el("span", "tag", translation.lang), translation.text);
+        li.append(line);
+      }
+      list.append(li);
+    }
+    const from = page.total === 0 ? 0 : state.offset + 1;
+    const to = Math.min(state.offset + PAGE_SIZE, page.total);
+    $("page-info").textContent = `${from}–${to} of ${page.total}`;
+  } catch (error) {
+    list.append(el("li", "empty", `Could not load sentences: ${error.message}`));
+    $("page-info").textContent = "";
+    state.total = 0;
+  }
+  $("prev").disabled = state.offset === 0;
+  $("more").disabled = state.offset + PAGE_SIZE >= state.total;
+}
+
+async function loadRuns() {
+  const box = $("runs");
+  try {
+    const runs = await getJson("/import-runs?limit=5");
+    if (runs.length === 0) {
+      box.replaceChildren(el("p", "empty", "No imports yet. Run: make import"));
+      return;
+    }
+    const table = el("table");
+    const head = el("tr");
+    for (const title of ["#", "Started", "Status", "Pages", "Fetched", "New rows", "Updated", "Skipped"]) {
+      head.append(el("th", null, title));
+    }
+    table.append(head);
+    for (const run of runs) {
+      const row = el("tr");
+      const started = new Date(run.started_at).toLocaleString();
+      const statusClass = run.status === "succeeded" ? "ok" : run.status === "failed" ? "failed" : "";
+      const values = [run.id, started, run.status, run.pages, run.fetched, run.inserted, run.updated, run.skipped];
+      values.forEach((value, index) => {
+        const cell = el("td", index === 2 ? statusClass : null, String(value));
+        if (index === 2 && run.error) cell.title = run.error;
+        row.append(cell);
+      });
+      table.append(row);
+    }
+    box.replaceChildren(table);
+  } catch (error) {
+    box.replaceChildren(el("p", "empty", `Could not load import runs: ${error.message}`));
+  }
+}
+
+$("next").addEventListener("click", loadCard);
+$("reveal").addEventListener("click", toggleTranslation);
+$("listen").addEventListener("click", speak);
+$("practice-lang").addEventListener("change", loadCard);
+$("search-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  state.offset = 0;
+  loadList();
+});
+$("browse-lang").addEventListener("change", () => {
+  state.offset = 0;
+  loadList();
+});
+$("prev").addEventListener("click", () => {
+  state.offset = Math.max(0, state.offset - PAGE_SIZE);
+  loadList();
+});
+$("more").addEventListener("click", () => {
+  state.offset += PAGE_SIZE;
+  loadList();
+});
+
+loadHealth();
+loadCard();
+loadList();
+loadRuns();
+</script>
+</body>
+</html>

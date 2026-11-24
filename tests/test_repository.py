@@ -2,7 +2,8 @@ from sqlalchemy import func, select
 
 from langapp.db.models import Sentence, SentenceLink
 from langapp.ingestion.parser import parse_page
-from langapp.repositories.sentences import SentenceRepository
+from langapp.domain import ParsedSentence
+from langapp.repositories.sentences import SentenceRepository, whole_word_pattern
 from tests.conftest import load_fixture
 
 
@@ -74,3 +75,27 @@ def test_list_filters_by_language_and_translation_language(session_factory):
     by_id = {s.id: s for s in spanish}
     assert {link.translation.lang for link in by_id[14132454].links} == {"eng", "rus"}
     assert {link.translation.lang for link in by_id[14132239].links} == {"eng"}
+
+
+def test_search_matches_whole_words_only(session_factory):
+    sentences = [
+        ParsedSentence(id=1, lang="spa", text="Voy a casa."),
+        ParsedSentence(id=2, lang="spa", text="No puedo casarme contigo."),
+        ParsedSentence(id=3, lang="spa", text="Casa grande, perro pequeño."),
+        ParsedSentence(id=4, lang="spa", text="¿Cuánto cuesta (más o menos)?"),
+    ]
+    with session_factory.begin() as session:
+        SentenceRepository(session).upsert_many(sentences)
+
+    with session_factory() as session:
+        repo = SentenceRepository(session)
+        casa, _ = repo.list(search="casa")
+        tricky, _ = repo.list(search="(más")
+
+    assert sorted(s.id for s in casa) == [1, 3]
+    assert tricky == []
+
+
+def test_whole_word_pattern_escapes_regex_characters():
+    assert whole_word_pattern(" casa ") == r"\mcasa\M"
+    assert whole_word_pattern("a.b(c)") == r"\ma\.b\(c\)\M"

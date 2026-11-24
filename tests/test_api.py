@@ -57,3 +57,11 @@ def test_random_sentence(api):
 def test_invalid_query_is_rejected(api):
     assert api.get("/sentences", params={"lang": "SPANISH"}).status_code == 422
     assert api.get("/sentences", params={"limit": 1000}).status_code == 422
+
+
+def test_home_page_is_served():
+    response = TestClient(app).get("/")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "TurtleTalk" in response.text
