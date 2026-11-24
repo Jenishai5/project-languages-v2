@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "./css/globals.css";
+@import "./css/landing.css";
+@import "./css/game.css";
+@import "./css/turtle.css";

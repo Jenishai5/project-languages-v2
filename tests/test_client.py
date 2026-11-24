@@ -154,3 +154,15 @@ def test_waits_between_requests_to_respect_rate_limit(client, fake_time):
     list(client.iter_sentence_pages("spa"))
 
     assert fake_time.sleeps == [1.0]
+
+
+@respx.mock
+def test_sends_word_count_and_audio_parameters(client):
+    route = respx.get(f"{BASE}/v1/sentences").mock(return_value=httpx.Response(200, json=page(None)))
+
+    list(client.iter_sentence_pages("eng", ["spa", "rus"], max_words=8, with_audio=True))
+
+    params = route.calls[0].request.url.params
+    assert params["word_count"] == "-8"
+    assert params["has_audio"] == "yes"
+    assert params["include"] == "audios"

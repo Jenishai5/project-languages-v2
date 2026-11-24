@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
-from langapp.api.routes import sentences, system
+from langapp.api.routes import games, progress, sentences, system
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
@@ -14,6 +14,8 @@ app = FastAPI(
 )
 app.include_router(system.router)
 app.include_router(sentences.router)
+app.include_router(games.router)
+app.include_router(progress.router)
 
 
 @app.get("/", include_in_schema=False)

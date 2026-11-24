@@ -1,0 +1,194 @@
+{
+  "data": [
+    {
+      "id": 14007817,
+      "text": "Dad is proud of his car.",
+      "lang": "eng",
+      "script": null,
+      "license": "CC BY 2.0 FR",
+      "owner": "rul",
+      "is_unapproved": false,
+      "audios": [
+        {
+          "id": 1285708,
+          "created": "2026-09-26T05:43:42+00:00",
+          "author": "rul",
+          "license": "CC BY 4.0",
+          "attribution_url": "https://tatoeba.org/user/profile/rul",
+          "download_url": "https://api.tatoeba.org/v1/audio/1285708/file",
+          "modified": "2026-09-26T05:43:42+00:00"
+        }
+      ],
+      "translations": [
+        {
+          "id": 1131039,
+          "text": "Papá está orgulloso de su coche.",
+          "lang": "spa",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "Shishir",
+          "is_unapproved": false,
+          "is_direct": false,
+          "audios": [
+            {
+              "id": 639476,
+              "created": "2019-07-04T23:20:56+00:00",
+              "author": "arh",
+              "license": "CC BY-NC-ND 3.0",
+              "attribution_url": "https://tatoeba.org/user/profile/arh",
+              "download_url": "https://api.tatoeba.org/v1/audio/639476/file",
+              "modified": "2019-07-04T23:20:56+00:00"
+            }
+          ]
+        },
+        {
+          "id": 1677176,
+          "text": "Отец гордится своей машиной.",
+          "lang": "rus",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "marafon",
+          "is_unapproved": false,
+          "is_direct": false,
+          "audios": []
+        }
+      ]
+    },
+    {
+      "id": 13971628,
+      "text": "If it rains, we will stay home.",
+      "lang": "eng",
+      "script": null,
+      "license": "CC BY 2.0 FR",
+      "owner": "rul",
+      "is_unapproved": false,
+      "audios": [
+        {
+          "id": 1285705,
+          "created": "2026-09-26T05:43:42+00:00",
+          "author": "rul",
+          "license": "CC BY 4.0",
+          "attribution_url": "https://tatoeba.org/user/profile/rul",
+          "download_url": "https://api.tatoeba.org/v1/audio/1285705/file",
+          "modified": "2026-09-26T05:43:42+00:00"
+        }
+      ],
+      "translations": [
+        {
+          "id": 5982169,
+          "text": "Если будет дождь, мы останемся дома.",
+          "lang": "rus",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "marafon",
+          "is_unapproved": false,
+          "is_direct": true,
+          "audios": []
+        },
+        {
+          "id": 9003869,
+          "text": "Si llueve nos quedaremos en casa.",
+          "lang": "spa",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "Shishir",
+          "is_unapproved": false,
+          "is_direct": false,
+          "audios": [
+            {
+              "id": 769609,
+              "created": "2020-09-05T02:06:44+00:00",
+              "author": "arh",
+              "license": "CC BY-NC-ND 3.0",
+              "attribution_url": "https://tatoeba.org/user/profile/arh",
+              "download_url": "https://api.tatoeba.org/v1/audio/769609/file",
+              "modified": "2020-09-05T02:06:44+00:00"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 13929437,
+      "text": "That book is mine. Where is yours?",
+      "lang": "eng",
+      "script": null,
+      "license": "CC BY 2.0 FR",
+      "owner": "CM",
+      "is_unapproved": false,
+      "audios": [
+        {
+          "id": 1284808,
+          "created": "2026-06-04T04:42:53+00:00",
+          "author": "CK",
+          "license": "CC BY-NC-ND 3.0",
+          "attribution_url": "http://www.manythings.org/tatoeba",
+          "download_url": "https://api.tatoeba.org/v1/audio/1284808/file",
+          "modified": "2026-06-04T04:42:53+00:00"
+        }
+      ],
+      "translations": [
+        {
+          "id": 1439070,
+          "text": "Este libro es mío. ¿Dónde está el tuyo?",
+          "lang": "spa",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "marcelostockle",
+          "is_unapproved": false,
+          "is_direct": false,
+          "audios": []
+        },
+        {
+          "id": 11704918,
+          "text": "Эта книга моя. А где твоя?",
+          "lang": "rus",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "marafon",
+          "is_unapproved": false,
+          "is_direct": true,
+          "audios": []
+        }
+      ]
+    },
+    {
+      "id": 13955172,
+      "text": "I know a simple language.",
+      "lang": "eng",
+      "script": null,
+      "license": "CC BY 2.0 FR",
+      "owner": "rul",
+      "is_unapproved": false,
+      "audios": [
+        {
+          "id": 1285704,
+          "created": "2026-09-26T05:43:42+00:00",
+          "author": "rul",
+          "license": "CC BY 4.0",
+          "attribution_url": "https://tatoeba.org/user/profile/rul",
+          "download_url": "https://api.tatoeba.org/v1/audio/1285704/file",
+          "modified": "2026-09-26T05:43:42+00:00"
+        }
+      ],
+      "translations": [
+        {
+          "id": 13952169,
+          "text": "Я знаю токипону.",
+          "lang": "rus",
+          "script": null,
+          "license": "CC BY 2.0 FR",
+          "owner": "marafon",
+          "is_unapproved": false,
+          "is_direct": false,
+          "audios": []
+        }
+      ]
+    }
+  ],
+  "paging": {
+    "total": 341413,
+    "has_next": true,
+    "next": "https://api.tatoeba.org/v1/sentences?lang=eng&sort=created&limit=50&word_count=-8&has_audio=yes&include=audios&trans%3Alang=spa%2Crus&showtrans=matching&after=1764902672%2C13625673"
+  }
+}

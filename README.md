@@ -104,6 +104,52 @@ SELECT lang, count(*) FROM sentences GROUP BY lang;
 SELECT * FROM import_runs ORDER BY id DESC LIMIT 5;
 ```
 
+## TurtleTalk games (React frontend)
+
+The original TurtleTalk React app lives in `frontend/` and now runs on this backend.
+
+| Feature | Data source | Endpoint |
+|---|---|---|
+| Sentence Builder (drag the English words into order) | Tatoeba: short English sentences with Spanish/Russian translations | `GET /game/sentences` |
+| Listen (after a correct answer) | Tatoeba recordings by real people, with author and licence shown | `audio` field in `/game/sentences` |
+| Word Match (en↔es, en↔ru, es↔ru, es→emoji) | The old dictionary files in `data/dictionaries/` | `GET /game/wordmatch` |
+| Progress (spaced repetition) | Your answers; login via Supabase Auth | `POST /progress/sentence`, `POST /progress/word`, `GET /progress/sentences` |
+
+The endpoints keep the same URLs and JSON shapes the old Express server used, so the React screens needed very few changes.
+
+### Run it
+
+```bash
+make migrate
+make import-builder
+make import-words
+make api
+make frontend
+```
+
+What each step does:
+- **`make migrate`**: adds the new tables (`audios`, `word_pairs`, `user_progress`) and the `word_count` column.
+- **`make import-builder`**: imports 200 short English sentences with Spanish/Russian translations and recordings.
+- **`make import-words`**: imports 715 word pairs from `data/dictionaries/`.
+- **`make api`**: keep it running.
+- **`make frontend`**: in a second terminal. Then open http://localhost:5173.
+
+For login and progress, add `SUPABASE_URL` and `SUPABASE_ANON_KEY` to `.env` (backend) and `frontend/.env` (frontend). Without them the games still work; only saving progress needs login.
+
+### How the parts fit
+
+- **Word tiles** come from `services/games.py`: the sentence is split into words and the final `.`, `!` or `?` is removed.
+- **Word-type colours** come from `services/word_tagger.py`, a small rule-based tagger (word lists + suffixes). It is approximate: words it doesn't know (most nouns) get no colour. A real NLP library such as spaCy could replace it later; it doesn't support Python 3.15 yet.
+- **Level** (A1/A2/B1) is estimated from sentence length. Tatoeba has no CEFR levels.
+- **Progress:** the backend asks Supabase who the token belongs to (`auth.py`), then saves the answer with one atomic upsert (`repositories/progress.py`). Mastery goes 0–5, and the next review is in 2^mastery days.
+
+### More surprises in the data
+
+- **Same word, different answers:** *fish* = **el pescado** (food) and **pez** (animal), and *un pollo* = 🍗 and 🐔. So a word pair is unique on (pair, source, target), and one round never shows the same question or answer twice.
+- **Inconsistent articles** in the old dictionary: *el reloj* in one category, *reloj* in another.
+- **Audio licences differ per recording** (CC BY 4.0, CC BY-NC-ND 3.0…), so each recording's author and licence are stored and shown.
+- **Audio timestamps** come with a time zone (`2026-09-26T05:43:42+00:00`) and are stored as `timestamptz`.
+
 ## Tests
 
 ```bash

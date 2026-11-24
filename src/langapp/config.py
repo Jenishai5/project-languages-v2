@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     tatoeba_min_interval_seconds: float = 1.0
     tatoeba_user_agent: str = "project-languages-v2/0.1 (student project)"
 
+    supabase_url: str | None = None
+    supabase_anon_key: str | None = None
+
 
 @lru_cache
 def get_settings() -> Settings:

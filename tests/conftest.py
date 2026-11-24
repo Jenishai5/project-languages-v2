@@ -48,6 +48,6 @@ def engine():
 def session_factory(engine):
     with engine.begin() as connection:
         connection.execute(
-            text("TRUNCATE sentence_links, sentences, import_runs RESTART IDENTITY CASCADE")
+            text("TRUNCATE audios, sentence_links, sentences, import_runs, word_pairs, user_progress RESTART IDENTITY CASCADE")
         )
     return make_session_factory(engine)

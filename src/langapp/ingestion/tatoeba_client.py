@@ -64,6 +64,8 @@ class TatoebaClient:
         target_langs: Sequence[str] = (),
         max_pages: int | None = None,
         page_size: int = MAX_PAGE_SIZE,
+        max_words: int | None = None,
+        with_audio: bool = False,
     ) -> Iterator[Page]:
         params: dict[str, str | int] | None = {
             "lang": source_lang,
@@ -73,6 +75,11 @@ class TatoebaClient:
         }
         if target_langs:
             params["trans:lang"] = ",".join(target_langs)
+        if max_words is not None:
+            params["word_count"] = f"-{max_words}"
+        if with_audio:
+            params["has_audio"] = "yes"
+            params["include"] = "audios"
 
         url: str | None = "/v1/sentences"
         pages = 0

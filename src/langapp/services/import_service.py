@@ -25,14 +25,21 @@ class SentenceImporter:
         self._session_factory = session_factory
 
     def run(
-        self, source_lang: str, target_langs: Sequence[str], max_pages: int | None = 1
+        self,
+        source_lang: str,
+        target_langs: Sequence[str],
+        max_pages: int | None = 1,
+        max_words: int | None = None,
+        with_audio: bool = False,
     ) -> ImportSummary:
         with self._session_factory.begin() as session:
             run_id = ImportRunRepository(session).start(source_lang, target_langs).id
 
         issues: list[ParseIssue] = []
         try:
-            for page in self._client.iter_sentence_pages(source_lang, target_langs, max_pages):
+            for page in self._client.iter_sentence_pages(
+                source_lang, target_langs, max_pages, max_words=max_words, with_audio=with_audio
+            ):
                 result = parse_page(page.payload)
                 issues.extend(result.issues)
                 with self._session_factory.begin() as session:

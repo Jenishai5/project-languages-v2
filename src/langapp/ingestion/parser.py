@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 from pydantic import ValidationError
 
-from langapp.domain import ParsedSentence, ParsedTranslation
+from langapp.domain import ParsedAudio, ParsedSentence, ParsedTranslation
 
 
 class ParsePageError(Exception):
@@ -21,12 +21,33 @@ class ParseResult:
     issues: list[ParseIssue] = field(default_factory=list)
 
 
-def _describe(exc: ValidationError) -> str:
+def describe(exc: ValidationError) -> str:
     parts = []
     for error in exc.errors():
         location = ".".join(str(item) for item in error["loc"]) or "record"
         parts.append(f"{location}: {error['msg']}")
     return "; ".join(parts)
+
+
+def _parse_audios(record_id: object, raw: object, issues: list[ParseIssue]) -> list[ParsedAudio]:
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        issues.append(ParseIssue(record_id, "audios is not a list, ignored"))
+        return []
+
+    audios: list[ParsedAudio] = []
+    seen: set[int] = set()
+    for item in raw:
+        try:
+            audio = ParsedAudio.model_validate(item)
+        except ValidationError as exc:
+            issues.append(ParseIssue(record_id, f"audio skipped: {describe(exc)}"))
+            continue
+        if audio.id not in seen:
+            seen.add(audio.id)
+            audios.append(audio)
+    return audios
 
 
 def _parse_translations(record_id: object, raw: object, issues: list[ParseIssue]) -> list[ParsedTranslation]:
@@ -39,10 +60,14 @@ def _parse_translations(record_id: object, raw: object, issues: list[ParseIssue]
     translations: list[ParsedTranslation] = []
     seen: set[int] = set()
     for item in raw:
+        if not isinstance(item, dict):
+            issues.append(ParseIssue(record_id, "translation skipped: not a JSON object"))
+            continue
+        audios = _parse_audios(item.get("id"), item.get("audios"), issues)
         try:
-            translation = ParsedTranslation.model_validate(item)
+            translation = ParsedTranslation.model_validate({**item, "audios": audios})
         except ValidationError as exc:
-            issues.append(ParseIssue(record_id, f"translation skipped: {_describe(exc)}"))
+            issues.append(ParseIssue(record_id, f"translation skipped: {describe(exc)}"))
             continue
         if translation.id in seen or translation.id == record_id:
             continue
@@ -58,10 +83,11 @@ def parse_sentence(raw: object, issues: list[ParseIssue]) -> ParsedSentence | No
 
     record_id = raw.get("id")
     translations = _parse_translations(record_id, raw.get("translations"), issues)
+    audios = _parse_audios(record_id, raw.get("audios"), issues)
     try:
-        return ParsedSentence.model_validate({**raw, "translations": translations})
+        return ParsedSentence.model_validate({**raw, "translations": translations, "audios": audios})
     except ValidationError as exc:
-        issues.append(ParseIssue(record_id, _describe(exc)))
+        issues.append(ParseIssue(record_id, describe(exc)))
         return None
 
 
