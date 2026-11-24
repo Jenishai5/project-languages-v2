@@ -49,11 +49,12 @@ export interface LessonSentence {
   audio:        Recording | null;
 }
 
-export interface ListeningItem {
-  sentence_id: number;
-  audio:       Recording;
-  options:     string[];
-  answer:      string;
+export interface PictureRound {
+  slug:      string;
+  emoji:     string | null;
+  image_url: string | null;
+  options:   string[];
+  answer:    string;
 }
 
 export interface LessonDetail {
@@ -65,7 +66,7 @@ export interface LessonDetail {
   native:    LangCode;
   words:     LessonWord[];
   sentences: LessonSentence[];
-  listening: ListeningItem[];
+  pictures:  PictureRound[];
 }
 
 export interface LanguageSettings {

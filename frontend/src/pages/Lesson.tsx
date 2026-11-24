@@ -2,17 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import BuildStep from "../components/lesson/BuildStep";
 import LearnStep from "../components/lesson/LearnStep";
-import ListenStep from "../components/lesson/ListenStep";
 import MatchStep from "../components/lesson/MatchStep";
+import PictureStep from "../components/lesson/PictureStep";
+import PronounceStep from "../components/lesson/PronounceStep";
 import { PrimaryButton, SecondaryButton, StepCard } from "../components/lesson/shared";
 import { useAuth } from "../context/AuthContext";
 import { useLanguages } from "../hooks/useLanguages";
 import { fetchLesson, saveLessonResult, type LessonDetail } from "../lib/lessonsApi";
 
-type Step = "learn" | "match" | "build" | "listen" | "done";
+type Step = "learn" | "match" | "build" | "pronounce" | "picture" | "done";
 const PASS_RATE = 0.7;
-const MAX_SENTENCES = 5;
-const MAX_LISTENING = 4;
 
 export default function Lesson() {
   const { lessonId } = useParams();
@@ -42,7 +41,8 @@ export default function Lesson() {
     const list: Step[] = ["learn"];
     if (lesson.words.length >= 2) list.push("match");
     if (lesson.sentences.length > 0) list.push("build");
-    if (lesson.listening.length > 0) list.push("listen");
+    list.push("pronounce");
+    if (lesson.pictures.length > 0) list.push("picture");
     list.push("done");
     return list;
   }, [lesson]);
@@ -116,9 +116,10 @@ export default function Lesson() {
         {step === "learn" && <LearnStep words={lesson.words} learning={lesson.learning} onDone={() => goNext()} />}
         {step === "match" && <MatchStep words={lesson.words} onDone={goNext} />}
         {step === "build" && (
-          <BuildStep sentences={lesson.sentences.slice(0, MAX_SENTENCES)} learning={lesson.learning} onDone={goNext} />
+          <BuildStep sentences={lesson.sentences} learning={lesson.learning} onDone={goNext} />
         )}
-        {step === "listen" && <ListenStep items={lesson.listening.slice(0, MAX_LISTENING)} onDone={goNext} />}
+        {step === "pronounce" && <PronounceStep words={lesson.words} learning={lesson.learning} onDone={goNext} />}
+        {step === "picture" && <PictureStep rounds={lesson.pictures} onDone={goNext} />}
         {step === "done" && (
           <StepCard eyebrow="Lesson complete" title={percent >= PASS_RATE * 100 ? "🎉 Well done!" : "Good effort — try it again!"}>
             <p className="text-[var(--text-secondary)] mt-0">

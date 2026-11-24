@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from sqlalchemy.orm import Session, sessionmaker
 
 from langapp.domain import ParsedSentence
-from langapp.ingestion.concepts import ARTICLES, build_concepts, core_word, plan_lessons
+from langapp.ingestion.concepts import ARTICLES, WORDS_PER_LESSON, build_concepts, core_word, plan_lessons
 from langapp.ingestion.dictionary_parser import load_dictionary_file, pair_from_file_name
 from langapp.ingestion.parser import parse_page
 from langapp.ingestion.tatoeba_client import TatoebaClient, TatoebaError
@@ -37,7 +37,7 @@ class LessonBuildSummary:
     failed: list[str] = field(default_factory=list)
 
 
-def import_concepts(paths: Sequence, session_factory: sessionmaker[Session], words_per_lesson: int = 5) -> ConceptImportSummary:
+def import_concepts(paths: Sequence, session_factory: sessionmaker[Session], words_per_lesson: int = WORDS_PER_LESSON) -> ConceptImportSummary:
     pairs_by_file = {pair_from_file_name(path): load_dictionary_file(path)[0] for path in paths}
     concepts = build_concepts(pairs_by_file)
     lessons = plan_lessons(concepts, words_per_lesson)

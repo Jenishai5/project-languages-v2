@@ -29,7 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     words.add_argument("files", nargs="*", type=Path, help="files like dictionary-en-es.json")
 
     concepts = commands.add_parser("import-concepts", help="Build concepts and lessons from the dictionary files")
-    concepts.add_argument("--words-per-lesson", type=int, default=5)
+    concepts.add_argument("--words-per-lesson", type=int, default=10)
 
     lessons = commands.add_parser("build-lessons", help="Find Tatoeba sentences for the lesson words")
     lessons.add_argument("--learning", default="eng", help="language being learned (ISO 639-3)")

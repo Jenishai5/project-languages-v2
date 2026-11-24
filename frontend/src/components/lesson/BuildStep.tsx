@@ -67,7 +67,7 @@ export default function BuildStep({
   const listen = () => playRecording(sentence.audio, () => speak(sentence.full_text, voice));
 
   return (
-    <StepCard eyebrow={`Step 3 · Build · ${index + 1} of ${sentences.length}`} title="Build the sentence">
+    <StepCard eyebrow={`Step 3 · Shuffle · ${index + 1} of ${sentences.length}`} title="Build the sentence">
       <div className={S.promptBox}>
         <p className={`${S.promptEyebrow} m-0`}>Translate</p>
         <p className={S.promptText}>{sentence.prompt}</p>

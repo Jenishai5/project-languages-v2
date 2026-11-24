@@ -1,3 +1,4 @@
+import random
 import uuid
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from langapp.ingestion.dictionary_parser import load_dictionary_file, pair_from_
 from langapp.ingestion.parser import parse_page
 from langapp.ingestion.tatoeba_client import TatoebaClient
 from langapp.repositories.lessons import LessonRepository
+from langapp.services.lessons import pick_sentences, picture_rounds
 from langapp.services.lesson_builder import (
     LessonSentenceBuilder,
     coverage,
@@ -53,12 +55,13 @@ def test_concepts_from_real_dictionaries():
     assert concepts["doctor"].category == "people"
 
 
-def test_lessons_are_five_words_per_category():
+def test_lessons_are_ten_words_per_category():
     lessons = plan_lessons(real_concepts())
 
     assert lessons[0].title == "People 1"
-    assert lessons[0].concept_slugs == ("man", "woman", "boy", "girl", "friend")
-    assert all(3 <= len(lesson.concept_slugs) <= 7 for lesson in lessons)
+    assert lessons[0].concept_slugs[:5] == ("man", "woman", "boy", "girl", "friend")
+    assert len(lessons[0].concept_slugs) == 10
+    assert all(5 <= len(lesson.concept_slugs) <= 14 for lesson in lessons)
     assert [lesson.position for lesson in lessons] == list(range(1, len(lessons) + 1))
 
 
@@ -197,9 +200,12 @@ def test_lesson_detail_in_the_users_native_language(api, built_lesson):
     consult = next(s for s in lesson["sentences"] if s["full_text"] == "Consult your doctor.")
     assert consult["prompt"] == "Consulta a tu doctor."
     assert [w["form"] for w in consult["words"]] == ["Consult", "your", "doctor"]
-    for item in lesson["listening"]:
-        assert item["answer"] in item["options"]
-        assert item["audio"]["url"].startswith("https://")
+    assert len(lesson["sentences"]) <= 5
+    assert {s["concept_slug"] for s in lesson["sentences"]} == {"doctor", "paper"}
+    assert lesson["pictures"] == [
+        {"slug": "paper", "emoji": "📄", "image_url": None, "options": lesson["pictures"][0]["options"], "answer": "paper"}
+    ]
+    assert sorted(lesson["pictures"][0]["options"]) == ["doctor", "paper"]
 
 
 def test_lesson_errors(api, built_lesson):
@@ -242,3 +248,42 @@ def test_image_shows_only_after_approval(api, built_lesson, session_factory):
 
     assert hidden is None
     assert shown == "https://example.org/paper.png"
+
+
+def test_pick_sentences_spreads_over_words():
+    exercises = [{"concept_slug": slug, "full_text": f"{slug} {n}"} for slug in ("a", "b", "c") for n in range(3)]
+    exercises.append({"concept_slug": "c", "full_text": "a 0"})
+
+    picked = pick_sentences(exercises, 5)
+
+    assert [e["full_text"] for e in picked] == ["a 0", "b 0", "c 0", "a 1", "b 1"]
+
+
+def test_picture_rounds_offer_four_words_and_skip_words_without_pictures():
+    words = [
+        {"slug": f"w{n}", "word": f"word{n}", "emoji": "🙂" if n % 2 == 0 else None, "image_url": None}
+        for n in range(6)
+    ]
+
+    rounds = picture_rounds(words, random.Random(1))
+
+    assert [r["answer"] for r in rounds] == ["word0", "word2", "word4"]
+    assert all(len(r["options"]) == 4 and r["answer"] in r["options"] for r in rounds)
+    assert all(len(set(r["options"])) == 4 for r in rounds)
+
+
+def test_reimporting_with_a_new_plan_replaces_old_lessons(session_factory):
+    concepts = real_concepts()
+    with session_factory.begin() as session:
+        repo = LessonRepository(session)
+        ids = repo.upsert_concepts(concepts)
+        repo.upsert_lessons(plan_lessons(concepts, 5), ids)
+    with session_factory.begin() as session:
+        repo = LessonRepository(session)
+        count = repo.upsert_lessons(plan_lessons(concepts, 10), ids)
+    with session_factory() as session:
+        lessons = LessonRepository(session).list_lessons("eng", "spa")
+
+    assert count == len(lessons)
+    assert lessons[0]["word_count"] == 10
+    assert [lesson["position"] for lesson in lessons] == list(range(1, len(lessons) + 1))

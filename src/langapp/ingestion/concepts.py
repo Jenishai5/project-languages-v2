@@ -10,7 +10,8 @@ ARTICLES = {
     "spa": ("el ", "la ", "los ", "las ", "un ", "una ", "unos ", "unas ", "l'"),
 }
 LANG_OF = {"en": "eng", "es": "spa", "ru": "rus"}
-MIN_LAST_LESSON = 3
+MIN_LAST_LESSON = 5
+WORDS_PER_LESSON = 10
 
 
 @dataclass
@@ -101,7 +102,7 @@ def build_concepts(pairs_by_file: Mapping[str, list[ParsedWordPair]]) -> list[Pa
     return concepts
 
 
-def plan_lessons(concepts: list[ParsedConcept], words_per_lesson: int = 5) -> list[PlannedLesson]:
+def plan_lessons(concepts: list[ParsedConcept], words_per_lesson: int = WORDS_PER_LESSON) -> list[PlannedLesson]:
     by_category: dict[str, list[str]] = {}
     for concept in concepts:
         by_category.setdefault(concept.category, []).append(concept.slug)

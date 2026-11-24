@@ -3,6 +3,9 @@ import random
 from langapp.db.models import Concept, Sentence
 from langapp.services.games import estimate_level, pick_audio, tokenize
 
+SENTENCES_PER_LESSON = 5
+PICTURE_OPTIONS = 4
+
 LANGUAGE_NAMES = {"eng": "English", "spa": "Spanish", "rus": "Russian", "cat": "Catalan"}
 
 
@@ -34,6 +37,45 @@ def _audio(sentence: Sentence) -> dict | None:
     if audio is None:
         return None
     return {"url": audio.download_url, "author": audio.author, "license": audio.license, "attribution_url": audio.attribution_url}
+
+
+def pick_sentences(exercises: list[dict], limit: int) -> list[dict]:
+    by_word: dict[str, list[dict]] = {}
+    for exercise in exercises:
+        by_word.setdefault(exercise["concept_slug"], []).append(exercise)
+    picked: list[dict] = []
+    seen_texts: set[str] = set()
+    while len(picked) < limit and any(by_word.values()):
+        for queue in by_word.values():
+            while queue and queue[0]["full_text"] in seen_texts:
+                queue.pop(0)
+            if queue and len(picked) < limit:
+                exercise = queue.pop(0)
+                seen_texts.add(exercise["full_text"])
+                picked.append(exercise)
+    return picked
+
+
+def picture_rounds(words: list[dict], rng: random.Random) -> list[dict]:
+    if len(words) < 2:
+        return []
+    rounds = []
+    for word in words:
+        if not word["emoji"] and not word["image_url"]:
+            continue
+        others = sorted({w["word"] for w in words if w["word"] != word["word"]})
+        options = rng.sample(others, k=min(PICTURE_OPTIONS - 1, len(others))) + [word["word"]]
+        rng.shuffle(options)
+        rounds.append(
+            {
+                "slug": word["slug"],
+                "emoji": word["emoji"],
+                "image_url": word["image_url"],
+                "options": options,
+                "answer": word["word"],
+            }
+        )
+    return rounds
 
 
 def lesson_view(
@@ -82,22 +124,8 @@ def lesson_view(
             }
         )
 
-    all_texts = [e["full_text"] for e in exercises]
-    listening = []
-    for exercise in exercises:
-        if exercise["audio"] is None:
-            continue
-        others = [text for text in all_texts if text != exercise["full_text"]]
-        options = rng.sample(others, k=min(2, len(others))) + [exercise["full_text"]]
-        rng.shuffle(options)
-        listening.append(
-            {
-                "sentence_id": exercise["id"],
-                "audio": exercise["audio"],
-                "options": options,
-                "answer": exercise["full_text"],
-            }
-        )
+    chosen = pick_sentences(exercises, SENTENCES_PER_LESSON)
+    pictures = picture_rounds(words, rng)
 
     return {
         "id": lesson.id,
@@ -107,6 +135,6 @@ def lesson_view(
         "learning": learning,
         "native": native,
         "words": words,
-        "sentences": exercises,
-        "listening": [item for item in listening if len(item["options"]) >= 2],
+        "sentences": chosen,
+        "pictures": pictures,
     }

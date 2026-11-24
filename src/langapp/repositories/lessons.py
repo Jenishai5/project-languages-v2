@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, tuple_, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, selectinload
 
@@ -54,6 +54,9 @@ class LessonRepository:
     def upsert_lessons(self, lessons: Sequence[PlannedLesson], concept_ids: dict[str, int]) -> int:
         if not lessons:
             return 0
+        slugs = [lesson.slug for lesson in lessons]
+        self.session.execute(delete(Lesson).where(Lesson.slug.not_in(slugs)))
+        self.session.execute(update(Lesson).values(position=-Lesson.position))
         stmt = insert(Lesson).values(
             [{"slug": lesson.slug, "title": lesson.title, "position": lesson.position} for lesson in lessons]
         )
@@ -69,13 +72,13 @@ class LessonRepository:
             for index, slug in enumerate(lesson.concept_slugs)
             if slug in concept_ids
         ]
+        self.session.execute(delete(LessonConcept))
         if link_rows:
-            links = insert(LessonConcept).values(link_rows)
-            links = links.on_conflict_do_update(
-                index_elements=[LessonConcept.lesson_id, LessonConcept.concept_id],
-                set_={"position": links.excluded.position},
-            )
-            self.session.execute(links)
+            self.session.execute(insert(LessonConcept).values(link_rows))
+        linked = select(LessonConcept.lesson_id, LessonConcept.concept_id)
+        self.session.execute(
+            delete(LessonSentence).where(tuple_(LessonSentence.lesson_id, LessonSentence.concept_id).not_in(linked))
+        )
         return len(lesson_ids)
 
     def words_to_fill(self, learning_lang: str, first_lessons: int | None) -> list[LessonWord]:

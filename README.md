@@ -152,11 +152,19 @@ For login and progress, add `SUPABASE_URL` and `SUPABASE_ANON_KEY` to `.env` (ba
 
 ## Lessons
 
-A lesson teaches 4–7 words, then uses them: **Learn → Match → Build sentences → Listen**.
+A lesson has about **10 words**, and every lesson trains the same words in every exercise:
+
+| Step | What the learner does |
+|---|---|
+| 1. Learn | Sees each word with its emoji/picture and translation, taps to hear it |
+| 2. Match | Matches each word with its translation |
+| 3. Shuffle | Puts the tiles of 5 sentences in order; the sentences are spread over the lesson words |
+| 4. Pronounce | Says each word into the microphone; the browser's free speech recognition (Chrome, Safari) checks it. Case, accents, punctuation and articles are ignored. Other browsers can skip this step |
+| 5. Picture | Sees the emoji or approved image and picks the right word out of 4 |
 
 ### How lessons are made
 
-1. **Concepts.** `make import-concepts` turns the dictionary files into *concepts*: one row per meaning, with its words in every language (`concepts` + `concept_terms`). So any native language works with any learning language, instead of needing one file per language pair. Then it groups the concepts into lessons by category (`lessons` + `lesson_concepts`): 353 concepts, 70 lessons.
+1. **Concepts.** `make import-concepts` turns the dictionary files into *concepts*: one row per meaning, with its words in every language (`concepts` + `concept_terms`). So any native language works with any learning language, instead of needing one file per language pair. Then it groups the concepts into lessons of 10 words by category (`lessons` + `lesson_concepts`): 353 concepts, 36 lessons. A short leftover (under 5 words) joins the previous lesson. Running it again with a different size replaces the old plan.
 2. **Sentences.** `make build-lessons` searches Tatoeba for short sentences (3–7 words) that contain each lesson word (`q==doctor`) and have a translation in the learner's language. It picks the best ones and links them to the lesson (`lesson_sentences`). It is run once, not while people play.
 3. **Choosing good sentences** (`services/lesson_builder.py`):
    - the exact word must appear (*doctor*, not *doctors*);
@@ -171,7 +179,7 @@ make import-concepts
 make build-lessons
 ```
 
-`make build-lessons` fills the first 10 lessons (about 50 Tatoeba requests at 1 per second). `make build-lessons LESSONS=0` fills all 70 (about 6 minutes). Running it again adds nothing new.
+`make build-lessons` fills the first 10 lessons (about 100 Tatoeba requests at 1 per second, under 2 minutes). `make build-lessons LESSONS=0` fills all 36 (about 6 minutes). Running it again adds nothing new.
 
 ### Images
 
@@ -184,7 +192,7 @@ Each concept has `image_url` and `image_approved`. A picture is shown only after
 
 The first command saves the picture, waiting for approval. The second saves it and shows it to learners.
 
-AI image generation is **not connected yet**: choose a provider first (account, key, terms of use). Then generate each picture once, store it, review it, and approve it with `set-image`.
+AI image generation is **not connected yet**: choose a provider first (account, key, terms of use). Then generate each picture once, store it, review it, and approve it with `set-image`. The Picture step already uses approved images, so nothing in the frontend has to change.
 
 ### Endpoints
 
@@ -192,7 +200,7 @@ AI image generation is **not connected yet**: choose a provider first (account, 
 |---|---|---|
 | GET | `/languages` | Languages with words available |
 | GET | `/lessons?learning=eng&native=spa` | Lesson list with word and sentence counts |
-| GET | `/lessons/{id}?learning=eng&native=spa` | Words, build exercises and listening exercises |
+| GET | `/lessons/{id}?learning=eng&native=spa` | Words, 5 shuffle sentences and picture rounds |
 | GET / PUT | `/settings` | The learner's languages (login required) |
 | POST | `/progress/lesson` · GET `/progress/lessons` | Lesson results (login required) |
 

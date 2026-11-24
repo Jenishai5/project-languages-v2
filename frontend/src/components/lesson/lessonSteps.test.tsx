@@ -1,9 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { vi } from "vitest";
 import BuildStep from "./BuildStep";
-import ListenStep from "./ListenStep";
 import MatchStep from "./MatchStep";
-import type { LessonSentence, LessonWord, ListeningItem } from "../../lib/lessonsApi";
+import PictureStep from "./PictureStep";
+import PronounceStep from "./PronounceStep";
+import { heardWord, targetsFor } from "../../lib/speech";
+import type { LessonSentence, LessonWord, PictureRound } from "../../lib/lessonsApi";
 
 const words: LessonWord[] = [
   { concept_id: 1, slug: "doctor", word: "doctor", translation: "el médico", emoji: null, image_url: null },
@@ -75,22 +77,71 @@ test("build step shows the answer when the order is wrong", () => {
   expect(screen.getByText("❌ The answer is: Call the doctor.")).toBeInTheDocument();
 });
 
-test("listen step marks the chosen option and moves on", () => {
+test("picture step shows the emoji and checks the chosen word", () => {
   const onDone = vi.fn();
-  const items: ListeningItem[] = [
-    {
-      sentence_id: 1,
-      audio: { url: "https://example.org/a.mp3", author: "CK", license: "CC BY 4.0", attribution_url: null },
-      options: ["Get a doctor.", "I need paper.", "Call the doctor."],
-      answer: "Call the doctor.",
-    },
+  const rounds: PictureRound[] = [
+    { slug: "paper", emoji: "📄", image_url: null, options: ["doctor", "paper", "car", "dog"], answer: "paper" },
   ];
-  render(<ListenStep items={items} onDone={onDone} />);
+  render(<PictureStep rounds={rounds} onDone={onDone} />);
 
-  fireEvent.click(screen.getByText("Call the doctor."));
+  expect(screen.getByRole("img", { name: "Guess the word" })).toHaveTextContent("📄");
+  fireEvent.click(screen.getByText("car"));
 
-  expect(screen.getByText("✅ Correct!")).toBeInTheDocument();
-  expect(screen.getByText(/Recording by/)).toHaveTextContent("CK · CC BY 4.0 · from Tatoeba");
+  expect(screen.getByText("❌ It's “paper”")).toBeInTheDocument();
   fireEvent.click(screen.getByText("See results →"));
+  expect(onDone).toHaveBeenCalledWith(0, 1);
+});
+
+test("speech matching ignores case, accents, punctuation and articles", () => {
+  expect(targetsFor("el médico / la médica", "spa")).toEqual(["medico", "medica"]);
+  expect(heardWord(["The doctor."], "doctor", "eng")).toBe(true);
+  expect(heardWord(["Médica"], "el médico / la médica", "spa")).toBe(true);
+  expect(heardWord(["ice cream please"], "ice cream", "eng")).toBe(true);
+  expect(heardWord(["Ёлка"], "елка", "rus")).toBe(true);
+  expect(heardWord(["doctors"], "doctor", "eng")).toBe(false);
+  expect(heardWord(["dog", "doctor"], "doctor", "eng")).toBe(true);
+});
+
+class FakeRecognition {
+  static last: FakeRecognition;
+  lang = "";
+  interimResults = false;
+  maxAlternatives = 1;
+  onresult: ((event: { results: { transcript: string }[][] }) => void) | null = null;
+  onerror: ((event: { error: string }) => void) | null = null;
+  onend: (() => void) | null = null;
+  constructor() {
+    FakeRecognition.last = this;
+  }
+  start() {}
+  abort() {}
+  say(...transcripts: string[]) {
+    act(() => this.onresult?.({ results: [transcripts.map(transcript => ({ transcript }))] }));
+  }
+}
+
+test("pronounce step accepts the spoken word and counts it once", () => {
+  Object.assign(window, { webkitSpeechRecognition: FakeRecognition });
+  const onDone = vi.fn();
+  render(<PronounceStep words={words.slice(0, 1)} learning="eng" onDone={onDone} />);
+
+  fireEvent.click(screen.getByText("🎤 Say it"));
+  expect(FakeRecognition.last.lang).toBe("en-US");
+  FakeRecognition.last.say("the doctor");
+  expect(screen.getByText("✅ Great! I heard “the doctor”.")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("🎤 Try again"));
+  FakeRecognition.last.say("doctor");
+  fireEvent.click(screen.getByText("Finish →"));
+
   expect(onDone).toHaveBeenCalledWith(1, 1);
+  delete (window as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
+});
+
+test("pronounce step lets the user skip when the browser cannot listen", () => {
+  const onDone = vi.fn();
+  render(<PronounceStep words={words} learning="eng" onDone={onDone} />);
+
+  expect(screen.getByText(/Open the app in Chrome or Safari/)).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Skip this step →"));
+  expect(onDone).toHaveBeenCalledWith(0, 0);
 });
