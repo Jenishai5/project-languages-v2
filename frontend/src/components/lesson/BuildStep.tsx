@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useSpeechSynthesis } from "../../hooks/useSpeechSynthesis";
 import { SPEECH_LANG, type LessonSentence, type Tile } from "../../lib/lessonsApi";
 import * as S from "../../css/SentenceGame.styles";
-import { Attribution, Feedback, PrimaryButton, SecondaryButton, StepCard, playRecording, shuffle } from "./shared";
+import { Attribution, Feedback, PrimaryButton, SecondaryButton, StepCard } from "./shared";
+import { playRecording, shuffle } from "../../lib/lessonUtils";
 
 interface PlacedTile extends Tile {
   uid: string;
@@ -67,7 +68,7 @@ export default function BuildStep({
   const listen = () => playRecording(sentence.audio, () => speak(sentence.full_text, voice));
 
   return (
-    <StepCard eyebrow={`Step 3 · Shuffle · ${index + 1} of ${sentences.length}`} title="Build the sentence">
+    <StepCard eyebrow={`Shuffle · ${index + 1} of ${sentences.length}`} title="Build the sentence">
       <div className={S.promptBox}>
         <p className={`${S.promptEyebrow} m-0`}>Translate</p>
         <p className={S.promptText}>{sentence.prompt}</p>

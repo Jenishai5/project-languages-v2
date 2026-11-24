@@ -4,6 +4,7 @@ import BuildStep from "./BuildStep";
 import MatchStep from "./MatchStep";
 import PictureStep from "./PictureStep";
 import PronounceStep from "./PronounceStep";
+import TrainingMenu from "./TrainingMenu";
 import { heardWord, targetsFor } from "../../lib/speech";
 import type { LessonSentence, LessonWord, PictureRound } from "../../lib/lessonsApi";
 
@@ -144,4 +145,22 @@ test("pronounce step lets the user skip when the browser cannot listen", () => {
   expect(screen.getByText(/Open the app in Chrome or Safari/)).toBeInTheDocument();
   fireEvent.click(screen.getByText("Skip this step →"));
   expect(onDone).toHaveBeenCalledWith(0, 0);
+});
+
+test("training menu shows four trainings with their results", () => {
+  const onOpen = vi.fn();
+  render(
+    <TrainingMenu
+      available={{ match: true, shuffle: false, pronounce: true, picture: true }}
+      results={{ match: { correct: 8, total: 10 }, pronounce: { correct: 0, total: 0 } }}
+      onOpen={onOpen}
+    />,
+  );
+
+  expect(screen.getAllByRole("button")).toHaveLength(4);
+  expect(screen.getByRole("button", { name: "Match" })).toHaveTextContent("✓ 8 of 10");
+  expect(screen.getByRole("button", { name: "Shuffle" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Pronounce" })).toHaveTextContent("✓ Skipped");
+  fireEvent.click(screen.getByRole("button", { name: "Picture" }));
+  expect(onOpen).toHaveBeenCalledWith("picture");
 });

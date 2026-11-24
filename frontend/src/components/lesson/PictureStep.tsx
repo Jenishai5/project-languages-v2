@@ -31,7 +31,7 @@ export default function PictureStep({ rounds, onDone }: { rounds: PictureRound[]
   };
 
   return (
-    <StepCard eyebrow={`Step 5 · Picture · ${index + 1} of ${rounds.length}`} title="What is in the picture?">
+    <StepCard eyebrow={`Picture · ${index + 1} of ${rounds.length}`} title="What is in the picture?">
       <div className="flex justify-center mb-6">
         {round.image_url ? (
           <img src={round.image_url} alt="Guess the word" className="w-40 h-40 object-contain rounded-[18px]" />

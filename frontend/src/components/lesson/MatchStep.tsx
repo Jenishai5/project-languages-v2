@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { LessonWord } from "../../lib/lessonsApi";
-import { PrimaryButton, StepCard, shuffle } from "./shared";
+import { PrimaryButton, StepCard } from "./shared";
+import { shuffle } from "../../lib/lessonUtils";
 
 type State = "idle" | "selected" | "correct" | "wrong";
 
@@ -38,7 +39,7 @@ export default function MatchStep({ words, onDone }: { words: LessonWord[]; onDo
     matched.has(id) ? "correct" : wrong?.right === id ? "wrong" : "idle";
 
   return (
-    <StepCard eyebrow="Step 2 · Match" title="Match each word with its translation">
+    <StepCard eyebrow="Match" title="Match each word with its translation">
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="flex flex-col gap-3">
           {words.map(word => (

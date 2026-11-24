@@ -152,15 +152,16 @@ For login and progress, add `SUPABASE_URL` and `SUPABASE_ANON_KEY` to `.env` (ba
 
 ## Lessons
 
-A lesson has about **10 words**, and every lesson trains the same words in every exercise:
+A lesson has about **10 words**. Opening a lesson shows its words (tap to hear) and **four training buttons**. Every training uses the same 10 words, the learner can do them in any order, and the lesson is complete when all four are done:
 
-| Step | What the learner does |
+| Training | What the learner does |
 |---|---|
-| 1. Learn | Sees each word with its emoji/picture and translation, taps to hear it |
-| 2. Match | Matches each word with its translation |
-| 3. Shuffle | Puts the tiles of 5 sentences in order; the sentences are spread over the lesson words |
-| 4. Pronounce | Says each word into the microphone; the browser's free speech recognition (Chrome, Safari) checks it. Case, accents, punctuation and articles are ignored. Other browsers can skip this step |
-| 5. Picture | Sees the emoji or approved image and picks the right word out of 4 |
+| 🧩 Match | Matches each word with its translation |
+| 🔀 Shuffle | Puts the tiles of 5 sentences in order; the sentences are spread over the lesson words |
+| 🎤 Pronounce | Says each word into the microphone; the browser's free speech recognition (Chrome, Safari) checks it. Case, accents, punctuation and articles are ignored. Other browsers can skip it |
+| 🖼️ Picture | Sees the emoji or approved image and picks the right word out of 4 |
+
+A finished training shows its score on its button (✓ 8 of 10). When all are done, the result is saved (login required).
 
 ### How lessons are made
 

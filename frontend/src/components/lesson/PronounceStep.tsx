@@ -40,7 +40,7 @@ export default function PronounceStep({
 
   if (!Recognizer) {
     return (
-      <StepCard eyebrow="Step 4 · Pronounce" title="Say the words">
+      <StepCard eyebrow="Pronounce" title="Say the words">
         <p className="text-[var(--text-secondary)] mt-0">
           Your browser can't listen to speech. Open the app in Chrome or Safari to practise pronunciation.
         </p>
@@ -93,7 +93,7 @@ export default function PronounceStep({
   const finished = status === "correct" || status === "wrong";
 
   return (
-    <StepCard eyebrow={`Step 4 · Pronounce · ${index + 1} of ${words.length}`} title="Say the word out loud">
+    <StepCard eyebrow={`Pronounce · ${index + 1} of ${words.length}`} title="Say the word out loud">
       <div className="flex flex-col items-center gap-2 mb-6">
         {word.image_url ? (
           <img src={word.image_url} alt="" className="w-24 h-24 object-contain rounded-[12px]" />
