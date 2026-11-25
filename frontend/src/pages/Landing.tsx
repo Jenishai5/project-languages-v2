@@ -23,10 +23,10 @@ export default function Landing() {
         <div className="container hero__inner">
           <div className="hero__copy">
             <ul className="hero__langs" aria-label="Languages">
-              <li className="hero__lang"><span className="spin"><Flag lang="eng" size={40} /></span>English</li>
-              <li className="hero__lang"><span className="spin"><Flag lang="spa" size={40} /></span>Español</li>
-              <li className="hero__lang"><span className="spin"><Flag lang="rus" size={40} /></span>Русский</li>
-              <li className="hero__lang"><span className="spin"><Flag lang="cat" size={40} /></span>Català</li>
+              <li className="hero__lang"><span className="spin"><Flag lang="eng" size={40} /></span><span className="visually-hidden">English</span></li>
+              <li className="hero__lang"><span className="spin"><Flag lang="spa" size={40} /></span><span className="visually-hidden">Español</span></li>
+              <li className="hero__lang"><span className="spin"><Flag lang="rus" size={40} /></span><span className="visually-hidden">Русский</span></li>
+              <li className="hero__lang"><span className="spin"><Flag lang="cat" size={40} /></span><span className="visually-hidden">Català</span></li>
             </ul>
             <h1 className="display">
               Ten words today.<br />A <em>conversation</em><br />tomorrow.
