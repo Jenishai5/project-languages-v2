@@ -24,6 +24,14 @@ class MnemonicRepository:
         )
         return self.session.scalars(stmt).first()
 
+    def get_for_user(self, user_id: uuid.UUID, mnemonic_id: int) -> Mnemonic | None:
+        stmt = (
+            select(Mnemonic)
+            .options(selectinload(Mnemonic.concept).selectinload(Concept.terms))
+            .where(Mnemonic.id == mnemonic_id, Mnemonic.user_id == user_id)
+        )
+        return self.session.scalars(stmt).first()
+
     def list_for_user(self, user_id: uuid.UUID, learning: str, native: str) -> list[Mnemonic]:
         stmt = (
             select(Mnemonic)

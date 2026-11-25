@@ -297,6 +297,12 @@ The AI agents live inside the backend in `src/langapp/services/agents/`. A rule-
 - The answer depends only on the word, the languages and the level, so it is cached and shared by all learners.
 - On the back of a picture card, "More examples with this word" uses the same agent.
 
+**Conversation Agent (picture cards).** "Talk about this" on a picture card opens a short chat in the learning language. The chat is about the card's sentence and uses that lesson's words. The partner answers in one or two easy sentences and gently corrects one mistake at a time.
+
+- The chat exists only in the browser. Each `POST /api/agents/conversation/turn` sends the last 8 turns, and the backend stores nothing between calls.
+- "End conversation" calls `/conversation/finish` without any AI call. It saves the lesson words the learner used (as `word_used` outcomes and correct word results in `user_progress`) and the corrections (as `mistake` outcomes). The messages themselves are never written to the database or to logs.
+- Closing the tab without "End conversation" saves nothing.
+
 Settings in `.env`:
 
 ```

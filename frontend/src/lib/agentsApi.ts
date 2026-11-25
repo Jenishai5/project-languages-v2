@@ -69,3 +69,61 @@ export async function getWordHelp(conceptId: number, learning: LangCode, native:
     body:    JSON.stringify({ concept_id: conceptId, learning, native }),
   });
 }
+
+export interface Correction {
+  wrong: string;
+  right: string;
+  why:   string;
+}
+
+export interface PartnerReply {
+  available:       boolean;
+  reply:           string | null;
+  correction:      Correction | null;
+  message:         string | null;
+  remaining_today: number;
+}
+
+export interface ConversationStart extends PartnerReply {
+  word:         string;
+  sentence:     string;
+  lesson_words: string[];
+}
+
+export interface ChatTurn {
+  role: "user" | "assistant";
+  text: string;
+}
+
+export interface ConversationSummary {
+  words_used:     string[];
+  mistakes_saved: number;
+}
+
+async function post<T>(url: string, body: unknown): Promise<T> {
+  return getJson<T>(url, { method: "POST", headers: await authHeaders(), body: JSON.stringify(body) });
+}
+
+export function startConversation(mnemonicId: number, learning: LangCode, native: LangCode): Promise<ConversationStart> {
+  return post("/api/agents/conversation/start", { mnemonic_id: mnemonicId, learning, native });
+}
+
+export function sendConversationTurn(
+  mnemonicId: number,
+  learning: LangCode,
+  native: LangCode,
+  history: ChatTurn[],
+  message: string,
+): Promise<PartnerReply> {
+  return post("/api/agents/conversation/turn", { mnemonic_id: mnemonicId, learning, native, history: history.slice(-8), message });
+}
+
+export function finishConversation(
+  mnemonicId: number,
+  learning: LangCode,
+  native: LangCode,
+  messages: string[],
+  corrections: Correction[],
+): Promise<ConversationSummary> {
+  return post("/api/agents/conversation/finish", { mnemonic_id: mnemonicId, learning, native, messages, corrections });
+}

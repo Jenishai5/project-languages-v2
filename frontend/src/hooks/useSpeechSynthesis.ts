@@ -20,7 +20,7 @@ export function useSpeechSynthesis() {
 
   const cancel = useCallback(() => {
     if (typeof window === "undefined") return;
-    window.speechSynthesis.cancel();
+    window.speechSynthesis?.cancel();
   }, []);
 
   return { speak, cancel };

@@ -23,6 +23,8 @@ from langapp.repositories.system import DatabaseCheck
 from langapp.repositories.user_settings import UserSettingsRepository
 from langapp.repositories.word_pairs import WordPairRepository
 from langapp.services.agents.base import model_list
+from langapp.services.agents.conversation import ConversationAgent
+from langapp.services.agents.conversation_service import ConversationService
 from langapp.services.agents.grammar import GrammarAgent
 from langapp.services.agents.orchestrator import AgentLimits, AgentOrchestrator, ReplyCache
 from langapp.services.agents.vocabulary import VocabularyAgent
@@ -192,12 +194,41 @@ def get_agent_orchestrator(
     )
 
 
+AgentOrchestratorDep = Annotated[AgentOrchestrator, Depends(get_agent_orchestrator)]
+
+
+def get_conversation_agent(
+    openrouter: Annotated[OpenRouterClient | None, Depends(get_openrouter)],
+) -> ConversationAgent | None:
+    if openrouter is None:
+        return None
+    models, max_tokens = _agent_settings()
+    return ConversationAgent(openrouter, models, max_tokens=max_tokens)
+
+
+def get_conversation_service(
+    session: SessionDep,
+    orchestrator: AgentOrchestratorDep,
+    agent: Annotated[ConversationAgent | None, Depends(get_conversation_agent)],
+) -> ConversationService:
+    return ConversationService(
+        orchestrator,
+        agent,
+        MnemonicRepository(session),
+        LessonRepository(session),
+        LearningOutcomeRepository(session),
+        ProgressRepository(session),
+    )
+
+
+ConversationServiceDep = Annotated[ConversationService, Depends(get_conversation_service)]
+
+
 def get_learner_service(session: SessionDep) -> LearnerService:
     return LearnerService(ProgressRepository(session), ConceptRepository(session), LessonRepository(session))
 
 
 LearnerServiceDep = Annotated[LearnerService, Depends(get_learner_service)]
-AgentOrchestratorDep = Annotated[AgentOrchestrator, Depends(get_agent_orchestrator)]
 
 
 @lru_cache

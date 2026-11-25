@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
@@ -332,3 +332,55 @@ class LessonWordResultIn(BaseModel):
     concept_id: int
     learning: str = Field(pattern=LANG_PATTERN)
     correct: bool
+
+
+class ChatTurnIn(BaseModel):
+    role: Literal["user", "assistant"]
+    text: str = Field(min_length=1, max_length=600)
+
+
+class CorrectionIn(BaseModel):
+    wrong: str = Field(max_length=200)
+    right: str = Field(min_length=1, max_length=200)
+    why: str = Field(max_length=300)
+
+
+class CorrectionOut(BaseModel):
+    wrong: str
+    right: str
+    why: str
+
+
+class ConversationStartIn(BaseModel):
+    mnemonic_id: int
+    learning: str = Field(pattern=LANG_PATTERN)
+    native: str = Field(pattern=LANG_PATTERN)
+
+
+class ConversationTurnIn(ConversationStartIn):
+    history: list[ChatTurnIn] = Field(default_factory=list, max_length=20)
+    message: str = Field(min_length=1, max_length=300)
+
+
+class ConversationFinishIn(ConversationStartIn):
+    messages: list[Annotated[str, Field(max_length=300)]] = Field(default_factory=list, max_length=40)
+    corrections: list[CorrectionIn] = Field(default_factory=list, max_length=40)
+
+
+class ConversationReplyOut(BaseModel):
+    available: bool
+    reply: str | None
+    correction: CorrectionOut | None
+    message: str | None
+    remaining_today: int
+
+
+class ConversationStartOut(ConversationReplyOut):
+    word: str
+    sentence: str
+    lesson_words: list[str]
+
+
+class ConversationSummaryOut(BaseModel):
+    words_used: list[str]
+    mistakes_saved: int

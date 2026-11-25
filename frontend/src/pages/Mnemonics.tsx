@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import ConversationPanel from "../components/agents/ConversationPanel";
 import Flashcards from "../components/mnemonics/Flashcards";
 import MnemonicCard from "../components/mnemonics/MnemonicCard";
 import { useLanguages } from "../hooks/useLanguages";
-import { fetchMnemonics, type MnemonicList } from "../lib/mnemonicsApi";
+import { fetchMnemonics, type Mnemonic, type MnemonicList } from "../lib/mnemonicsApi";
 
 export default function Mnemonics() {
   const { settings } = useLanguages();
@@ -22,6 +23,7 @@ export default function Mnemonics() {
     return () => { cancelled = true; };
   }, [key, settings.learning_lang, settings.native_lang]);
 
+  const [talking, setTalking] = useState<Mnemonic | null>(null);
   const cards = list?.mnemonics ?? [];
   const setPractice = (on: boolean) => setParams(on ? { practice: "1" } : {});
 
@@ -51,7 +53,17 @@ export default function Mnemonics() {
           <Flashcards cards={cards} learning={settings.learning_lang} native={settings.native_lang} onExit={() => setPractice(false)} />
         )}
 
-        {list && cards.length > 0 && !practising && (
+        {talking && (
+          <ConversationPanel
+            key={talking.id}
+            card={talking}
+            learning={settings.learning_lang}
+            native={settings.native_lang}
+            onClose={() => setTalking(null)}
+          />
+        )}
+
+        {list && cards.length > 0 && !practising && !talking && (
           <>
             <div className="row row--between">
               <p className="eyebrow">
@@ -62,7 +74,9 @@ export default function Mnemonics() {
             </div>
             <div className="mnemonic-grid">
               {cards.map(m => (
-                <MnemonicCard key={m.id} word={m.word} translation={m.translation} emoji={m.emoji} imageUrl={m.image_url} sentence={m.sentence} />
+                <MnemonicCard key={m.id} word={m.word} translation={m.translation} emoji={m.emoji} imageUrl={m.image_url} sentence={m.sentence}>
+                  <button className="btn btn--light btn--sm self-start" onClick={() => setTalking(m)}>Talk about this</button>
+                </MnemonicCard>
               ))}
             </div>
           </>

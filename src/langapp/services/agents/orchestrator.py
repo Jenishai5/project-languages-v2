@@ -121,7 +121,7 @@ class AgentOrchestrator:
 
         context = self.learner(user_id, learning, native)
         target, attempt = " ".join(target_words), " ".join(answer_words)
-        result = self._ask(
+        result = self.ask(
             context,
             GRAMMAR,
             self._grammar,
@@ -142,7 +142,7 @@ class AgentOrchestrator:
         card = cards[0]
 
         context = self.learner(user_id, learning, native)
-        result = self._ask(
+        result = self.ask(
             context,
             VOCABULARY,
             self._vocabulary,
@@ -171,16 +171,16 @@ class AgentOrchestrator:
             "remaining_today": self.remaining_today(user_id),
         }
 
-    def _ask(
+    def ask(
         self,
         context: LearnerContext,
         name: str,
         agent: Any,
-        key: str,
+        key: str | None,
         call: Callable[[Any], Any],
         usable: Callable[[Any], bool],
     ) -> Answer:
-        cached = self._cache.get(key)
+        cached = self._cache.get(key) if key else None
         if cached is not None:
             return Answer(value=cached, cached=True)
         if agent is None:
@@ -203,7 +203,8 @@ class AgentOrchestrator:
         self._usage.log(context.user_id, name, value.model or agent.primary_model, True, value.tokens)
         if not usable(value):
             return Answer(message="The AI teacher sent an empty answer. Try again later.")
-        self._cache.put(key, value)
+        if key:
+            self._cache.put(key, value)
         return Answer(value=value)
 
     def _meaning(self, sentence_id: int, native: str) -> str | None:

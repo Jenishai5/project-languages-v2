@@ -116,6 +116,16 @@ class LessonRepository:
     def get_lesson(self, lesson_id: int) -> Lesson | None:
         return self.session.get(Lesson, lesson_id)
 
+    def concepts_in_same_lesson(self, concept_id: int) -> list[Concept]:
+        stmt = (
+            select(LessonConcept.lesson_id)
+            .where(LessonConcept.concept_id == concept_id)
+            .order_by(LessonConcept.lesson_id)
+            .limit(1)
+        )
+        lesson_id = self.session.scalar(stmt)
+        return self.lesson_concepts(lesson_id) if lesson_id is not None else []
+
     def lesson_concepts(self, lesson_id: int) -> list[Concept]:
         stmt = (
             select(Concept)
