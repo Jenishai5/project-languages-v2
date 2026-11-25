@@ -61,7 +61,7 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
     const reduced = prefersReducedMotion();
     const fontSize = parseFloat(getComputedStyle(el).fontSize) || 40;
     const width = el.offsetWidth;
-    const wallWidth = Math.max(5, fontSize * 0.12);
+    const wallWidth = Math.max(3, fontSize * 0.07);
     const wallX = width / 2;
     const leftWidth = wallX - wallWidth / 2;
     const rightOrigin = wallX + wallWidth / 2;
@@ -130,12 +130,31 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
     };
 
     let travelled = reduced ? items[0].start + Math.max(items[0].src.width, items[0].tgt.width) + fontSize : 0;
+    const tagIn = el.querySelector<HTMLElement>(".snake__tag--in")!;
+    const tagOut = el.querySelector<HTMLElement>(".snake__tag--out")!;
+    let shown = -1;
+    const label = (index: number) => {
+      if (index === shown) return;
+      shown = index;
+      const [from, to] = stream[index];
+      tagIn.textContent = from.name;
+      tagOut.textContent = to.name;
+      gsap.fromTo([tagIn, tagOut], { opacity: 0, y: 4 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out", stagger: 0.08 });
+    };
+
     const render = () => {
-      items.forEach(({ src, tgt, start }) => {
+      let current = -1;
+      let nearest = -Infinity;
+      items.forEach(({ src, tgt, start }, i) => {
         const d = ((((travelled - start + approach) % period) + period) % period) - approach;
         place(src, leftWidth + d - src.width, "left", leftWidth);
         place(tgt, d - tgt.width, "right", rightWidth);
+        if (d < Math.max(src.width, tgt.width) && d > nearest) {
+          nearest = d;
+          current = i;
+        }
       });
+      if (current >= 0) label(current);
     };
     render();
 
@@ -147,6 +166,7 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
     gsap.ticker.add(tick);
     return () => {
       gsap.ticker.remove(tick);
+      gsap.killTweensOf([tagIn, tagOut]);
     };
   }, [layoutVersion, speed, wave, stream]);
 
@@ -162,6 +182,8 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
         {stream.map(([, b], i) => <Line key={i} phrase={b} index={i} role="tgt" />)}
       </div>
       <span className="snake__wall" aria-hidden="true" />
+      <span className="snake__tag snake__tag--in" aria-hidden="true" />
+      <span className="snake__tag snake__tag--out" aria-hidden="true" />
     </figure>
   );
 }
