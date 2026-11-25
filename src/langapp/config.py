@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     agent_daily_limit: int = 30
     agent_max_concurrent: int = 4
     agent_wait_seconds: float = 5.0
-    agent_max_tokens: int = 400
+    agent_max_tokens: int = 2000
 
 
 @lru_cache

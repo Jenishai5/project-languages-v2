@@ -68,15 +68,22 @@ class OpenRouterClient:
         if user:
             body["user"] = user
         payload = self._post("/chat/completions", body)
+        model = payload.get("model", names[0])
         try:
-            text = payload["choices"][0]["message"]["content"] or ""
+            choice = payload["choices"][0]
+            text = choice["message"]["content"] or ""
         except (KeyError, IndexError, TypeError) as exc:
+            logger.warning("OpenRouter %s sent an unexpected reply shape", model)
             raise OpenRouterError("The AI model sent an answer in an unexpected format.") from exc
         if not text.strip():
-            raise OpenRouterError("The AI model sent an empty answer.")
+            finish = choice.get("finish_reason")
+            logger.warning("OpenRouter %s sent an empty answer (finish_reason=%s)", model, finish)
+            if finish == "length":
+                raise OpenRouterError(f"The AI model {model} used up its token budget before answering.")
+            raise OpenRouterError(f"The AI model {model} sent an empty answer.")
         usage = payload.get("usage") or {}
         tokens = usage.get("total_tokens") if isinstance(usage.get("total_tokens"), int) else None
-        return ChatReply(text=text, model=payload.get("model", names[0]), tokens=tokens)
+        return ChatReply(text=text, model=model, tokens=tokens)
 
     def generate_image(self, model: str, prompt: str, user: str | None = None) -> GeneratedImage:
         body: dict = {"model": model, "prompt": prompt, "aspect_ratio": "1:1", "n": 1}
@@ -108,6 +115,7 @@ class OpenRouterClient:
                 except ValueError as exc:
                     raise OpenRouterError("OpenRouter sent a reply that is not JSON.") from exc
             if response.status_code == 429:
+                logger.warning("OpenRouter %s answered 429: %s", path, response.text[:300])
                 raise UpstreamRateLimited("The free AI models are busy or today's free limit is used up. Try again later.")
             if response.status_code in RETRYABLE_STATUS and attempt < self._max_retries:
                 attempt += 1

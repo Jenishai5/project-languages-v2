@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import threading
 import uuid
 from collections import Counter, OrderedDict
@@ -15,6 +16,8 @@ from langapp.services.agents.base import DEFAULT_LEVEL, LearnerContext
 from langapp.services.agents.grammar import AGENT as GRAMMAR
 from langapp.services.agents.grammar import GrammarAgent, GrammarFeedback
 from langapp.services.games import tokenize
+
+logger = logging.getLogger(__name__)
 
 
 class ReplyCache:
@@ -121,9 +124,11 @@ class AgentOrchestrator:
             feedback = self._grammar.explain(context, target, attempt, meaning)
         except UpstreamRateLimited:
             raise
-        except ExternalSourceError:
+        except ExternalSourceError as exc:
+            logger.warning("Grammar agent failed: %s", exc)
             self._usage.log(user_id, GRAMMAR, self._grammar.primary_model, succeeded=False)
-            return self._view(user_id, correct=False, message="The AI teacher could not answer this time. Try again later.")
+            message = f"The AI teacher could not answer this time ({exc}). Try again later."
+            return self._view(user_id, correct=False, message=message)
         finally:
             self._gate.release()
 

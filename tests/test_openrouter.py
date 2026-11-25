@@ -97,3 +97,19 @@ def test_chat_json_sends_fallback_models_and_reads_usage():
 def test_chat_json_needs_a_model():
     with pytest.raises(OpenRouterError):
         make_client().chat_json([], [{"role": "user", "content": "hi"}])
+
+
+@respx.mock
+def test_chat_json_explains_an_answer_cut_by_the_token_budget():
+    respx.post(f"{BASE}/chat/completions").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "model": "think:free",
+                "choices": [{"message": {"content": None, "reasoning": "hmm"}, "finish_reason": "length"}],
+            },
+        )
+    )
+
+    with pytest.raises(OpenRouterError, match="token budget"):
+        make_client().chat_json(["think:free"], [{"role": "user", "content": "hi"}])

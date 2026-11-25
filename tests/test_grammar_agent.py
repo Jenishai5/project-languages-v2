@@ -30,15 +30,18 @@ REPLY = {
 
 
 class FakeChat:
-    def __init__(self, text: str | None = None, error: Exception | None = None) -> None:
+    def __init__(self, text: str | None = None, error: Exception | None = None, failures: int = 0) -> None:
         self.text = text if text is not None else json.dumps(REPLY, ensure_ascii=False)
         self.error = error
+        self.failures = failures
         self.calls: list[dict] = []
 
     def chat_json(self, models, messages, user=None, max_tokens=400):
         self.calls.append({"models": list(models), "messages": messages, "user": user, "max_tokens": max_tokens})
         if self.error:
             raise self.error
+        if len(self.calls) <= self.failures:
+            raise ExternalSourceError("one free model failed")
         return ChatReply(text=self.text, model="tiny:free", tokens=42)
 
 
@@ -171,6 +174,16 @@ def test_model_failure_is_counted_and_answered_kindly(session_factory):
 
     assert result["available"] is False and "could not answer" in result["message"]
     assert result["remaining_today"] == 4
+
+
+def test_one_failed_model_is_retried_once(session_factory):
+    seed_sentence(session_factory)
+    chat = FakeChat(failures=1)
+    with session_factory.begin() as session:
+        result = make_orchestrator(session, chat).check_shuffle(USER.id, SENTENCE_ID, WRONG, "eng", "spa")
+
+    assert result["available"] is True
+    assert len(chat.calls) == 2
 
 
 def test_upstream_rate_limit_is_passed_on(session_factory):
