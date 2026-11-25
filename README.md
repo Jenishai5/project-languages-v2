@@ -234,38 +234,41 @@ AI image generation is **not connected yet**: choose a provider first (account, 
 - **Alternatives:** terms like *el médico / la médica* are shown in full, and searched by the first one.
 - **Production builds need the `VITE_*` values.** Vite writes them into the code at build time. Without `frontend/.env`, the Supabase check fails and Vite drops the whole app as unreachable code.
 
-## Mnemonics (AI memory tricks)
+## Picture cards (mnemonics)
 
-On every lesson page, "Memory tricks" lets a logged-in learner ask the AI for a picture story for a word
-(the keyword method: link how the word *sounds* to what it *means*). The text and the picture are made once,
-saved to the learner's account and shown again on the lesson page and on **My memory tricks** (`/mnemonics`).
+On every lesson page the learner writes **their own sentence** with each word ("The woman reads a book").
+The AI draws that sentence, and the cards become a **flashcard game** on **My picture cards** (`/mnemonics`):
+the front shows the picture and the sentence with a gap ("The ___ reads a book."), the learner **says** the word
+(browser speech recognition) or **types** it, then flips the card to see the word, the translation and the full sentence.
 
 ```
-browser ──POST /mnemonics──▶ FastAPI ──▶ MnemonicService
-                                          ├─ already saved?  → return it (no AI call)
-                                          ├─ daily limit reached? → 429
-                                          ├─ OpenRouter chat (openrouter/free) → {"mnemonic", "image_prompt"}
+browser ──POST /mnemonics {concept_id, sentence}──▶ FastAPI ──▶ MnemonicService
+                                          ├─ sentence uses the word?  no → 400 "Use the word …"
+                                          ├─ picture limit reached today? → 429
                                           ├─ OpenRouter image (first working model in OPENROUTER_IMAGE_MODEL) → PNG
+                                          ├─ every picture request is logged in `image_generations`
                                           ├─ Supabase Storage (private bucket) ← PNG
-                                          └─ PostgreSQL `mnemonics` row (text, image path, models)
+                                          └─ PostgreSQL `mnemonics` row (sentence, image path); a new sentence replaces the old one
 ```
 
 | Piece | File |
 |---|---|
-| OpenRouter adapter (chat + images, no retry on 429) | `src/langapp/integrations/openrouter.py` |
-| Supabase Storage adapter (upload + signed URLs) | `src/langapp/integrations/supabase_storage.py` |
-| Interfaces the service needs (`ChatModel`, `ImageModel`, `ImageStore`) | `src/langapp/services/ports.py` |
-| Prompt, answer parsing, daily limit, image fallback | `src/langapp/services/mnemonics.py` |
-| Table | `mnemonics` (one per user, word and language pair) |
+| OpenRouter adapter (images now, chat for later features; no retry on 429) | `src/langapp/integrations/openrouter.py` |
+| Supabase Storage adapter (upload + signed URLs; works with `sb_secret_` keys) | `src/langapp/integrations/supabase_storage.py` |
+| Interfaces the service needs (`ImageModel`, `ImageStore`) | `src/langapp/services/ports.py` |
+| Sentence check, gap, image prompt, daily limit, model fallback | `src/langapp/services/mnemonics.py` |
+| Tables | `mnemonics` (one card per user, word and language pair), `image_generations` (one row per picture request) |
+| Frontend | `components/mnemonics/` (`MnemonicsPanel`, `SentenceForm`, `Flashcards`), `pages/Mnemonics.tsx` |
 
 Decisions:
 
-- **Free models only.** `openrouter/free` picks any working free text model. `OPENROUTER_IMAGE_MODEL` is a comma-separated list tried in order (default `recraft/recraft-v4.1-flash-v2:free`); free image models are retired often, so add the next one to the list when it appears. A cheap paid model (for example `recraft/recraft-v4.1-flash`) can go last if the account has credits.
-  OpenRouter allows 20 free requests a minute and 50 a day per account (1,000 a day after buying $10 of credits once),
-  so each learner gets `MNEMONIC_DAILY_LIMIT` (default 5) new memory tricks a day and nothing is ever generated twice.
-- **Graceful fallback.** Free image models come and go. If the picture fails, the text is still saved and the word's emoji is shown.
-- **Private images.** The bucket is private; the API returns short-lived signed URLs (1 hour).
-- **Secrets stay on the backend.** `OPENROUTER_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` live only in the backend `.env`. Never put them in `frontend/.env`.
+- **The learner writes, the AI only draws.** Making your own sentence is the learning step; no extra text model call.
+- **The sentence must contain the word** (articles, case and simple plurals are accepted: "the cats" works for *cat*, "la médica" for *el médico / la médica*). The same rule makes the gap on the card.
+- **Free image models only.** `OPENROUTER_IMAGE_MODEL` is a comma-separated list tried in order (default `recraft/recraft-v4.1-flash-v2:free`); free image models are retired often, so add the next one when it appears. A cheap paid model (for example `recraft/recraft-v4.1-flash`) can go last if the account has credits.
+- **Daily limit per learner** (`MNEMONIC_DAILY_LIMIT`, default 5) counted from `image_generations`, so rewriting or deleting cards does not reset it. Failed attempts count too, like on OpenRouter.
+- **Graceful fallback.** If no picture can be made, the sentence is still saved and the card shows the word's emoji.
+- **Private images.** The bucket is private; the API returns signed URLs valid for 1 hour.
+- **Secrets stay on the backend.** `OPENROUTER_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` live only in the backend `.env`.
 
 ### Setup
 
@@ -274,7 +277,7 @@ Decisions:
 3. In Supabase: Project Settings → API Keys → **Secret keys** → copy (or create) a key starting with `sb_secret_` into `.env` as `SUPABASE_SERVICE_ROLE_KEY`. The legacy `service_role` key also works, but Supabase is retiring it by the end of 2026.
 4. `make migrate`, restart `make api`.
 
-Without the OpenRouter key the button answers "AI is not configured"; without the storage key memory tricks are saved without pictures.
+Without the OpenRouter key or the storage key, sentences are saved without pictures and the flashcards use the emoji.
 
 ## Tests
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 import re
 import uuid
@@ -10,34 +9,36 @@ from datetime import UTC, datetime, timedelta
 
 from langapp.db.models import Concept, Mnemonic
 from langapp.domain import GeneratedImage
-from langapp.errors import ExternalSourceError, NotFound, RateLimited, ServiceUnavailable, UpstreamRateLimited
+from langapp.errors import ExternalSourceError, InvalidRequest, NotFound, RateLimited, UpstreamRateLimited
 from langapp.repositories.concepts import ConceptRepository
 from langapp.repositories.mnemonics import MnemonicRepository
-from langapp.services.languages import LANGUAGE_NAMES, LanguageCatalog
-from langapp.services.ports import ChatModel, ImageModel, ImageStore
+from langapp.services.languages import LanguageCatalog
+from langapp.services.ports import ImageModel, ImageStore
 
 logger = logging.getLogger(__name__)
 
-MAX_TEXT_LENGTH = 600
-MAX_PROMPT_LENGTH = 400
+MIN_SENTENCE_LENGTH = 3
+MAX_SENTENCE_LENGTH = 200
+GAP = "___"
 IMAGE_STYLE = (
-    "Handmade felt craft illustration with soft stitched edges, one clear subject, "
+    "Draw this scene as a handmade felt craft illustration with soft stitched edges, one clear subject, "
     "plain soft matcha green background, friendly and family-friendly. "
     "No text, no letters, no words in the image."
 )
 EXTENSIONS = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
-JSON_BLOCK = re.compile(r"\{.*\}", re.DOTALL)
-
-
-@dataclass(frozen=True)
-class MnemonicIdea:
-    text: str
-    image_prompt: str
+ARTICLES = {
+    "eng": ("the", "a", "an", "to"),
+    "spa": ("el", "la", "los", "las", "un", "una", "unos", "unas"),
+}
+ENDINGS = {
+    "eng": r"(?:s|es)?",
+    "spa": r"(?:s|es)?",
+    "rus": r"\w{0,3}",
+}
 
 
 @dataclass(frozen=True)
 class MnemonicSettings:
-    text_model: str
     image_model: str
     daily_limit: int
     signed_url_seconds: int
@@ -47,38 +48,33 @@ class MnemonicSettings:
         return [model.strip() for model in self.image_model.split(",") if model.strip()]
 
 
-def mnemonic_messages(word: str, translation: str, learning: str, native: str) -> list[dict]:
-    learning_name = LANGUAGE_NAMES.get(learning, learning)
-    native_name = LANGUAGE_NAMES.get(native, native)
-    system = (
-        "You are a creative language teacher who invents memory tricks with the keyword method: "
-        f"link how a {learning_name} word sounds to its meaning with one vivid, funny, family-friendly scene. "
-        "Answer only with JSON of the form "
-        '{"mnemonic": "...", "image_prompt": "..."}. '
-        f'"mnemonic": one or two short sentences written in {native_name}, quoting the {learning_name} word. '
-        '"image_prompt": in English, describe only the scene to draw, with one main subject.'
-    )
-    user = f'Word to learn ({learning_name}): "{word}". Meaning ({native_name}): "{translation}".'
-    return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+def clean_sentence(sentence: str) -> str:
+    return " ".join(sentence.split())
 
 
-def parse_idea(reply: str, word: str) -> MnemonicIdea:
-    match = JSON_BLOCK.search(reply)
-    if match:
-        try:
-            data = json.loads(match.group(0))
-        except json.JSONDecodeError:
-            data = {}
-        text = str(data.get("mnemonic") or "").strip()
-        prompt = str(data.get("image_prompt") or "").strip()
-        if text:
-            return MnemonicIdea(text[:MAX_TEXT_LENGTH], (prompt or f'A scene that shows "{word}"')[:MAX_PROMPT_LENGTH])
-    text = reply.strip().strip("`").strip()
-    return MnemonicIdea(text[:MAX_TEXT_LENGTH], f'A scene that shows "{word}"')
+def word_forms(term: str, lang: str) -> list[str]:
+    articles = ARTICLES.get(lang, ())
+    forms = []
+    for variant in term.split("/"):
+        words = variant.strip().split()
+        if len(words) > 1 and words[0].lower() in articles:
+            words = words[1:]
+        if words:
+            forms.append(" ".join(words))
+    return sorted(set(forms), key=lambda form: (-len(form), form))
 
 
-def image_prompt(idea: MnemonicIdea) -> str:
-    return f"{idea.image_prompt} {IMAGE_STYLE}"
+def mask_sentence(sentence: str, term: str, lang: str) -> str | None:
+    ending = ENDINGS.get(lang, "")
+    for form in word_forms(term, lang):
+        pattern = re.compile(rf"(?<!\w){re.escape(form)}{ending}(?!\w)", re.IGNORECASE)
+        if pattern.search(sentence):
+            return pattern.sub(GAP, sentence, count=1)
+    return None
+
+
+def image_prompt(sentence: str) -> str:
+    return f'Scene: "{sentence}". {IMAGE_STYLE}'
 
 
 def image_path_for(user_id: uuid.UUID, concept_id: int, learning: str, native: str, media_type: str) -> str:
@@ -91,14 +87,16 @@ def _term(concept: Concept, lang: str) -> str | None:
 
 def mnemonic_view(mnemonic: Mnemonic, image_url: str | None) -> dict:
     concept = mnemonic.concept
+    word = _term(concept, mnemonic.learning_lang) or concept.slug
     return {
         "id": mnemonic.id,
         "concept_id": mnemonic.concept_id,
         "slug": concept.slug,
-        "word": _term(concept, mnemonic.learning_lang) or concept.slug,
+        "word": word,
         "translation": _term(concept, mnemonic.native_lang) or "",
         "emoji": concept.emoji,
-        "mnemonic": mnemonic.text,
+        "sentence": mnemonic.text,
+        "masked_sentence": mask_sentence(mnemonic.text, word, mnemonic.learning_lang) or GAP,
         "image_url": image_url,
         "created_at": mnemonic.created_at,
     }
@@ -110,7 +108,6 @@ class MnemonicService:
         mnemonics: MnemonicRepository,
         concepts: ConceptRepository,
         catalog: LanguageCatalog,
-        chat: ChatModel | None,
         images: ImageModel | None,
         store: ImageStore | None,
         settings: MnemonicSettings,
@@ -119,11 +116,14 @@ class MnemonicService:
         self._mnemonics = mnemonics
         self._concepts = concepts
         self._catalog = catalog
-        self._chat = chat
         self._images = images
         self._store = store
         self._settings = settings
         self._clock = clock
+
+    @property
+    def _can_draw(self) -> bool:
+        return self._images is not None and self._store is not None
 
     def list(self, user_id: uuid.UUID, learning: str, native: str) -> dict:
         self._catalog.ensure_pair(learning, native)
@@ -133,37 +133,40 @@ class MnemonicService:
             "mnemonics": [mnemonic_view(m, urls.get(m.image_path or "")) for m in items],
             "daily_limit": self._settings.daily_limit,
             "remaining_today": self._remaining(user_id),
+            "pictures_enabled": self._can_draw,
         }
 
-    def create(self, user_id: uuid.UUID, concept_id: int, learning: str, native: str) -> dict:
+    def save(self, user_id: uuid.UUID, concept_id: int, learning: str, native: str, sentence: str) -> dict:
         self._catalog.ensure_pair(learning, native)
-        existing = self._mnemonics.find(user_id, concept_id, learning, native)
-        if existing:
-            return self._view(existing)
-        if self._chat is None:
-            raise ServiceUnavailable("AI is not configured: set OPENROUTER_API_KEY in .env")
         concept = self._concepts.get_with_terms(concept_id)
         if concept is None:
             raise NotFound(f"Word {concept_id} not found")
         word, translation = _term(concept, learning), _term(concept, native)
         if word is None or translation is None:
             raise NotFound("This word has no translation in your languages yet")
-        if self._remaining(user_id) <= 0:
-            raise RateLimited(f"You can create {self._settings.daily_limit} memory tricks a day. Come back tomorrow!")
 
-        messages = mnemonic_messages(word, translation, learning, native)
-        reply = self._chat.chat(self._settings.text_model, messages, user=str(user_id))
-        idea = parse_idea(reply.text, word)
-        image_path, image_model = self._make_image(user_id, concept_id, learning, native, idea)
-        saved = self._mnemonics.add(user_id, concept_id, learning, native, idea.text, image_path, reply.model, image_model)
+        text = clean_sentence(sentence)
+        if not MIN_SENTENCE_LENGTH <= len(text) <= MAX_SENTENCE_LENGTH:
+            raise InvalidRequest(f"Write a sentence between {MIN_SENTENCE_LENGTH} and {MAX_SENTENCE_LENGTH} characters.")
+        if mask_sentence(text, word, learning) is None:
+            raise InvalidRequest(f"Use the word “{word_forms(word, learning)[0]}” in your sentence.")
+
+        image_path, image_model = self._draw(user_id, concept_id, learning, native, text)
+        existing = self._mnemonics.find(user_id, concept_id, learning, native)
+        if existing:
+            saved = self._mnemonics.update(existing, text, image_path, image_model)
+        else:
+            saved = self._mnemonics.add(user_id, concept_id, learning, native, text, image_path, None, image_model)
         return self._view(saved)
 
-    def _make_image(
-        self, user_id: uuid.UUID, concept_id: int, learning: str, native: str, idea: MnemonicIdea
+    def _draw(
+        self, user_id: uuid.UUID, concept_id: int, learning: str, native: str, sentence: str
     ) -> tuple[str | None, str | None]:
-        if self._images is None or self._store is None:
+        if not self._can_draw:
             return None, None
-        image = self._first_working_image(image_prompt(idea), str(user_id))
+        if self._remaining(user_id) <= 0:
+            raise RateLimited(f"You can create {self._settings.daily_limit} pictures a day. Come back tomorrow!")
+        image = self._first_working_image(user_id, image_prompt(sentence))
         if image is None:
             return None, None
         try:
@@ -171,24 +174,29 @@ class MnemonicService:
             self._store.save(path, image.data, image.media_type)
             return path, image.model
         except ExternalSourceError:
-            logger.warning("mnemonic image could not be saved; falling back to the emoji", exc_info=True)
+            logger.warning("picture could not be saved; falling back to the emoji", exc_info=True)
             return None, None
 
-    def _first_working_image(self, prompt: str, user: str) -> GeneratedImage | None:
+    def _first_working_image(self, user_id: uuid.UUID, prompt: str) -> GeneratedImage | None:
         for model in self._settings.image_models:
             try:
-                return self._images.generate_image(model, prompt, user=user)
+                image = self._images.generate_image(model, prompt, user=str(user_id))
             except UpstreamRateLimited:
+                self._mnemonics.log_generation(user_id, model, succeeded=False)
                 logger.warning("image models are rate limited; falling back to the emoji")
                 return None
             except ExternalSourceError as exc:
+                self._mnemonics.log_generation(user_id, model, succeeded=False)
                 logger.warning("image model %s failed (%s); trying the next one", model, exc)
+                continue
+            self._mnemonics.log_generation(user_id, model, succeeded=True)
+            return image
         logger.warning("no image model worked; falling back to the emoji")
         return None
 
     def _remaining(self, user_id: uuid.UUID) -> int:
         since = self._clock() - timedelta(days=1)
-        return max(0, self._settings.daily_limit - self._mnemonics.count_created_since(user_id, since))
+        return max(0, self._settings.daily_limit - self._mnemonics.count_generations_since(user_id, since))
 
     def _signed_urls(self, paths: list[str]) -> dict[str, str]:
         if not paths or self._store is None:
@@ -196,7 +204,7 @@ class MnemonicService:
         try:
             return self._store.signed_urls(paths, self._settings.signed_url_seconds)
         except ExternalSourceError:
-            logger.warning("could not sign mnemonic images", exc_info=True)
+            logger.warning("could not sign pictures", exc_info=True)
             return {}
 
     def _view(self, mnemonic: Mnemonic) -> dict:

@@ -242,6 +242,7 @@ class MnemonicIn(BaseModel):
     concept_id: int = Field(gt=0)
     learning: LangCode
     native: LangCode
+    sentence: str = Field(min_length=1, max_length=500)
 
 
 class MnemonicOut(BaseModel):
@@ -251,7 +252,8 @@ class MnemonicOut(BaseModel):
     word: str
     translation: str
     emoji: str | None
-    mnemonic: str
+    sentence: str
+    masked_sentence: str
     image_url: str | None
     created_at: datetime
 
@@ -260,3 +262,4 @@ class MnemonicListOut(BaseModel):
     mnemonics: list[MnemonicOut]
     daily_limit: int
     remaining_today: int
+    pictures_enabled: bool

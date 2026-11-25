@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import Flashcards from "../components/mnemonics/Flashcards";
 import MnemonicCard from "../components/mnemonics/MnemonicCard";
 import { useLanguages } from "../hooks/useLanguages";
 import { fetchMnemonics, type MnemonicList } from "../lib/mnemonicsApi";
 
 export default function Mnemonics() {
   const { settings } = useLanguages();
+  const [params, setParams] = useSearchParams();
+  const practising = params.get("practice") === "1";
   const [loaded, setLoaded] = useState<{ key: string; list: MnemonicList | null; error: string | null }>({ key: "", list: null, error: null });
   const key = `${settings.learning_lang}:${settings.native_lang}`;
   const list  = loaded.key === key ? loaded.list : null;
@@ -19,37 +22,49 @@ export default function Mnemonics() {
     return () => { cancelled = true; };
   }, [key, settings.learning_lang, settings.native_lang]);
 
+  const cards = list?.mnemonics ?? [];
+  const setPractice = (on: boolean) => setParams(on ? { practice: "1" } : {});
+
   return (
     <>
       <header className="page-header grid-bg">
         <div className="container page-header__inner">
-          <p className="eyebrow">Mnemonics</p>
-          <h1 className="display">My memory <em>tricks</em></h1>
-          <p className="lead">Every picture story you created, saved to your account.</p>
+          <p className="eyebrow">Picture cards</p>
+          <h1 className="display">My picture <em>cards</em></h1>
+          <p className="lead">Your own sentences, drawn by AI. Guess the missing word, then flip the card.</p>
         </div>
       </header>
 
       <div className="container page-body">
         {error && <p className="alert" data-type="error" role="alert">{error}</p>}
-        {!list && !error && <div className="spinner" role="status" aria-label="Loading memory tricks" />}
-        {list && (
+        {!list && !error && <div className="spinner" role="status" aria-label="Loading picture cards" />}
+
+        {list && cards.length === 0 && (
+          <div className="center-state">
+            <p className="h3">No picture cards yet.</p>
+            <p className="muted">Open a lesson and write a sentence with any word.</p>
+            <Link className="btn btn--primary" to="/lessons">Go to lessons</Link>
+          </div>
+        )}
+
+        {list && cards.length > 0 && practising && (
+          <Flashcards cards={cards} learning={settings.learning_lang} onExit={() => setPractice(false)} />
+        )}
+
+        {list && cards.length > 0 && !practising && (
           <>
-            <p className="eyebrow">
-              {list.mnemonics.length} saved · {list.remaining_today} of {list.daily_limit} left today
-            </p>
-            {list.mnemonics.length === 0 ? (
-              <div className="center-state">
-                <p className="h3">No memory tricks yet.</p>
-                <p className="muted">Open a lesson and tap “Create memory trick” on any word.</p>
-                <Link className="btn btn--primary" to="/lessons">Go to lessons</Link>
-              </div>
-            ) : (
-              <div className="mnemonic-grid">
-                {list.mnemonics.map(m => (
-                  <MnemonicCard key={m.id} word={m.word} translation={m.translation} emoji={m.emoji} imageUrl={m.image_url} text={m.mnemonic} />
-                ))}
-              </div>
-            )}
+            <div className="row row--between">
+              <p className="eyebrow">
+                {cards.length} card{cards.length === 1 ? "" : "s"}
+                {list.pictures_enabled && <> · {list.remaining_today} of {list.daily_limit} pictures left today</>}
+              </p>
+              <button className="btn btn--primary" onClick={() => setPractice(true)}>Practise with flashcards</button>
+            </div>
+            <div className="mnemonic-grid">
+              {cards.map(m => (
+                <MnemonicCard key={m.id} word={m.word} translation={m.translation} emoji={m.emoji} imageUrl={m.image_url} sentence={m.sentence} />
+              ))}
+            </div>
           </>
         )}
       </div>

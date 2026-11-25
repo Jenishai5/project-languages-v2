@@ -115,11 +115,9 @@ def get_mnemonic_service(
         MnemonicRepository(session),
         ConceptRepository(session),
         catalog,
-        chat=openrouter,
         images=openrouter,
         store=store,
         settings=MnemonicSettings(
-            text_model=settings.openrouter_text_model,
             image_model=settings.openrouter_image_model,
             daily_limit=settings.mnemonic_daily_limit,
             signed_url_seconds=settings.signed_url_seconds,

@@ -32,6 +32,11 @@ export function heardWord(transcripts: string[], term: string, lang: string): bo
   });
 }
 
+export function typedAnswerMatches(answer: string, term: string, lang: string): boolean {
+  const targets = targetsFor(term, lang);
+  return targetsFor(answer, lang).some(form => targets.includes(form));
+}
+
 interface RecognitionAlternative {
   transcript: string;
 }

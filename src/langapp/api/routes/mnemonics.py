@@ -24,7 +24,7 @@ def list_mnemonics(
 @router.post(
     "",
     response_model=MnemonicOut,
-    responses={code: {"model": ErrorOut} for code in (400, 404, 429, 502, 503)},
+    responses={code: {"model": ErrorOut} for code in (400, 404, 429)},
 )
-def create_mnemonic(body: MnemonicIn, user: CurrentUser, service: MnemonicServiceDep) -> dict:
-    return service.create(user.id, body.concept_id, body.learning, body.native)
+def save_mnemonic(body: MnemonicIn, user: CurrentUser, service: MnemonicServiceDep) -> dict:
+    return service.save(user.id, body.concept_id, body.learning, body.native, body.sentence)

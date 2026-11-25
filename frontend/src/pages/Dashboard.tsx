@@ -79,7 +79,7 @@ export default function Dashboard() {
           <p className="muted">Uses all words and sentences, not one lesson.</p>
           <PracticeLink heading="Match" sub="5 random pairs a round →" tone="pink" onClick={() => navigate("/game")} />
           <PracticeLink heading="Sentence shuffle" sub="Real Tatoeba sentences →" tone="mint" onClick={() => navigate("/sentence-builder")} />
-          <PracticeLink heading="My memory tricks" sub="AI picture stories →" tone="lime" onClick={() => navigate("/mnemonics")} />
+          <PracticeLink heading="Picture cards" sub="Your sentences as flashcards →" tone="lime" onClick={() => navigate("/mnemonics")} />
         </section>
       </div>
     </>

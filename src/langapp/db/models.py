@@ -203,8 +203,19 @@ class Mnemonic(Base):
     native_lang: Mapped[str] = mapped_column(String(8))
     text: Mapped[str] = mapped_column(Text)
     image_path: Mapped[str | None] = mapped_column(Text)
-    text_model: Mapped[str] = mapped_column(String(200))
+    text_model: Mapped[str | None] = mapped_column(String(200))
     image_model: Mapped[str | None] = mapped_column(String(200))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     concept: Mapped[Concept] = relationship()
+
+
+class ImageGeneration(Base):
+    __tablename__ = "image_generations"
+    __table_args__ = (Index("ix_image_generations_user_created", "user_id", "created_at"),)
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    model: Mapped[str] = mapped_column(String(200))
+    succeeded: Mapped[bool] = mapped_column(Boolean)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

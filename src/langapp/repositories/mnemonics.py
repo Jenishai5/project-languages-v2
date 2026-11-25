@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from langapp.db.models import Concept, Mnemonic
+from langapp.db.models import Concept, ImageGeneration, Mnemonic
 
 
 class MnemonicRepository:
@@ -33,9 +33,17 @@ class MnemonicRepository:
         )
         return list(self.session.scalars(stmt))
 
-    def count_created_since(self, user_id: uuid.UUID, since: datetime) -> int:
-        stmt = select(func.count()).select_from(Mnemonic).where(Mnemonic.user_id == user_id, Mnemonic.created_at >= since)
+    def count_generations_since(self, user_id: uuid.UUID, since: datetime) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(ImageGeneration)
+            .where(ImageGeneration.user_id == user_id, ImageGeneration.created_at >= since)
+        )
         return self.session.scalar(stmt) or 0
+
+    def log_generation(self, user_id: uuid.UUID, model: str, succeeded: bool) -> None:
+        self.session.add(ImageGeneration(user_id=user_id, model=model, succeeded=succeeded))
+        self.session.flush()
 
     def add(
         self,
@@ -45,7 +53,7 @@ class MnemonicRepository:
         native: str,
         text: str,
         image_path: str | None,
-        text_model: str,
+        text_model: str | None,
         image_model: str | None,
     ) -> Mnemonic:
         mnemonic = Mnemonic(
@@ -61,3 +69,11 @@ class MnemonicRepository:
         self.session.add(mnemonic)
         self.session.flush()
         return self.find(user_id, concept_id, learning, native) or mnemonic
+
+    def update(self, mnemonic: Mnemonic, text: str, image_path: str | None, image_model: str | None) -> Mnemonic:
+        mnemonic.text = text
+        mnemonic.image_path = image_path
+        mnemonic.image_model = image_model
+        mnemonic.text_model = None
+        self.session.flush()
+        return mnemonic
