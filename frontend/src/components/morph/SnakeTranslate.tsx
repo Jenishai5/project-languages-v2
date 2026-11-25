@@ -98,18 +98,34 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
     const period = cursor;
     const approach = leftWidth + fontSize;
 
-    const place = (t: Track, x: number, origin: number, visibleWidth: number) => {
+    const zone = fontSize * 2.6;
+    const squeeze = 0.15;
+    const squeezed = (r: number) => {
+      if (r >= zone) return { r, scale: 1 };
+      const u = Math.max(0, r) / zone;
+      const curve = squeeze * u + (2 - 2 * squeeze) * u * u + (squeeze - 1) * u * u * u;
+      const slope = squeeze + 2 * (2 - 2 * squeeze) * u + 3 * (squeeze - 1) * u * u;
+      return { r: curve * zone, scale: Math.max(0.05, slope) };
+    };
+
+    const place = (t: Track, x: number, side: "left" | "right", visibleWidth: number) => {
       if (x + t.width < -fontSize || x > visibleWidth + fontSize) {
         if (t.line.style.visibility !== "hidden") t.line.style.visibility = "hidden";
         return;
       }
+      const origin = side === "left" ? 0 : rightOrigin;
       t.line.style.visibility = "visible";
       t.line.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0)`;
       t.chars.forEach((c, i) => {
-        const phase = ((origin + x + t.centers[i]) / wavelength) * Math.PI * 2;
+        const local = x + t.centers[i];
+        const distance = side === "left" ? leftWidth - local : local;
+        const { r, scale } = squeezed(distance);
+        const shift = side === "left" ? distance - r : r - distance;
+        const phase = ((origin + local) / wavelength) * Math.PI * 2;
         const y = amplitude * Math.sin(phase);
         const tilt = Math.atan(amplitude * ((Math.PI * 2) / wavelength) * Math.cos(phase)) * 57.3 * 0.8;
-        c.style.transform = `translate3d(0, ${y.toFixed(2)}px, 0) rotate(${tilt.toFixed(2)}deg)`;
+        const scaleY = 0.7 + 0.3 * Math.min(1, scale);
+        c.style.transform = `translate3d(${shift.toFixed(2)}px, ${y.toFixed(2)}px, 0) rotate(${tilt.toFixed(2)}deg) scale(${scale.toFixed(3)}, ${scaleY.toFixed(3)})`;
       });
     };
 
@@ -131,8 +147,8 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
       let active = false;
       items.forEach(({ src, tgt, start }, i) => {
         const d = ((((travelled - start + approach) % period) + period) % period) - approach;
-        place(src, leftWidth + d - src.width, 0, leftWidth);
-        place(tgt, d - tgt.width, rightOrigin, rightWidth);
+        place(src, leftWidth + d - src.width, "left", leftWidth);
+        place(tgt, d - tgt.width, "right", rightWidth);
         const through = Math.max(src.width, tgt.width);
         if (d > 0 && d < through) active = true;
         const before = previous[i];
