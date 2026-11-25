@@ -76,7 +76,7 @@ export default function Landing() {
 
       <section className="ways-section grid-bg grid-bg--light">
         <div className="container">
-          <SnakeTranslate />
+          <SnakeTranslate wave={0} />
           <div className="section-head">
             <h2 className="h1">Learn your way.<br />Same words, two paths.</h2>
             <p className="lead">Follow the path lesson by lesson, or drop into free practice whenever you have five minutes.</p>

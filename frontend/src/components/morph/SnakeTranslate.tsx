@@ -12,7 +12,7 @@ const RU: Phrase = { code: "ru", name: "Russian", text: "Привет, как д
 const PAIRS: Pair[] = [[ES, CA], [EN, RU], [CA, EN], [RU, ES]];
 const LAPS = 2;
 
-type Props = { pairs?: Pair[]; speed?: number };
+type Props = { pairs?: Pair[]; speed?: number; wave?: number };
 
 type Track = {
   line: HTMLElement;
@@ -35,7 +35,7 @@ function Line({ phrase, index, role }: { phrase: Phrase; index: number; role: "s
   );
 }
 
-export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6 }: Props) {
+export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24 }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const [layoutVersion, setLayoutVersion] = useState(0);
   const stream = useMemo(() => Array.from({ length: LAPS }, () => pairs).flat(), [pairs]);
@@ -66,7 +66,7 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6 }: Props) {
     const leftWidth = wallX - wallWidth / 2;
     const rightOrigin = wallX + wallWidth / 2;
     const rightWidth = width - rightOrigin;
-    const amplitude = reduced ? 0 : fontSize * 0.24;
+    const amplitude = reduced ? 0 : fontSize * wave;
     const wavelength = fontSize * 3.6;
     const velocity = reduced ? 0 : fontSize * speed;
 
@@ -134,7 +134,7 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6 }: Props) {
       gsap.ticker.remove(tick);
       pulse.kill();
     };
-  }, [layoutVersion, speed, stream]);
+  }, [layoutVersion, speed, wave, stream]);
 
   return (
     <figure ref={root} className="snake">
