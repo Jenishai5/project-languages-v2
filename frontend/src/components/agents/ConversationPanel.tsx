@@ -71,7 +71,7 @@ export default function ConversationPanel({
         setLeft(answer.remaining_today);
         if (answer.reply) {
           setMessages([{ role: "assistant", text: answer.reply }]);
-          if (voiceRef.current) speak(answer.reply, voice);
+          if (voiceRef.current) speak(answer.reply, voice, 1, 1, setNotice);
         }
         else setNotice(answer.message ?? "The AI partner is not available right now.");
       })
@@ -104,7 +104,7 @@ export default function ConversationPanel({
         updated[updated.length - 1] = { ...updated[updated.length - 1], correction: answer.correction };
         return answer.reply ? [...updated, { role: "assistant", text: answer.reply }] : updated;
       });
-      if (answer.reply && voiceOn) speak(answer.reply, voice);
+      if (answer.reply && voiceOn) speak(answer.reply, voice, 1, 1, setNotice);
       if (!answer.reply) setNotice(answer.message ?? "No answer this time. Try again.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Something went wrong.");
@@ -201,7 +201,7 @@ export default function ConversationPanel({
             <div className="chat__bubble">
               <span>{message.text}</span>
               {message.role === "assistant" && (
-                <button className="chat__speak" onClick={() => speak(message.text, voice)} aria-label="Listen">🔊</button>
+                <button className="chat__speak" onClick={() => speak(message.text, voice, 1, 1, setNotice)} aria-label="Listen">🔊</button>
               )}
             </div>
             {message.correction && (

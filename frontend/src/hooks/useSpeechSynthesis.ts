@@ -21,9 +21,13 @@ export function useSpeechSynthesis() {
   const current = useRef<SpeechSynthesisUtterance | null>(null);
 
   const speak = useCallback(
-    (text: string, lang: SpeechLang, rate: number = 1, pitch: number = 1) => {
+    (text: string, lang: SpeechLang, rate: number = 1, pitch: number = 1, onProblem?: (reason: string) => void) => {
       const engine = synth();
-      if (!engine || !text.trim()) return;
+      if (!engine) {
+        onProblem?.("This browser cannot read text aloud.");
+        return;
+      }
+      if (!text.trim()) return;
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
@@ -31,6 +35,15 @@ export function useSpeechSynthesis() {
       utterance.pitch = pitch;
       const voice = voiceFor(engine, lang);
       if (voice) utterance.voice = voice;
+      else if ((engine.getVoices?.() ?? []).length > 0) onProblem?.(`No ${lang} voice is installed on this device.`);
+      utterance.onerror = event => {
+        if (event.error === "canceled" || event.error === "interrupted") return;
+        onProblem?.(
+          event.error === "not-allowed"
+            ? "The browser blocked the voice. Click the page once, then press 🔊 again."
+            : `The voice could not play (${event.error}).`,
+        );
+      };
       current.current = utterance;
 
       const start = () => {
