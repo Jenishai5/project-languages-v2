@@ -10,6 +10,7 @@ type Props = {
   fromLang?: string;
   toLang?: string;
   className?: string;
+  onStart?: () => void;
   onComplete?: () => void;
 };
 
@@ -58,14 +59,16 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 }
 
-export default function TextMorph({ from, to, duration = 2.6, delay = 0, fromLang, toLang, className, onComplete }: Props) {
+export default function TextMorph({ from, to, duration = 2.6, delay = 0, fromLang, toLang, className, onStart, onComplete }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const filterId = `morph-goo-${useId().replace(/:/g, "")}`;
   const steps = useMemo(() => planMorph(from, to), [from, to]);
   const [layoutVersion, setLayoutVersion] = useState(0);
+  const started = useRef(onStart);
   const finished = useRef(onComplete);
 
   useEffect(() => {
+    started.current = onStart;
     finished.current = onComplete;
   });
 
@@ -125,7 +128,10 @@ export default function TextMorph({ from, to, duration = 2.6, delay = 0, fromLan
 
       const tl = gsap.timeline({
         delay,
-        onStart: () => { stage.style.filter = reduced ? "" : `url(#${filterId})`; },
+        onStart: () => {
+          stage.style.filter = reduced ? "" : `url(#${filterId})`;
+          started.current?.();
+        },
         onComplete: () => {
           stage.style.filter = "";
           finished.current?.();
