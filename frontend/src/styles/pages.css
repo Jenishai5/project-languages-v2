@@ -1,8 +1,9 @@
 .hero { margin-top: -78px; padding-top: 78px; padding-bottom: 96px; }
 .hero__inner { display: flex; flex-wrap: wrap; align-items: center; gap: 48px; padding-top: 56px; }
 .hero__copy { flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 28px; }
-.hero__langs { display: flex; flex-wrap: wrap; gap: 14px 32px; margin: 0; padding: 0; list-style: none; }
-.hero__lang { display: inline-flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.hero__langs { display: flex; flex-wrap: nowrap; gap: 20px; margin: 0; padding: 0; list-style: none; }
+.hero__lang { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+@media (max-width: 560px) { .hero__langs { flex-wrap: wrap; gap: 12px 20px; } }
 .spin { display: inline-flex; animation: spin 9s linear infinite; }
 .hero__lang:nth-child(2) .spin { animation-duration: 11s; animation-direction: reverse; }
 .hero__lang:nth-child(3) .spin { animation-duration: 13s; }
