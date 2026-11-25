@@ -12,7 +12,7 @@ const PHRASES: Phrase[] = [
 
 type Props = { phrases?: Phrase[]; duration?: number; hold?: number };
 
-export default function LanguageMorph({ phrases = PHRASES, duration = 3.4, hold = 1.6 }: Props) {
+export default function LanguageMorph({ phrases = PHRASES, duration = 4, hold = 1.6 }: Props) {
   const [step, setStep] = useState(0);
   const current = phrases[step % phrases.length];
   const next = phrases[(step + 1) % phrases.length];

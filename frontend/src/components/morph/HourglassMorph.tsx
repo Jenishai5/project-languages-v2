@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
+import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 import { planMorph } from "../../lib/morphPlan";
 import { Glyph, Measure } from "./morphParts";
 
@@ -17,6 +18,8 @@ type Props = {
 };
 
 type Box = { x: number; y: number; w: number; h: number };
+
+gsap.registerPlugin(MotionPathPlugin);
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
@@ -59,15 +62,9 @@ export default function HourglassMorph({
       const c = layer(name).querySelector<HTMLElement>(`[data-i="${index}"]`);
       return c ? { x: c.offsetLeft, y: c.offsetTop, w: c.offsetWidth, h: c.offsetHeight } : null;
     };
-    const textWidth = (name: "from" | "to") => {
-      const cells = Array.from(layer(name).querySelectorAll<HTMLElement>(".morph__cell"));
-      if (!cells.length) return 0;
-      return Math.max(...cells.map(c => c.offsetLeft + c.offsetWidth)) - Math.min(...cells.map(c => c.offsetLeft));
-    };
-
     const stage = el.querySelector<HTMLElement>(".morph__stage")!;
     const blobLayer = el.querySelector<HTMLElement>(".morph__blobs")!;
-    const outline = el.querySelector<SVGSVGElement>(".hourglass__outline")!;
+    const stream = el.querySelector<HTMLElement>(".hourglass__stream")!;
     const textBlur = el.querySelector<SVGFEGaussianBlurElement>(".morph__text-blur")!;
 
     const fontSize = parseFloat(getComputedStyle(el).fontSize) || 40;
@@ -79,14 +76,12 @@ export default function HourglassMorph({
     const gap = fontSize * 3.2;
     const bottomTop = lineH + gap;
     const neck = { x: el.offsetWidth / 2, y: lineH + gap / 2 };
-    const bulbWidth = Math.max(textWidth("from"), textWidth("to")) + padX * 4;
     const down = (b: Box): Box => ({ ...b, y: b.y + bottomTop });
     const atNeck = (b: Box): Box => ({ ...b, x: neck.x - b.w / 2, y: neck.y - b.h / 2 });
     const blobBox = (b: Box) => ({ x: b.x - padX, y: b.y - padY, width: b.w + padX * 2, height: b.h + padY * 2 });
 
     const ctx = gsap.context(() => {
       gsap.set(el, { height: lineH * 2 + gap });
-      gsap.set(outline, { width: bulbWidth, height: lineH * 2 + gap + padY * 4, x: -bulbWidth / 2, y: -padY * 2, rotation: 0 });
       gsap.set(blobLayer, { color: fromColor });
 
       const glyphs = gsap.utils.toArray<HTMLElement>(".morph__glyph", el);
@@ -102,10 +97,19 @@ export default function HourglassMorph({
       const order = [...items].sort((a, b) => {
         const rank = (it: typeof a) => {
           const ref = it.start ?? it.end!;
-          const base = it.start ? 0 : 10000;
-          return base + Math.abs(ref.x + ref.w / 2 - neck.x);
+          return (it.start ? 0 : 10000) + Math.abs(ref.x + ref.w / 2 - neck.x);
         };
         return rank(a) - rank(b);
+      });
+
+      const streamWidth = fontSize * 0.22;
+      gsap.set(stream, {
+        x: neck.x - streamWidth / 2,
+        y: lineH * 0.55,
+        width: streamWidth,
+        height: bottomTop - lineH * 0.1,
+        scaleY: 0,
+        transformOrigin: "50% 0%",
       });
 
       const tl = gsap.timeline({
@@ -117,60 +121,83 @@ export default function HourglassMorph({
         },
       });
 
-      const spread = D * 0.45;
-      const fall = D * 0.28;
-      const rise = D * 0.3;
-      const follow = D * 0.04;
+      const spread = D * 0.5;
+      const travel = D * 0.5;
+      const half = travel / 2;
+      const follow = D * 0.035;
+      const pourEnd = spread + travel;
 
-      tl.to(blobLayer, { color: toColor, duration: D * 0.7, ease: "sine.inOut" }, D * 0.15);
-      tl.to(textBlur, { attr: { stdDeviation: reduced ? 0 : fontSize * 0.035 }, duration: D * 0.4, ease: "sine.inOut" }, 0);
-      tl.to(textBlur, { attr: { stdDeviation: 0 }, duration: D * 0.4, ease: "sine.inOut" }, D * 0.6);
+      tl.to(blobLayer, { color: toColor, duration: D * 0.8, ease: "sine.inOut" }, D * 0.1);
+      tl.to(textBlur, { attr: { stdDeviation: reduced ? 0 : fontSize * 0.03 }, duration: D * 0.4, ease: "sine.inOut" }, 0);
+      tl.to(textBlur, { attr: { stdDeviation: 0 }, duration: D * 0.4, ease: "sine.inOut" }, pourEnd - D * 0.3);
+      if (!reduced) {
+        tl.to(stream, { scaleY: 1, duration: D * 0.3, ease: "power2.in" }, half * 0.6);
+        tl.set(stream, { transformOrigin: "50% 100%" }, pourEnd - half * 1.2);
+        tl.to(stream, { scaleY: 0, duration: D * 0.25, ease: "power2.inOut" }, pourEnd - half * 1.2);
+      }
+
+      const curve = (a: Box, b: Box, toward: number) => ({
+        x: a.x + (b.x - a.x) * toward,
+        y: a.y + (b.y - a.y) * 0.6,
+      });
+      const pathThrough = (points: { x: number; y: number }[]) => ({ path: points, curviness: 1.3 });
+      const shift = (b: { x: number; y: number }, dx: number, dy: number) => ({ x: b.x + dx, y: b.y + dy });
 
       order.forEach((it, k) => {
         const t = order.length > 1 ? (k / (order.length - 1)) * spread : 0;
         const { g, blob, start, end } = it;
+        const bx = -padX;
+        const by = -padY;
 
         if (it.kind === "keep" || it.kind === "morph") {
           const s = start!;
           const e = down(end!);
           const n = atNeck(e);
-          gsap.set(g, { x: s.x, y: s.y, scale: 1, opacity: 1 });
-          gsap.set(blob, { ...blobBox(s), scale: 1 });
-          tl.to(g, { x: n.x, y: n.y, scale: 0.5, duration: fall, ease: "power2.in" }, t);
-          tl.to(g, { x: e.x, y: e.y, scale: 1, duration: rise, ease: "power3.out" }, t + fall);
-          tl.to(blob, { ...blobBox(atNeck(s)), scale: 0.35, duration: fall, ease: "power2.in" }, t + follow);
-          tl.to(blob, { ...blobBox(e), scale: 1, duration: rise, ease: "power3.out" }, t + fall + follow);
+          const sb = blobBox(s);
+          const eb = blobBox(e);
+          const points = [s, curve(s, n, 0.3), n, curve(e, n, 0.3), e];
+          gsap.set(g, { x: s.x, y: s.y });
+          gsap.set(blob, sb);
+          tl.to(g, { motionPath: pathThrough(points), duration: travel, ease: "power1.inOut" }, t);
+          tl.to(g, { scaleX: 0.5, scaleY: 1.35, duration: half, ease: "sine.in" }, t);
+          tl.to(g, { scaleX: 1, scaleY: 1, duration: half, ease: "sine.out" }, t + half);
+          tl.to(blob, { width: eb.width, height: eb.height, duration: travel, ease: "power1.inOut" }, t + follow);
+          tl.to(blob, { motionPath: pathThrough(points.map(p => shift(p, bx, by))), duration: travel, ease: "power1.inOut" }, t + follow);
+          tl.to(blob, { scaleX: 0.3, scaleY: 1.1, duration: half, ease: "sine.in" }, t + follow);
+          tl.to(blob, { scaleX: 1, scaleY: 1, duration: half, ease: "sine.out" }, t + follow + half);
           if (it.kind === "morph") {
             const oldGlyph = g.querySelector(".morph__old");
             const newGlyph = g.querySelector(".morph__new");
-            gsap.set(newGlyph, { opacity: 0, scaleY: 0.6, filter: "blur(3px)" });
-            tl.to(oldGlyph, { opacity: 0, scaleY: 1.4, filter: "blur(3px)", duration: fall * 0.6, ease: "power1.in" }, t + fall * 0.55);
-            tl.to(newGlyph, { opacity: 1, scaleY: 1, filter: "blur(0px)", duration: rise * 0.7, ease: "power2.out" }, t + fall * 0.85);
+            gsap.set(newGlyph, { opacity: 0, filter: "blur(3px)" });
+            tl.to(oldGlyph, { opacity: 0, filter: "blur(3px)", duration: half * 0.6, ease: "power1.in" }, t + half * 0.7);
+            tl.to(newGlyph, { opacity: 1, filter: "blur(0px)", duration: half * 0.8, ease: "power2.out" }, t + half * 1.05);
           }
         } else if (it.kind === "remove") {
           const s = start!;
-          const n = atNeck(s);
-          gsap.set(g, { x: s.x, y: s.y, scale: 1, opacity: 1 });
-          gsap.set(blob, { ...blobBox(s), scale: 1 });
-          tl.to(g, { x: n.x, y: n.y, scale: 0.2, opacity: 0, duration: fall, ease: "power2.in" }, t);
-          tl.to(blob, { ...blobBox(n), scale: 0, duration: fall, ease: "power2.in" }, t + follow);
+          const n = { ...s, x: neck.x - s.w / 2, y: neck.y - s.h / 2 };
+          const points = [s, curve(s, n, 0.3), n];
+          gsap.set(g, { x: s.x, y: s.y });
+          gsap.set(blob, blobBox(s));
+          tl.to(g, { motionPath: pathThrough(points), scaleX: 0.3, scaleY: 1.2, opacity: 0, duration: half * 1.1, ease: "power1.in" }, t);
+          tl.to(blob, { motionPath: pathThrough(points.map(p => shift(p, bx, by))), scaleX: 0.2, scaleY: 0.6, duration: half * 1.1, ease: "power1.in" }, t + follow);
+          tl.to(blob, { scale: 0, duration: half * 0.3, ease: "power1.in" }, t + follow + half * 1.1);
         } else {
           const e = down(end!);
           const n = atNeck(e);
-          gsap.set(g, { x: n.x, y: n.y, scale: 0.2, opacity: 0 });
-          gsap.set(blob, { ...blobBox(n), scale: 0 });
-          tl.to(g, { x: e.x, y: e.y, scale: 1, opacity: 1, duration: rise, ease: "power3.out" }, t + fall * 0.6);
-          tl.to(blob, { ...blobBox(e), scale: 1, duration: rise, ease: "power3.out" }, t + fall * 0.6 + follow);
+          const points = [n, curve(e, n, 0.3), e];
+          gsap.set(g, { x: n.x, y: n.y, scaleX: 0.3, scaleY: 1.2, opacity: 0 });
+          gsap.set(blob, { ...blobBox(n), scaleX: 0.2, scaleY: 0.6 });
+          tl.to(g, { motionPath: pathThrough(points), scaleX: 1, scaleY: 1, opacity: 1, duration: half * 1.2, ease: "power2.out" }, t + half);
+          tl.to(blob, { motionPath: pathThrough(points.map(p => shift(p, bx, by))), scaleX: 1, scaleY: 1, duration: half * 1.2, ease: "power2.out" }, t + half + follow);
         }
       });
 
-      const flipAt = spread + fall + rise + D * 0.35;
-      const flip = reduced ? 0.01 : 1.1;
-      tl.to(outline, { rotation: 180, duration: flip, ease: "power3.inOut" }, flipAt);
+      const riseAt = pourEnd + D * 0.35;
+      const rise = reduced ? 0.01 : 1.2;
       items.forEach(({ g, blob, end }) => {
         if (!end) return;
-        tl.to(g, { y: end.y, duration: flip, ease: "power3.inOut" }, flipAt);
-        tl.to(blob, { y: end.y - padY, duration: flip, ease: "power3.inOut" }, flipAt + follow);
+        tl.to(g, { y: end.y, duration: rise, ease: "power3.inOut" }, riseAt);
+        tl.to(blob, { y: end.y - padY, duration: rise, ease: "power3.inOut" }, riseAt + follow);
       });
     }, el);
 
@@ -193,15 +220,10 @@ export default function HourglassMorph({
           <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" />
         </filter>
       </svg>
-      <svg className="hourglass__outline" viewBox="0 0 100 200" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-        <path
-          d="M2 2 H98 C98 60 56 84 52 100 C56 116 98 140 98 198 H2 C2 140 44 116 48 100 C44 84 2 60 2 2 Z"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
       <Measure text={from} layer="from" lang={fromLang} />
       <Measure text={to} layer="to" lang={toLang} />
       <div className="morph__blobs" aria-hidden="true" style={{ filter: `url(#${id}-blob)` }}>
+        <span className="hourglass__stream" />
         {steps.map((_, i) => <span key={i} className="morph__blob" />)}
       </div>
       <div className="morph__stage" aria-hidden="true">
