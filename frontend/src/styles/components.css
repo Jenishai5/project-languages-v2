@@ -271,3 +271,17 @@ progress::-moz-progress-bar { background: var(--brown); border-radius: var(--rad
 .word-tile .word-card { width: 100%; }
 .word-tile__culture { align-self: center; font-size: 13px; }
 .culture-note .row { align-items: center; }
+
+.pron-score__top { display: flex; align-items: center; gap: 16px; }
+.pron-score__big { flex: none; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; font-family: var(--font-display); font-size: 28px; background: var(--white); border: 3px solid var(--line-strong); }
+.pron-score__big[data-tone="good"] { border-color: var(--mint); }
+.pron-score__big[data-tone="ok"] { border-color: var(--lime); }
+.pron-score__big[data-tone="weak"] { border-color: var(--blush); }
+.pron-score__bars { margin: 0; display: grid; gap: 4px; font-size: 13px; }
+.pron-score__bars div { display: grid; grid-template-columns: 110px 1fr; align-items: center; }
+.pron-score__bars dt { color: var(--ink-muted); }
+.pron-score__bars dd { margin: 0; display: flex; align-items: center; gap: 8px; }
+.pron-score__bars meter { width: 100%; max-width: 220px; height: 10px; }
+.pron-score__words { margin: 0; font-family: var(--font-display); font-size: 22px; }
+.pron-score__words [data-tone="weak"] { background: var(--pink); border-radius: 6px; padding: 0 4px; }
+.pron-score__words [data-tone="ok"] { background: var(--lime); border-radius: 6px; padding: 0 4px; }

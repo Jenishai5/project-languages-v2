@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from langapp.auth import AuthError, AuthUser, SupabaseTokenVerifier
 from langapp.config import get_settings
 from langapp.db.session import get_session_factory
+from langapp.integrations.azure_speech import AzureSpeechClient
 from langapp.integrations.openrouter import OpenRouterClient
 from langapp.integrations.supabase_storage import SupabaseImageStore
 from langapp.repositories.ai_usage import AiUsageRepository
@@ -28,6 +29,7 @@ from langapp.services.agents.conversation_service import ConversationService
 from langapp.services.agents.cultural import CulturalAgent
 from langapp.services.agents.grammar import GrammarAgent
 from langapp.services.agents.orchestrator import AgentLimits, AgentOrchestrator, ReplyCache
+from langapp.services.agents.pronunciation import PronunciationAgent, PronunciationService
 from langapp.services.agents.vocabulary import VocabularyAgent
 from langapp.services.games import GameService
 from langapp.services.languages import LanguageCatalog
@@ -234,6 +236,31 @@ def get_conversation_service(
 
 
 ConversationServiceDep = Annotated[ConversationService, Depends(get_conversation_service)]
+
+
+@lru_cache
+def get_azure_speech() -> AzureSpeechClient | None:
+    settings = get_settings()
+    if not settings.azure_speech_key or not settings.azure_speech_region:
+        return None
+    return AzureSpeechClient(settings.azure_speech_key, settings.azure_speech_region, settings.azure_speech_timeout_seconds)
+
+
+def get_pronunciation_agent(
+    azure: Annotated[AzureSpeechClient | None, Depends(get_azure_speech)],
+) -> PronunciationAgent | None:
+    return PronunciationAgent(azure) if azure is not None else None
+
+
+def get_pronunciation_service(
+    session: SessionDep,
+    orchestrator: AgentOrchestratorDep,
+    agent: Annotated[PronunciationAgent | None, Depends(get_pronunciation_agent)],
+) -> PronunciationService:
+    return PronunciationService(orchestrator, agent, LearningOutcomeRepository(session))
+
+
+PronunciationServiceDep = Annotated[PronunciationService, Depends(get_pronunciation_service)]
 
 
 def get_learner_service(session: SessionDep) -> LearnerService:

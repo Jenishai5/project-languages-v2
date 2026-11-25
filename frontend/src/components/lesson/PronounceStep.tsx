@@ -3,6 +3,9 @@ import { useSpeechSynthesis } from "../../hooks/useSpeechSynthesis";
 import { SPEECH_LANG, type LessonWord } from "../../lib/lessonsApi";
 import { getRecognition, heardWord, transcriptsOf, type Recognition } from "../../lib/speech";
 import { Feedback, PrimaryButton, SecondaryButton, StepCard } from "./shared";
+import PronunciationCoach from "../agents/PronunciationCoach";
+import { pronunciationSupported } from "../../lib/agentsApi";
+import { canRecord } from "../../lib/recordWav";
 
 type Status = "idle" | "listening" | "correct" | "wrong" | "error";
 
@@ -34,16 +37,32 @@ export default function PronounceStep({
   const [score, setScore]     = useState(0);
   const recognition = useRef<Recognition | null>(null);
   const scored = useRef(false);
+  const [scoring, setScoring] = useState(false);
   const word = words[index];
 
   useEffect(() => () => recognition.current?.abort(), []);
 
+  useEffect(() => {
+    let alive = true;
+    if (!canRecord()) return;
+    pronunciationSupported(learning)
+      .then(supported => alive && setScoring(supported))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [learning]);
+
+  const coach = scoring && <PronunciationCoach key={word.concept_id} word={word.word} learning={learning} />;
+
   if (!Recognizer) {
     return (
       <StepCard eyebrow="Pronounce" title="Say the words">
-        <p className="muted">
-          Your browser can't listen to speech. Open the app in Chrome or Safari to practise pronunciation.
-        </p>
+        {coach || (
+          <p className="muted">
+            Your browser can't listen to speech. Open the app in Chrome or Safari to practise pronunciation.
+          </p>
+        )}
         <PrimaryButton onClick={() => onDone(0, 0)}>Skip this step →</PrimaryButton>
       </StepCard>
     );
@@ -113,6 +132,8 @@ export default function PronounceStep({
       {status === "correct" && <Feedback correct>✅ Great! I heard “{heard}”.</Feedback>}
       {status === "wrong" && <Feedback correct={false}>❌ I heard “{heard || "…"}”. Listen and try again.</Feedback>}
       {status === "error" && <Feedback correct={false}>{message}</Feedback>}
+
+      {coach}
 
       <div className="row row--center">
         {status === "correct" ? (

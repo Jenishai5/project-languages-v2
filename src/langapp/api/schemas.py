@@ -402,3 +402,29 @@ class CultureNoteOut(BaseModel):
     cached: bool
     message: str | None
     remaining_today: int
+
+
+class WordScoreOut(BaseModel):
+    word: str
+    accuracy: float
+    error: str
+
+
+class PronunciationOut(BaseModel):
+    available: bool
+    heard: bool
+    text: str
+    recognized: str | None
+    pronunciation: float | None
+    accuracy: float | None
+    fluency: float | None
+    completeness: float | None
+    words: list[WordScoreOut]
+    weak_sounds: list[str]
+    verdict: str | None
+    message: str | None
+    remaining_today: int
+
+
+class PronunciationSupportOut(BaseModel):
+    supported: bool

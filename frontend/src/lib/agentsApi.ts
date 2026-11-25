@@ -144,3 +144,32 @@ export interface CultureNote {
 export function getCultureNote(conceptId: number, learning: LangCode, native: LangCode): Promise<CultureNote> {
   return post("/api/agents/cultural/explain", { concept_id: conceptId, learning, native });
 }
+
+export interface PronunciationResult {
+  available:       boolean;
+  heard:           boolean;
+  text:            string;
+  recognized:      string | null;
+  pronunciation:   number | null;
+  accuracy:        number | null;
+  fluency:         number | null;
+  completeness:    number | null;
+  words:           { word: string; accuracy: number; error: string }[];
+  weak_sounds:     string[];
+  verdict:         string | null;
+  message:         string | null;
+  remaining_today: number;
+}
+
+export async function pronunciationSupported(learning: LangCode): Promise<boolean> {
+  const params = new URLSearchParams({ learning });
+  const data = await getJson<{ supported: boolean }>(`/api/agents/pronunciation/support?${params}`, { headers: await authHeaders() });
+  return data.supported;
+}
+
+export async function assessPronunciation(learning: LangCode, text: string, audio: Blob): Promise<PronunciationResult> {
+  const params = new URLSearchParams({ learning, text });
+  const headers = new Headers(await authHeaders());
+  headers.set("Content-Type", "audio/wav");
+  return getJson<PronunciationResult>(`/api/agents/pronunciation/assess?${params}`, { method: "POST", headers, body: audio });
+}

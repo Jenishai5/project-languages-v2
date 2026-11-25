@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     agent_wait_seconds: float = 5.0
     agent_max_tokens: int = 2000
 
+    azure_speech_key: str | None = None
+    azure_speech_region: str | None = None
+    azure_speech_timeout_seconds: float = 15.0
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -151,3 +151,27 @@ class GeneratedImage:
     data: bytes
     media_type: str
     model: str
+
+
+@dataclass(frozen=True)
+class SoundScore:
+    sound: str
+    accuracy: float
+
+
+@dataclass(frozen=True)
+class WordScore:
+    word: str
+    accuracy: float
+    error: str
+    sounds: tuple[SoundScore, ...] = ()
+
+
+@dataclass(frozen=True)
+class PronunciationScore:
+    recognized: str
+    pronunciation: float
+    accuracy: float
+    fluency: float
+    completeness: float
+    words: tuple[WordScore, ...] = ()

@@ -1,8 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Body, Query
 
-from langapp.api.deps import AgentOrchestratorDep, ConversationServiceDep, CurrentUser, LearnerServiceDep
+from langapp.api.deps import (
+    AgentOrchestratorDep,
+    ConversationServiceDep,
+    CurrentUser,
+    LearnerServiceDep,
+    PronunciationServiceDep,
+)
 from langapp.api.schemas import (
     ConversationFinishIn,
     ConversationReplyOut,
@@ -14,6 +20,8 @@ from langapp.api.schemas import (
     ErrorOut,
     GrammarCheckIn,
     GrammarCheckOut,
+    PronunciationOut,
+    PronunciationSupportOut,
     WeakWordsOut,
     WordHelpIn,
     WordHelpOut,
@@ -69,3 +77,19 @@ def finish_conversation(body: ConversationFinishIn, user: CurrentUser, chat: Con
 @router.post("/cultural/explain", response_model=CultureNoteOut, responses=AGENT_ERRORS)
 def explain_culture(body: WordHelpIn, user: CurrentUser, agents: AgentOrchestratorDep) -> dict:
     return agents.culture_note(user.id, body.concept_id, body.learning, body.native)
+
+
+@router.get("/pronunciation/support", response_model=PronunciationSupportOut)
+def pronunciation_support(user: CurrentUser, scoring: PronunciationServiceDep, learning: LangQuery) -> dict:
+    return {"supported": scoring.supports(learning)}
+
+
+@router.post("/pronunciation/assess", response_model=PronunciationOut, responses=AGENT_ERRORS)
+def assess_pronunciation(
+    user: CurrentUser,
+    scoring: PronunciationServiceDep,
+    learning: LangQuery,
+    text: Annotated[str, Query(min_length=1, max_length=80)],
+    audio: Annotated[bytes, Body(media_type="audio/wav")],
+) -> dict:
+    return scoring.assess(user.id, learning, text, audio)

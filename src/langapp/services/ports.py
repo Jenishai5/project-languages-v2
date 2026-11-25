@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Sequence
 from typing import Protocol
 
-from langapp.domain import ChatReply, GeneratedImage, Page
+from langapp.domain import ChatReply, GeneratedImage, Page, PronunciationScore
 
 
 class SentencePageSource(Protocol):
@@ -46,3 +46,7 @@ class ImageStore(Protocol):
     def save(self, path: str, data: bytes, content_type: str) -> str: ...
 
     def signed_urls(self, paths: list[str], expires_in: int) -> dict[str, str]: ...
+
+
+class PronunciationScorer(Protocol):
+    def assess(self, audio: bytes, reference_text: str, locale: str) -> PronunciationScore | None: ...

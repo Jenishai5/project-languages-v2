@@ -305,6 +305,14 @@ The AI agents live inside the backend in `src/langapp/services/agents/`. A rule-
 
 **Cultural Agent (word list and conversations).** "🌍 Culture" under a lesson word, or in the chat header, calls `POST /api/agents/cultural/explain`. It returns how native speakers really use the word, up to three common idioms with their meaning, and a fun fact when a true one exists. The note is the same for every learner at a level, so it is cached.
 
+**Pronunciation Agent (Pronounce step).** "🎯 Score my pronunciation" records three seconds from the microphone. The browser converts the recording to 16 kHz mono WAV (`frontend/src/lib/recordWav.ts`) and sends it to `POST /api/agents/pronunciation/assess`.
+
+- The backend forwards the audio to **Azure Speech Pronunciation Assessment** (`integrations/azure_speech.py`). The key never leaves the server.
+- The learner gets scores for pronunciation, accuracy, fluency and completeness, a score per word, and the weakest sounds. The advice comes from these numbers, with no language model involved: a text model cannot hear sound.
+- Supported: English, Spanish and Catalan. Russian keeps the browser's transcript check, because Azure has no pronunciation assessment for Russian.
+- Each score counts as one AI answer. Azure's free tier (F0) gives 5 audio hours a month.
+- Settings in `.env`: `AZURE_SPEECH_KEY` and `AZURE_SPEECH_REGION` (for example `swedencentral`).
+
 All text agents share one retry helper (`ask_with_retry`): if a free model fails or answers empty, the request is tried once more.
 
 Settings in `.env`:
