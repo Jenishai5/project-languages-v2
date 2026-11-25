@@ -12,6 +12,12 @@ class StorageError(ExternalSourceError):
     pass
 
 
+def auth_headers(key: str) -> dict[str, str]:
+    if key.startswith("sb_secret_"):
+        return {"apikey": key}
+    return {"apikey": key, "Authorization": f"Bearer {key}"}
+
+
 class SupabaseImageStore:
     def __init__(
         self,
@@ -27,7 +33,7 @@ class SupabaseImageStore:
             base_url=self._storage_url,
             timeout=timeout_seconds,
             transport=transport,
-            headers={"apikey": service_role_key, "Authorization": f"Bearer {service_role_key}"},
+            headers=auth_headers(service_role_key),
         )
 
     def close(self) -> None:

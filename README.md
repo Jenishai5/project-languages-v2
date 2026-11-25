@@ -271,7 +271,7 @@ Decisions:
 
 1. Create a key at openrouter.ai → Keys, and put it in `.env` as `OPENROUTER_API_KEY`.
 2. In Supabase: Storage → New bucket → name `mnemonics`, **private**.
-3. In Supabase: Project Settings → API keys → copy the **secret / service_role** key into `.env` as `SUPABASE_SERVICE_ROLE_KEY`.
+3. In Supabase: Project Settings → API Keys → **Secret keys** → copy (or create) a key starting with `sb_secret_` into `.env` as `SUPABASE_SERVICE_ROLE_KEY`. The legacy `service_role` key also works, but Supabase is retiring it by the end of 2026.
 4. `make migrate`, restart `make api`.
 
 Without the OpenRouter key the button answers "AI is not configured"; without the storage key memory tricks are saved without pictures.

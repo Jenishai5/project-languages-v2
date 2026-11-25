@@ -4,7 +4,7 @@ import httpx
 import pytest
 import respx
 
-from langapp.integrations.supabase_storage import StorageError, SupabaseImageStore
+from langapp.integrations.supabase_storage import StorageError, SupabaseImageStore, auth_headers
 
 URL = "https://proj.supabase.test"
 
@@ -58,3 +58,8 @@ def test_upload_failure_raises():
 
 def test_no_paths_means_no_request():
     assert make_store().signed_urls([], 60) == {}
+
+
+def test_new_secret_keys_are_sent_only_as_apikey():
+    assert auth_headers("sb_secret_abc") == {"apikey": "sb_secret_abc"}
+    assert auth_headers("eyJhbGciOi.legacy") == {"apikey": "eyJhbGciOi.legacy", "Authorization": "Bearer eyJhbGciOi.legacy"}
