@@ -245,7 +245,7 @@ browser ──POST /mnemonics──▶ FastAPI ──▶ MnemonicService
                                           ├─ already saved?  → return it (no AI call)
                                           ├─ daily limit reached? → 429
                                           ├─ OpenRouter chat (openrouter/free) → {"mnemonic", "image_prompt"}
-                                          ├─ OpenRouter image (grok-imagine :free) → PNG
+                                          ├─ OpenRouter image (first working model in OPENROUTER_IMAGE_MODEL) → PNG
                                           ├─ Supabase Storage (private bucket) ← PNG
                                           └─ PostgreSQL `mnemonics` row (text, image path, models)
 ```
@@ -260,7 +260,7 @@ browser ──POST /mnemonics──▶ FastAPI ──▶ MnemonicService
 
 Decisions:
 
-- **Free models only.** `openrouter/free` picks any working free text model; images use the free Grok Imagine model.
+- **Free models only.** `openrouter/free` picks any working free text model. `OPENROUTER_IMAGE_MODEL` is a comma-separated list tried in order (default `recraft/recraft-v4.1-flash-v2:free`); free image models are retired often, so add the next one to the list when it appears. A cheap paid model (for example `recraft/recraft-v4.1-flash`) can go last if the account has credits.
   OpenRouter allows 20 free requests a minute and 50 a day per account (1,000 a day after buying $10 of credits once),
   so each learner gets `MNEMONIC_DAILY_LIMIT` (default 5) new memory tricks a day and nothing is ever generated twice.
 - **Graceful fallback.** Free image models come and go. If the picture fails, the text is still saved and the word's emoji is shown.

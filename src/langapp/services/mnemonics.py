@@ -9,7 +9,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from langapp.db.models import Concept, Mnemonic
-from langapp.errors import ExternalSourceError, NotFound, RateLimited, ServiceUnavailable
+from langapp.domain import GeneratedImage
+from langapp.errors import ExternalSourceError, NotFound, RateLimited, ServiceUnavailable, UpstreamRateLimited
 from langapp.repositories.concepts import ConceptRepository
 from langapp.repositories.mnemonics import MnemonicRepository
 from langapp.services.languages import LANGUAGE_NAMES, LanguageCatalog
@@ -40,6 +41,10 @@ class MnemonicSettings:
     image_model: str
     daily_limit: int
     signed_url_seconds: int
+
+    @property
+    def image_models(self) -> list[str]:
+        return [model.strip() for model in self.image_model.split(",") if model.strip()]
 
 
 def mnemonic_messages(word: str, translation: str, learning: str, native: str) -> list[dict]:
@@ -158,14 +163,28 @@ class MnemonicService:
     ) -> tuple[str | None, str | None]:
         if self._images is None or self._store is None:
             return None, None
+        image = self._first_working_image(image_prompt(idea), str(user_id))
+        if image is None:
+            return None, None
         try:
-            image = self._images.generate_image(self._settings.image_model, image_prompt(idea), user=str(user_id))
             path = image_path_for(user_id, concept_id, learning, native, image.media_type)
             self._store.save(path, image.data, image.media_type)
             return path, image.model
         except ExternalSourceError:
-            logger.warning("mnemonic image failed; falling back to the emoji", exc_info=True)
+            logger.warning("mnemonic image could not be saved; falling back to the emoji", exc_info=True)
             return None, None
+
+    def _first_working_image(self, prompt: str, user: str) -> GeneratedImage | None:
+        for model in self._settings.image_models:
+            try:
+                return self._images.generate_image(model, prompt, user=user)
+            except UpstreamRateLimited:
+                logger.warning("image models are rate limited; falling back to the emoji")
+                return None
+            except ExternalSourceError as exc:
+                logger.warning("image model %s failed (%s); trying the next one", model, exc)
+        logger.warning("no image model worked; falling back to the emoji")
+        return None
 
     def _remaining(self, user_id: uuid.UUID) -> int:
         since = self._clock() - timedelta(days=1)

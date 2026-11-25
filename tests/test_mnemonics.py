@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from langapp.api.deps import get_mnemonic_service, get_session, get_token_verifier
 from langapp.api.main import app
 from langapp.domain import ChatReply, GeneratedImage, ParsedConcept
-from langapp.errors import ExternalSourceError, RateLimited, ServiceUnavailable
+from langapp.errors import ExternalSourceError, RateLimited, ServiceUnavailable, UpstreamRateLimited
 from langapp.repositories.concepts import ConceptRepository
 from langapp.repositories.mnemonics import MnemonicRepository
 from langapp.services.languages import LanguageCatalog
@@ -30,13 +30,16 @@ class FakeChat:
 
 
 class FakeImages:
-    def __init__(self, fail: bool = False) -> None:
+    def __init__(self, fail: bool = False, missing: tuple[str, ...] = ()) -> None:
         self.fail = fail
+        self.missing = missing
         self.prompts: list[str] = []
+        self.models: list[str] = []
 
     def generate_image(self, model, prompt, user=None):
         self.prompts.append(prompt)
-        if self.fail:
+        self.models.append(model)
+        if self.fail or model in self.missing:
             raise ExternalSourceError("free image model is gone")
         return GeneratedImage(data=b"png-bytes", media_type="image/png", model=model)
 
@@ -203,3 +206,33 @@ def test_api_requires_login_and_valid_input(api, session_factory):
     unknown = {"concept_id": max(ids.values()) + 99, "learning": "eng", "native": "spa"}
     missing = api.post("/mnemonics", json=unknown, headers=AUTH)
     assert missing.status_code == 404
+
+
+def test_next_image_model_is_tried_when_one_is_gone(session_factory):
+    ids = seed_concepts(session_factory)
+    images = FakeImages(missing=("old:free",))
+    settings = MnemonicSettings(text_model="t", image_model="old:free, new:free", daily_limit=5, signed_url_seconds=60)
+
+    with session_factory.begin() as session:
+        result = make_service(session, FakeChat(REPLY), images, FakeStore(), settings).create(USER.id, ids["paper"], "eng", "spa")
+
+    assert images.models == ["old:free", "new:free"]
+    assert result["image_url"] is not None
+
+
+class RateLimitedImages(FakeImages):
+    def generate_image(self, model, prompt, user=None):
+        self.models.append(model)
+        raise UpstreamRateLimited("busy")
+
+
+def test_rate_limit_stops_trying_other_image_models(session_factory):
+    ids = seed_concepts(session_factory)
+    images = RateLimitedImages()
+    settings = MnemonicSettings(text_model="t", image_model="a:free,b:free", daily_limit=5, signed_url_seconds=60)
+
+    with session_factory.begin() as session:
+        result = make_service(session, FakeChat(REPLY), images, FakeStore(), settings).create(USER.id, ids["paper"], "eng", "spa")
+
+    assert images.models == ["a:free"]
+    assert result["image_url"] is None

@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     openrouter_api_key: str | None = None
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     openrouter_text_model: str = "openrouter/free"
-    openrouter_image_model: str = "x-ai/grok-imagine-image-quality:free"
+    openrouter_image_model: str = "recraft/recraft-v4.1-flash-v2:free"
     openrouter_timeout_seconds: float = 120.0
     openrouter_app_title: str = "TurtleTalk"
 
