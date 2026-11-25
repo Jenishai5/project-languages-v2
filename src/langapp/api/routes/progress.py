@@ -1,10 +1,12 @@
 from fastapi import APIRouter
 
-from langapp.api.deps import CurrentUser, ProgressServiceDep
+from langapp.api.deps import CurrentUser, LearnerServiceDep, ProgressServiceDep
 from langapp.api.schemas import (
+    ErrorOut,
     LessonProgressMap,
     LessonProgressOut,
     LessonResultIn,
+    LessonWordResultIn,
     ProgressSavedOut,
     SentenceProgressMap,
     SentenceProgressOut,
@@ -29,6 +31,11 @@ def save_sentence_result(body: SentenceResultIn, user: CurrentUser, service: Pro
 @router.post("/word", response_model=ProgressSavedOut)
 def save_word_result(body: WordResultIn, user: CurrentUser, service: ProgressServiceDep) -> ProgressSavedOut:
     return _saved(service.record(user.id, ItemType.WORD, word_key(body.language, body.lemma), body.correct))
+
+
+@router.post("/lesson-word", response_model=ProgressSavedOut, responses={404: {"model": ErrorOut}})
+def save_lesson_word_result(body: LessonWordResultIn, user: CurrentUser, learner: LearnerServiceDep) -> dict:
+    return learner.record_word(user.id, body.concept_id, body.learning, body.correct)
 
 
 @router.post("/lesson", response_model=ProgressSavedOut)

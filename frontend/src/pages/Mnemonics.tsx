@@ -48,7 +48,7 @@ export default function Mnemonics() {
         )}
 
         {list && cards.length > 0 && practising && (
-          <Flashcards cards={cards} learning={settings.learning_lang} onExit={() => setPractice(false)} />
+          <Flashcards cards={cards} learning={settings.learning_lang} native={settings.native_lang} onExit={() => setPractice(false)} />
         )}
 
         {list && cards.length > 0 && !practising && (

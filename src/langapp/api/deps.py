@@ -25,8 +25,10 @@ from langapp.repositories.word_pairs import WordPairRepository
 from langapp.services.agents.base import model_list
 from langapp.services.agents.grammar import GrammarAgent
 from langapp.services.agents.orchestrator import AgentLimits, AgentOrchestrator, ReplyCache
+from langapp.services.agents.vocabulary import VocabularyAgent
 from langapp.services.games import GameService
 from langapp.services.languages import LanguageCatalog
+from langapp.services.learner import LearnerService
 from langapp.services.lessons import LessonService
 from langapp.services.mnemonics import MnemonicService, MnemonicSettings
 from langapp.services.progress import ProgressService
@@ -144,39 +146,57 @@ def get_agent_gate() -> threading.BoundedSemaphore:
     return threading.BoundedSemaphore(max(1, get_settings().agent_max_concurrent))
 
 
+def _agent_settings() -> tuple[tuple[str, ...], int]:
+    settings = get_settings()
+    return model_list(settings.agent_models, settings.openrouter_text_model), settings.agent_max_tokens
+
+
 def get_grammar_agent(
     openrouter: Annotated[OpenRouterClient | None, Depends(get_openrouter)],
 ) -> GrammarAgent | None:
     if openrouter is None:
         return None
-    settings = get_settings()
-    return GrammarAgent(
-        openrouter,
-        model_list(settings.agent_models, settings.openrouter_text_model),
-        max_tokens=settings.agent_max_tokens,
-    )
+    models, max_tokens = _agent_settings()
+    return GrammarAgent(openrouter, models, max_tokens=max_tokens)
+
+
+def get_vocabulary_agent(
+    openrouter: Annotated[OpenRouterClient | None, Depends(get_openrouter)],
+) -> VocabularyAgent | None:
+    if openrouter is None:
+        return None
+    models, max_tokens = _agent_settings()
+    return VocabularyAgent(openrouter, models, max_tokens=max_tokens)
 
 
 def get_agent_orchestrator(
     session: SessionDep,
     sentences: SentenceRepoDep,
     grammar: Annotated[GrammarAgent | None, Depends(get_grammar_agent)],
+    vocabulary: Annotated[VocabularyAgent | None, Depends(get_vocabulary_agent)],
     cache: Annotated[ReplyCache, Depends(get_reply_cache)],
     gate: Annotated[threading.BoundedSemaphore, Depends(get_agent_gate)],
 ) -> AgentOrchestrator:
     settings = get_settings()
     return AgentOrchestrator(
         sentences,
+        ConceptRepository(session),
         UserSettingsRepository(session),
         LearningOutcomeRepository(session),
         AiUsageRepository(session),
         grammar=grammar,
+        vocabulary=vocabulary,
         cache=cache,
         gate=gate,
         limits=AgentLimits(daily_limit=settings.agent_daily_limit, wait_seconds=settings.agent_wait_seconds),
     )
 
 
+def get_learner_service(session: SessionDep) -> LearnerService:
+    return LearnerService(ProgressRepository(session), ConceptRepository(session), LessonRepository(session))
+
+
+LearnerServiceDep = Annotated[LearnerService, Depends(get_learner_service)]
 AgentOrchestratorDep = Annotated[AgentOrchestrator, Depends(get_agent_orchestrator)]
 
 

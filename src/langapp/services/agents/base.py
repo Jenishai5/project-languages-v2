@@ -1,3 +1,4 @@
+import json
 import uuid
 from dataclasses import dataclass
 
@@ -26,3 +27,18 @@ class LearnerContext:
 def model_list(configured: str, fallback: str) -> tuple[str, ...]:
     names = tuple(name.strip() for name in configured.split(",") if name.strip())
     return names or ((fallback,) if fallback else ())
+
+
+def clip(value: object, limit: int) -> str:
+    return str(value).strip()[:limit] if isinstance(value, str | int | float) else ""
+
+
+def json_object(text: str) -> dict | None:
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end <= start:
+        return None
+    try:
+        data = json.loads(text[start : end + 1])
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) else None

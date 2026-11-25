@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from langapp.errors import ExternalSourceError, UpstreamRateLimited
-from langapp.services.agents.base import LearnerContext
+from langapp.services.agents.base import LearnerContext, clip, json_object
 from langapp.services.ports import JsonChatModel
 
 AGENT = "grammar"
@@ -49,38 +49,23 @@ def build_messages(context: LearnerContext, target: str, answer: str, meaning: s
     ]
 
 
-def _clip(value: object, limit: int) -> str:
-    return str(value).strip()[:limit] if isinstance(value, str | int | float) else ""
-
-
-def _json_object(text: str) -> dict | None:
-    start, end = text.find("{"), text.rfind("}")
-    if start < 0 or end <= start:
-        return None
-    try:
-        data = json.loads(text[start : end + 1])
-    except ValueError:
-        return None
-    return data if isinstance(data, dict) else None
-
-
 def parse_feedback(text: str, model: str | None = None, tokens: int | None = None) -> GrammarFeedback:
-    data = _json_object(text)
+    data = json_object(text)
     if data is None:
-        return GrammarFeedback(explanation=_clip(text, 600), model=model, tokens=tokens)
+        return GrammarFeedback(explanation=clip(text, 600), model=model, tokens=tokens)
 
     mistakes = []
     for item in data.get("mistakes") or []:
         if not isinstance(item, dict):
             continue
-        mistake = Mistake(_clip(item.get("wrong"), 120), _clip(item.get("right"), 120), _clip(item.get("why"), 300))
+        mistake = Mistake(clip(item.get("wrong"), 120), clip(item.get("right"), 120), clip(item.get("why"), 300))
         if mistake.wrong or mistake.right or mistake.why:
             mistakes.append(mistake)
 
     return GrammarFeedback(
-        explanation=_clip(data.get("explanation"), 600),
+        explanation=clip(data.get("explanation"), 600),
         mistakes=tuple(mistakes[:MAX_MISTAKES]),
-        tip=_clip(data.get("tip"), 200) or None,
+        tip=clip(data.get("tip"), 200) or None,
         model=model,
         tokens=tokens,
     )

@@ -3,6 +3,8 @@ import { shuffle } from "../../lib/lessonUtils";
 import { SPEECH_LANG, type LangCode } from "../../lib/lessonsApi";
 import type { Mnemonic } from "../../lib/mnemonicsApi";
 import { getRecognition, heardWord, transcriptsOf, typedAnswerMatches, type Recognition } from "../../lib/speech";
+import { saveLessonWordResult } from "../../lib/progressService";
+import WordHelpPanel from "../agents/WordHelpPanel";
 
 type Mode = "say" | "type";
 type Result = "correct" | "wrong" | null;
@@ -10,10 +12,11 @@ type Result = "correct" | "wrong" | null;
 interface FlashcardsProps {
   cards:    Mnemonic[];
   learning: LangCode;
+  native?:  LangCode;
   onExit:   () => void;
 }
 
-export default function Flashcards({ cards, learning, onExit }: FlashcardsProps) {
+export default function Flashcards({ cards, learning, native, onExit }: FlashcardsProps) {
   const deck = useMemo(() => shuffle(cards), [cards]);
   const Recognizer = getRecognition();
 
@@ -35,6 +38,7 @@ export default function Flashcards({ cards, learning, onExit }: FlashcardsProps)
   const answer = (correct: boolean) => {
     setResult(correct ? "correct" : "wrong");
     if (correct) setScore(s => s + 1);
+    saveLessonWordResult(card.concept_id, learning, correct).catch(() => {});
     setFlipped(true);
   };
 
@@ -139,9 +143,14 @@ export default function Flashcards({ cards, learning, onExit }: FlashcardsProps)
           <button className="link-btn self-start" onClick={() => setFlipped(true)}>Flip the card</button>
         </div>
       ) : (
-        <div className="row">
-          {result && <p className="feedback grow" data-state={result} role="status">{result === "correct" ? "Well done!" : "Not quite. Look at the back."}</p>}
-          <button className="btn btn--primary" onClick={next}>{index + 1 >= deck.length ? "See results" : "Next card"}</button>
+        <div className="stack">
+          {native && (
+            <WordHelpPanel key={card.id} conceptId={card.concept_id} learning={learning} native={native} label="More examples with this word" />
+          )}
+          <div className="row">
+            {result && <p className="feedback grow" data-state={result} role="status">{result === "correct" ? "Well done!" : "Not quite. Look at the back."}</p>}
+            <button className="btn btn--primary" onClick={next}>{index + 1 >= deck.length ? "See results" : "Next card"}</button>
+          </div>
         </div>
       )}
     </section>

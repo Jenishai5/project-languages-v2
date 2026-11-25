@@ -188,3 +188,42 @@ test("build step offers an AI explanation for a wrong order", async () => {
   expect(body).toEqual({ sentence_id: 4, answer: ["doctor", "the", "Call"], learning: "eng", native: "spa" });
   vi.unstubAllGlobals();
 });
+
+test("match step saves word results and shows the hardest words with help", async () => {
+  const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<{ ok: boolean; json: () => Promise<unknown> }>>(async url => ({
+    ok:   true,
+    json: async () => url.includes("/vocabulary/weak")
+      ? { words: [{ concept_id: 1, slug: "doctor", word: "doctor", translation: "el médico", emoji: null, attempts: 2, correct: 1 }] }
+      : url.includes("/vocabulary/help")
+        ? { concept_id: 1, word: "doctor", translation: "el médico", available: true, cached: false, message: null, remaining_today: 20,
+            examples: [{ sentence: "The doctor is kind.", translation: "El médico es amable." }], synonyms: ["physician"], antonyms: [], tip: "Piensa en la bata blanca." }
+        : {},
+  }));
+  vi.stubGlobal("fetch", fetchMock);
+  const words = [
+    { concept_id: 1, slug: "doctor", word: "doctor", translation: "el médico", emoji: null, image_url: null },
+    { concept_id: 2, slug: "paper", word: "paper", translation: "el papel", emoji: null, image_url: null },
+  ];
+  render(<MatchStep words={words} learning="eng" native="spa" lessonId={7} onDone={vi.fn()} />);
+
+  fireEvent.click(screen.getByText("doctor"));
+  fireEvent.click(screen.getByText("el papel"));
+  fireEvent.click(screen.getByText("doctor"));
+  fireEvent.click(screen.getByText("el médico"));
+  fireEvent.click(screen.getByText("paper"));
+  fireEvent.click(screen.getByText("el papel"));
+
+  expect(await screen.findByText("Your hardest words")).toBeInTheDocument();
+  const saved = fetchMock.mock.calls.filter(([url]) => url === "/api/progress/lesson-word").map(([, init]) => JSON.parse(String(init?.body)));
+  expect(saved).toEqual([
+    { concept_id: 1, learning: "eng", correct: false },
+    { concept_id: 1, learning: "eng", correct: true },
+    { concept_id: 2, learning: "eng", correct: true },
+  ]);
+  expect(fetchMock.mock.calls.some(([url]) => String(url).includes("lesson_id=7"))).toBe(true);
+
+  fireEvent.click(screen.getByText("Help me remember"));
+  expect(await screen.findByText("The doctor is kind.")).toBeInTheDocument();
+  expect(screen.getByText("physician")).toBeInTheDocument();
+  vi.unstubAllGlobals();
+});

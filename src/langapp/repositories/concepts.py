@@ -57,3 +57,9 @@ class ConceptRepository:
     def get_with_terms(self, concept_id: int) -> Concept | None:
         stmt = select(Concept).options(selectinload(Concept.terms)).where(Concept.id == concept_id)
         return self.session.scalars(stmt).first()
+
+    def with_terms_by_slugs(self, slugs: Sequence[str]) -> list[Concept]:
+        if not slugs:
+            return []
+        stmt = select(Concept).options(selectinload(Concept.terms)).where(Concept.slug.in_(slugs))
+        return list(self.session.scalars(stmt))

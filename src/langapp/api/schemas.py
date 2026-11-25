@@ -287,3 +287,48 @@ class GrammarCheckOut(BaseModel):
     cached: bool
     message: str | None
     remaining_today: int
+
+
+class WordHelpIn(BaseModel):
+    concept_id: int
+    learning: str = Field(pattern=LANG_PATTERN)
+    native: str = Field(pattern=LANG_PATTERN)
+
+
+class ExampleOut(BaseModel):
+    sentence: str
+    translation: str
+
+
+class WordHelpOut(BaseModel):
+    concept_id: int
+    word: str
+    translation: str
+    available: bool
+    examples: list[ExampleOut]
+    synonyms: list[str]
+    antonyms: list[str]
+    tip: str | None
+    cached: bool
+    message: str | None
+    remaining_today: int
+
+
+class WeakWordOut(BaseModel):
+    concept_id: int
+    slug: str
+    word: str
+    translation: str
+    emoji: str | None
+    attempts: int
+    correct: int
+
+
+class WeakWordsOut(BaseModel):
+    words: list[WeakWordOut]
+
+
+class LessonWordResultIn(BaseModel):
+    concept_id: int
+    learning: str = Field(pattern=LANG_PATTERN)
+    correct: bool

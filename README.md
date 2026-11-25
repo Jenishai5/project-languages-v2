@@ -290,6 +290,13 @@ The AI agents live inside the backend in `src/langapp/services/agents/`. A rule-
 - The same mistake is explained once and then served from a cache.
 - Each mistake is saved in `learning_outcomes`, and each AI call is counted in `ai_usage`. Chat text is never saved.
 
+**Vocabulary Agent (Match and picture cards).** Lesson Match and the picture-card game now save a result for every word through `POST /api/progress/lesson-word` (`user_progress`, key `eng:doctor`).
+
+- `GET /api/agents/vocabulary/weak` lists the words a learner gets wrong most often. It is plain SQL, with no AI call.
+- After a Match round with mistakes, "Your hardest words" shows them. "Help me remember" calls `POST /api/agents/vocabulary/help`, which returns three easy example sentences with translations, similar and opposite words, and a memory tip.
+- The answer depends only on the word, the languages and the level, so it is cached and shared by all learners.
+- On the back of a picture card, "More examples with this word" uses the same agent.
+
 Settings in `.env`:
 
 ```

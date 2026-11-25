@@ -52,3 +52,11 @@ class ProgressRepository:
             .order_by(UserProgress.last_attempted_at.desc())
         )
         return list(self.session.scalars(stmt))
+
+    def word_results(self, user_id: uuid.UUID, key_prefix: str) -> list[UserProgress]:
+        stmt = select(UserProgress).where(
+            UserProgress.user_id == user_id,
+            UserProgress.item_type == ItemType.WORD,
+            UserProgress.item_key.startswith(key_prefix, autoescape=True),
+        )
+        return list(self.session.scalars(stmt))

@@ -12,6 +12,7 @@ from langapp.db.models import UserSettings
 from langapp.domain import ChatReply, ParsedSentence, ParsedTranslation
 from langapp.errors import ExternalSourceError, InvalidRequest, RateLimited, ServiceUnavailable, UpstreamRateLimited
 from langapp.repositories.ai_usage import AiUsageRepository
+from langapp.repositories.concepts import ConceptRepository
 from langapp.repositories.outcomes import LearningOutcomeRepository
 from langapp.repositories.sentences import SentenceRepository
 from langapp.repositories.user_settings import UserSettingsRepository
@@ -60,10 +61,12 @@ def make_orchestrator(session, chat: FakeChat | None, cache=None, gate=None, lim
     grammar = GrammarAgent(chat, ("tiny:free", "backup:free")) if chat else None
     return AgentOrchestrator(
         SentenceRepository(session),
+        ConceptRepository(session),
         UserSettingsRepository(session),
         LearningOutcomeRepository(session),
         AiUsageRepository(session),
         grammar=grammar,
+        vocabulary=None,
         cache=cache or ReplyCache(),
         gate=gate or threading.BoundedSemaphore(2),
         limits=AgentLimits(daily_limit=limit, wait_seconds=0.01),

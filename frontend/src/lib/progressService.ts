@@ -25,6 +25,15 @@ export async function saveWordResult(lemma: string, language: string, correct: b
   });
 }
 
+export async function saveLessonWordResult(conceptId: number, learning: string, correct: boolean): Promise<void> {
+  const res = await fetch('/api/progress/lesson-word', {
+    method:  'POST',
+    headers: await authHeaders(),
+    body:    JSON.stringify({ concept_id: conceptId, learning, correct }),
+  });
+  if (!res.ok) throw new Error(`Could not save the word result (${res.status})`);
+}
+
 export async function getAllSentenceProgress(): Promise<Record<string, { correct: number; attempts: number; updated_at: string }>> {
   const res  = await fetch('/api/progress/sentences', { headers: await authHeaders() });
   const data = await res.json();
