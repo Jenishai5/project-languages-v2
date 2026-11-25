@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import threading
+import time
 import uuid
 from collections import Counter, OrderedDict
 from collections.abc import Callable
@@ -69,6 +70,10 @@ def cache_key(*parts: str) -> str:
     return hashlib.sha256("␟".join(parts).encode("utf-8")).hexdigest()
 
 
+def _ms(started: float) -> int:
+    return round((time.perf_counter() - started) * 1000)
+
+
 def start_of_day(now: datetime) -> datetime:
     return now.astimezone(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -106,6 +111,16 @@ class AgentOrchestrator:
         row = self._user_settings.get_settings(user_id)
         level = row.level if row is not None and row.level else DEFAULT_LEVEL
         return LearnerContext(user_id=user_id, learning=learning, native=native, level=level)
+
+    def usage_today(self, user_id: uuid.UUID) -> dict:
+        by_agent = self._usage.by_agent_since(user_id, start_of_day(self._clock()))
+        used = sum(by_agent.values())
+        return {
+            "daily_limit": self._limits.daily_limit,
+            "used_today": used,
+            "remaining_today": max(0, self._limits.daily_limit - used),
+            "by_agent": by_agent,
+        }
 
     def remaining_today(self, user_id: uuid.UUID) -> int:
         used = self._usage.count_since(user_id, start_of_day(self._clock()))
@@ -225,18 +240,22 @@ class AgentOrchestrator:
             raise RateLimited(f"You have used today's {self._limits.daily_limit} AI answers. Come back tomorrow.")
         if not self._gate.acquire(timeout=self._limits.wait_seconds):
             raise ServiceUnavailable("Many learners are asking right now. Try again in a moment.")
+        started = time.perf_counter()
         try:
             value = call(agent)
         except UpstreamRateLimited:
+            logger.info("agent=%s model=%s ok=rate_limited ms=%d", name, agent.primary_model, _ms(started))
             raise
         except ExternalSourceError as exc:
-            logger.warning("%s agent failed: %s", name, exc)
+            logger.warning("agent=%s model=%s ok=false ms=%d reason=%s", name, agent.primary_model, _ms(started), exc)
             self._usage.log(context.user_id, name, agent.primary_model, succeeded=False)
             return Answer(message=f"The AI teacher could not answer this time ({exc}). Try again later.")
         finally:
             self._gate.release()
 
-        self._usage.log(context.user_id, name, value.model or agent.primary_model, True, value.tokens)
+        model = value.model or agent.primary_model
+        logger.info("agent=%s model=%s ok=true ms=%d tokens=%s", name, model, _ms(started), value.tokens)
+        self._usage.log(context.user_id, name, model, True, value.tokens)
         if not usable(value):
             return Answer(message="The AI teacher sent an empty answer. Try again later.")
         if key:

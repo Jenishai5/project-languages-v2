@@ -10,6 +10,7 @@ from langapp.api.deps import (
     PronunciationServiceDep,
 )
 from langapp.api.schemas import (
+    AiUsageTodayOut,
     ConversationFinishIn,
     ConversationReplyOut,
     ConversationStartIn,
@@ -33,6 +34,11 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 
 AGENT_ERRORS = {code: {"model": ErrorOut} for code in (400, 404, 429, 503)}
 LangQuery = Annotated[str, Query(pattern=LANG_PATTERN)]
+
+
+@router.get("/usage", response_model=AiUsageTodayOut)
+def usage_today(user: CurrentUser, agents: AgentOrchestratorDep) -> dict:
+    return agents.usage_today(user.id)
 
 
 @router.post("/grammar/check", response_model=GrammarCheckOut, responses=AGENT_ERRORS)

@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -7,6 +8,14 @@ from langapp.api.routes import agents, games, lessons, mnemonics, progress, sent
 from langapp.errors import AppError
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+
+app_logger = logging.getLogger("langapp")
+if not app_logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    app_logger.addHandler(handler)
+    app_logger.setLevel(logging.INFO)
+    app_logger.propagate = False
 
 app = FastAPI(
     title="Language App API",

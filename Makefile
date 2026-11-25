@@ -1,8 +1,11 @@
-.PHONY: install db migrate import import-builder import-words import-concepts build-lessons api frontend test down lint
+.PHONY: install install-mcp db migrate import import-builder import-words import-concepts build-lessons api frontend test down lint ai-usage mcp
 
 install:
 	python3 -m venv .venv
 	.venv/bin/pip install -e ".[dev]"
+
+install-mcp:
+	.venv/bin/pip install -e ".[dev,mcp]"
 
 db:
 	docker compose up -d --wait
@@ -36,6 +39,12 @@ test:
 
 lint:
 	.venv/bin/ruff check src tests
+
+ai-usage:
+	.venv/bin/python -m langapp.cli ai-usage --days $(or $(DAYS),7)
+
+mcp:
+	.venv/bin/python -m langapp.mcp_server
 
 down:
 	docker compose down

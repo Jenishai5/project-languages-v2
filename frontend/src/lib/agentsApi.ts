@@ -173,3 +173,14 @@ export async function assessPronunciation(learning: LangCode, text: string, audi
   headers.set("Content-Type", "audio/wav");
   return getJson<PronunciationResult>(`/api/agents/pronunciation/assess?${params}`, { method: "POST", headers, body: audio });
 }
+
+export interface AiUsageToday {
+  used_today:      number;
+  daily_limit:     number;
+  remaining_today: number;
+  by_agent:        Record<string, number>;
+}
+
+export async function fetchAiUsage(): Promise<AiUsageToday> {
+  return getJson<AiUsageToday>("/api/agents/usage", { headers: await authHeaders() });
+}

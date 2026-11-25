@@ -24,6 +24,9 @@ dev = [
     "respx>=0.21",
     "ruff>=0.6",
 ]
+mcp = [
+    "mcp>=2.3",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

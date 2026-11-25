@@ -428,3 +428,10 @@ class PronunciationOut(BaseModel):
 
 class PronunciationSupportOut(BaseModel):
     supported: bool
+
+
+class AiUsageTodayOut(BaseModel):
+    daily_limit: int
+    used_today: int
+    remaining_today: int
+    by_agent: dict[str, int]

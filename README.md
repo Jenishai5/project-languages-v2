@@ -325,6 +325,38 @@ AGENT_MAX_CONCURRENT=4
 
 `AGENT_MODELS` is a list in priority order; OpenRouter tries the next one when a model fails. When it is empty, `OPENROUTER_TEXT_MODEL` is used. The learner's level comes from `user_settings.level` (A1 when empty).
 
+## Monitoring, cost and developer tools
+
+**AI usage report.** Every AI answer is counted in `ai_usage` (agent, model, success, tokens). No learner text is stored there.
+
+```
+make ai-usage            # last 7 days, all learners
+make ai-usage DAYS=30
+```
+
+The table shows calls, failures, tokens and learners per day, agent and model, with a total failure rate at the end. On the dashboard, each learner sees "AI answers today: X of 30" (`GET /api/agents/usage`).
+
+**Timing logs.** Each agent call writes one log line, for example `agent=grammar model=... ok=true tokens=210 ms=1840`. The line has no user id, no words and no sentences, so logs are safe to share.
+
+**Read-only MCP server (for development).** `src/langapp/mcp_server.py` lets Claude Code read learning data while you work on the app. All five tools are read-only, and the database session itself is opened with `SET TRANSACTION READ ONLY`:
+
+| Tool | What it returns |
+|---|---|
+| `list_lessons` | Lessons for a language pair |
+| `get_lesson_words` | The 10 words of a lesson |
+| `get_weak_vocabulary` | A learner's most-missed words |
+| `get_learning_history` | A learner's saved outcomes (never chat text) |
+| `get_ai_usage` | The AI usage report |
+
+```
+make install-mcp
+claude mcp add turtletalk -- "$(pwd)/.venv/bin/python" -m langapp.mcp_server
+```
+
+The server runs locally over stdio and is not part of the deployed app.
+
+**Continuous integration.** `.github/workflows/ci.yml` runs on every push and pull request. The backend job starts PostgreSQL, runs ruff and all pytest tests. The frontend job runs vitest and the production build. Tests never call real AI or speech services: those calls are mocked.
+
 ## Tests
 
 ```bash

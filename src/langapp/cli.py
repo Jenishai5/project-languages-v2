@@ -8,6 +8,7 @@ from langapp.db.session import get_session_factory
 from langapp.ingestion.tatoeba_client import TatoebaClient
 from langapp.repositories.concepts import ConceptRepository
 from langapp.services.import_service import SentenceImporter
+from langapp.services.insights import Insights
 from langapp.services.lesson_builder import LessonSentenceBuilder, import_concepts
 from langapp.services.word_import import import_word_files
 
@@ -41,6 +42,9 @@ def build_parser() -> argparse.ArgumentParser:
     image.add_argument("slug", help="concept slug, e.g. doctor")
     image.add_argument("url", help="where the image is stored")
     image.add_argument("--approve", action="store_true", help="show it to learners")
+
+    usage = commands.add_parser("ai-usage", help="Show AI calls per day, agent and model")
+    usage.add_argument("--days", type=int, default=7, help="how many days back")
     return parser
 
 
@@ -130,6 +134,27 @@ def run_set_image(slug: str, url: str, approve: bool) -> int:
     return 0
 
 
+def format_usage(rows: list[dict]) -> str:
+    if not rows:
+        return "No AI calls in this period."
+    header = f"{'day':<11} {'agent':<14} {'model':<40} {'calls':>5} {'failed':>6} {'tokens':>7} {'learners':>8}"
+    lines = [header, "-" * len(header)]
+    for row in rows:
+        lines.append(
+            f"{row['day']:<11} {row['agent']:<14} {row['model'][:40]:<40} {row['calls']:>5} "
+            f"{row['failures']:>6} {row['tokens']:>7} {row['learners']:>8}"
+        )
+    calls = sum(row["calls"] for row in rows)
+    failed = sum(row["failures"] for row in rows)
+    lines.append(f"Total: {calls} calls, {failed} failed ({failed / calls:.0%}).")
+    return "\n".join(lines)
+
+
+def run_ai_usage(days: int) -> int:
+    print(format_usage(Insights(get_session_factory()).ai_usage(days)))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -140,6 +165,7 @@ def main(argv: list[str] | None = None) -> int:
         "import-concepts": lambda: run_import_concepts(args.words_per_lesson),
         "build-lessons": lambda: run_build_lessons(args.learning, args.natives, args.lessons, args.per_word),
         "set-image": lambda: run_set_image(args.slug, args.url, args.approve),
+        "ai-usage": lambda: run_ai_usage(args.days),
     }
     return commands[args.command]()
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguages } from "../hooks/useLanguages";
+import { fetchAiUsage, type AiUsageToday } from "../lib/agentsApi";
 import { fetchLessonProgress, fetchLessons, type LessonSummary } from "../lib/lessonsApi";
 
 interface PracticeLinkProps { heading: string; sub: string; tone?: "pink" | "mint" | "lime"; onClick: () => void; }
@@ -20,6 +21,13 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { settings } = useLanguages();
   const [path, setPath] = useState<PathState | null>(null);
+  const [usage, setUsage] = useState<AiUsageToday | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAiUsage().then(data => { if (!cancelled) setUsage(data); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +58,11 @@ export default function Dashboard() {
         <div className="container page-header__inner">
           <p className="eyebrow">Welcome back</p>
           <h1 className="display">Ready to <em>learn</em>?</h1>
+          {usage && (
+            <p className="small ai-usage" aria-live="polite">
+              AI answers today: {usage.used_today} of {usage.daily_limit}
+            </p>
+          )}
         </div>
       </header>
 
