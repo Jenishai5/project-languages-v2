@@ -2,7 +2,7 @@ import { useOutletContext, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthModal from "../components/organisms/AuthModal";
 import Flag from "../components/atoms/Flag";
-import TranslationJourney from "../components/TranslationJourney";
+import LanguageMorph from "../components/morph/LanguageMorph";
 
 const TRAININGS = [
   { name: "Match", hint: "Word and translation" },
@@ -73,7 +73,7 @@ export default function Landing() {
           </div>
         </div>
         <div className="container">
-          <TranslationJourney />
+          <LanguageMorph />
         </div>
       </section>
 
