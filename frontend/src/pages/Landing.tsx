@@ -2,6 +2,7 @@ import { useOutletContext, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthModal from "../components/organisms/AuthModal";
 import Flag from "../components/atoms/Flag";
+import TranslationJourney from "../components/TranslationJourney";
 
 const TRAININGS = [
   { name: "Match", hint: "Word and translation" },
@@ -52,8 +53,6 @@ export default function Landing() {
                 <div className="float__row"><b>RU</b>врач</div>
               </div>
             </div>
-            <div className="float float--bubble float--es">¿Cómo estás?</div>
-            <div className="float float--bubble float--ru">Как дела?</div>
             <div className="float float--sentence stack">
               <span className="eyebrow">Put it back together</span>
               <div className="row">
@@ -72,6 +71,9 @@ export default function Landing() {
               <span>Say “el papel”</span>
             </div>
           </div>
+        </div>
+        <div className="container">
+          <TranslationJourney />
         </div>
       </section>
 
