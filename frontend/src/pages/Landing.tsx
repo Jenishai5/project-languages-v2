@@ -1,6 +1,7 @@
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthModal from "../components/organisms/AuthModal";
+import Flag from "../components/atoms/Flag";
 
 const TRAININGS = [
   { name: "Match", hint: "Word and translation" },
@@ -112,11 +113,11 @@ export default function Landing() {
 
       <section className="container quote-band">
         <blockquote>“The same word, three ways: <em>doctor</em>, el médico, врач.”</blockquote>
-        <div className="row">
-          <span className="badge badge--en">EN · English</span>
-          <span className="badge badge--es">ES · Español</span>
-          <span className="badge badge--ru">RU · Русский</span>
-        </div>
+        <ul className="flag-list">
+          <li className="flag-chip"><Flag lang="eng" size={56} /><span>English</span></li>
+          <li className="flag-chip"><Flag lang="spa" size={56} /><span>Español</span></li>
+          <li className="flag-chip"><Flag lang="rus" size={56} /><span>Русский</span></li>
+        </ul>
       </section>
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}

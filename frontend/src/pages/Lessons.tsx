@@ -8,6 +8,7 @@ import {
   type Language,
   type LessonSummary,
 } from "../lib/lessonsApi";
+import Flag from "../components/atoms/Flag";
 
 export default function Lessons() {
   const navigate = useNavigate();
@@ -63,15 +64,21 @@ export default function Lessons() {
           <div className="lang-picker">
             <label className="field">
               <span className="field__label">I speak</span>
-              <select className="select" value={settings.native_lang} onChange={e => choose("native_lang", e.target.value)}>
-                {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
-              </select>
+              <span className="lang-select">
+                <Flag lang={settings.native_lang} size={44} />
+                <select className="select" value={settings.native_lang} onChange={e => choose("native_lang", e.target.value)}>
+                  {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+                </select>
+              </span>
             </label>
             <label className="field">
               <span className="field__label">I want to learn</span>
-              <select className="select" value={settings.learning_lang} onChange={e => choose("learning_lang", e.target.value)}>
-                {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
-              </select>
+              <span className="lang-select">
+                <Flag lang={settings.learning_lang} size={44} />
+                <select className="select" value={settings.learning_lang} onChange={e => choose("learning_lang", e.target.value)}>
+                  {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
+                </select>
+              </span>
             </label>
           </div>
         </section>
