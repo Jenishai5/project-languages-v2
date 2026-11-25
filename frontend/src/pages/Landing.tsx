@@ -22,13 +22,11 @@ export default function Landing() {
       <section className="hero grid-bg">
         <div className="container hero__inner">
           <div className="hero__copy">
-            <p className="eyebrow hero__kicker">
-              <span className="hero__lang"><Flag lang="eng" size={28} />English</span>
-              <span aria-hidden="true">·</span>
-              <span className="hero__lang"><Flag lang="spa" size={28} />Español</span>
-              <span aria-hidden="true">·</span>
-              <span className="hero__lang"><Flag lang="rus" size={28} />Русский</span>
-            </p>
+            <ul className="hero__langs" aria-label="Languages">
+              <li className="hero__lang"><span className="spin"><Flag lang="eng" size={48} /></span>English</li>
+              <li className="hero__lang"><span className="spin"><Flag lang="spa" size={48} /></span>Español</li>
+              <li className="hero__lang"><span className="spin"><Flag lang="rus" size={48} /></span>Русский</li>
+            </ul>
             <h1 className="display">
               Ten words today.<br />A <em>conversation</em><br />tomorrow.
             </h1>
