@@ -81,7 +81,7 @@ export default function Landing() {
 
       <section className="container ways-section">
         <div className="section-head">
-          <h2 className="h1">Two ways to learn.<br />One set of words.</h2>
+          <h2 className="h1">Learn your way.<br />Same words, two paths.</h2>
           <p className="lead">Follow the path lesson by lesson, or drop into free practice whenever you have five minutes.</p>
         </div>
         <div className="ways">
