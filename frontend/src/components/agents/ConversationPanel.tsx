@@ -11,6 +11,24 @@ import { SPEECH_LANG } from "../../lib/lessonsApi";
 import type { Mnemonic } from "../../lib/mnemonicsApi";
 import { getRecognition, transcriptsOf, type Recognition } from "../../lib/speech";
 
+const VOICE_KEY = "turtletalk.chat-voice";
+
+function voicePreference(): boolean {
+  try {
+    return localStorage.getItem(VOICE_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+function saveVoicePreference(on: boolean): void {
+  try {
+    localStorage.setItem(VOICE_KEY, on ? "on" : "off");
+  } catch {
+    return;
+  }
+}
+
 interface Message {
   role:        "user" | "assistant";
   text:        string;
@@ -39,6 +57,8 @@ export default function ConversationPanel({
   const [left, setLeft]         = useState<number | null>(null);
   const [listening, setListening] = useState(false);
   const [summary, setSummary]   = useState<ConversationSummary | null>(null);
+  const [voiceOn, setVoiceOn]   = useState(voicePreference);
+  const voiceRef = useRef(voiceOn);
   const started = useRef(false);
   const recognition = useRef<Recognition | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
@@ -49,12 +69,15 @@ export default function ConversationPanel({
     startConversation(card.id, learning, native)
       .then(answer => {
         setLeft(answer.remaining_today);
-        if (answer.reply) setMessages([{ role: "assistant", text: answer.reply }]);
+        if (answer.reply) {
+          setMessages([{ role: "assistant", text: answer.reply }]);
+          if (voiceRef.current) speak(answer.reply, voice);
+        }
         else setNotice(answer.message ?? "The AI partner is not available right now.");
       })
       .catch(error => setNotice(error instanceof Error ? error.message : "Could not start the conversation."))
       .finally(() => setBusy(false));
-  }, [card.id, learning, native]);
+  }, [card.id, learning, native, speak, voice]);
 
   useEffect(() => () => {
     recognition.current?.abort();
@@ -81,12 +104,21 @@ export default function ConversationPanel({
         updated[updated.length - 1] = { ...updated[updated.length - 1], correction: answer.correction };
         return answer.reply ? [...updated, { role: "assistant", text: answer.reply }] : updated;
       });
+      if (answer.reply && voiceOn) speak(answer.reply, voice);
       if (!answer.reply) setNotice(answer.message ?? "No answer this time. Try again.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Something went wrong.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const toggleVoice = () => {
+    const next = !voiceOn;
+    setVoiceOn(next);
+    voiceRef.current = next;
+    saveVoicePreference(next);
+    if (!next) cancel();
   };
 
   const listen = () => {
@@ -157,6 +189,9 @@ export default function ConversationPanel({
           <p className="eyebrow">Talk about your picture · {card.word}</p>
           <p className="chat__sentence">“{card.sentence}”</p>
         </div>
+        <button className="btn btn--ghost btn--sm" onClick={toggleVoice} aria-pressed={voiceOn}>
+          {voiceOn ? "🔊 Voice on" : "🔇 Voice off"}
+        </button>
         <button className="btn btn--ghost btn--sm" onClick={onClose}>Close</button>
       </header>
 

@@ -129,8 +129,9 @@ export async function fetchLessonProgress(): Promise<Record<string, { attempts: 
   }
 }
 
-export const SPEECH_LANG: Record<string, 'en-US' | 'es-ES' | 'ru-RU'> = {
+export const SPEECH_LANG: Record<string, 'en-US' | 'es-ES' | 'ru-RU' | 'ca-ES'> = {
   eng: 'en-US',
   spa: 'es-ES',
   rus: 'ru-RU',
+  cat: 'ca-ES',
 };
