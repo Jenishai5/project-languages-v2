@@ -103,7 +103,7 @@ export default function Lesson() {
       <div className="container page-body">
 
         {active === "match" && <MatchStep words={lesson.words} onDone={finish("match")} />}
-        {active === "shuffle" && <BuildStep sentences={lesson.sentences} learning={lesson.learning} onDone={finish("shuffle")} />}
+        {active === "shuffle" && <BuildStep sentences={lesson.sentences} learning={lesson.learning} native={lesson.native} onDone={finish("shuffle")} />}
         {active === "pronounce" && <PronounceStep words={lesson.words} learning={lesson.learning} onDone={finish("pronounce")} />}
         {active === "picture" && <PictureStep rounds={lesson.pictures} onDone={finish("picture")} />}
 

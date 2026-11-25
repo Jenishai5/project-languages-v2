@@ -1,3 +1,4 @@
+import threading
 from collections.abc import Iterator
 from functools import lru_cache
 from typing import Annotated
@@ -10,15 +11,20 @@ from langapp.config import get_settings
 from langapp.db.session import get_session_factory
 from langapp.integrations.openrouter import OpenRouterClient
 from langapp.integrations.supabase_storage import SupabaseImageStore
+from langapp.repositories.ai_usage import AiUsageRepository
 from langapp.repositories.concepts import ConceptRepository
 from langapp.repositories.import_runs import ImportRunRepository
 from langapp.repositories.lessons import LessonRepository
 from langapp.repositories.mnemonics import MnemonicRepository
+from langapp.repositories.outcomes import LearningOutcomeRepository
 from langapp.repositories.progress import ProgressRepository
 from langapp.repositories.sentences import SentenceRepository
 from langapp.repositories.system import DatabaseCheck
 from langapp.repositories.user_settings import UserSettingsRepository
 from langapp.repositories.word_pairs import WordPairRepository
+from langapp.services.agents.base import model_list
+from langapp.services.agents.grammar import GrammarAgent
+from langapp.services.agents.orchestrator import AgentLimits, AgentOrchestrator, ReplyCache
 from langapp.services.games import GameService
 from langapp.services.languages import LanguageCatalog
 from langapp.services.lessons import LessonService
@@ -126,6 +132,52 @@ def get_mnemonic_service(
 
 
 MnemonicServiceDep = Annotated[MnemonicService, Depends(get_mnemonic_service)]
+
+
+@lru_cache
+def get_reply_cache() -> ReplyCache:
+    return ReplyCache()
+
+
+@lru_cache
+def get_agent_gate() -> threading.BoundedSemaphore:
+    return threading.BoundedSemaphore(max(1, get_settings().agent_max_concurrent))
+
+
+def get_grammar_agent(
+    openrouter: Annotated[OpenRouterClient | None, Depends(get_openrouter)],
+) -> GrammarAgent | None:
+    if openrouter is None:
+        return None
+    settings = get_settings()
+    return GrammarAgent(
+        openrouter,
+        model_list(settings.agent_models, settings.openrouter_text_model),
+        max_tokens=settings.agent_max_tokens,
+    )
+
+
+def get_agent_orchestrator(
+    session: SessionDep,
+    sentences: SentenceRepoDep,
+    grammar: Annotated[GrammarAgent | None, Depends(get_grammar_agent)],
+    cache: Annotated[ReplyCache, Depends(get_reply_cache)],
+    gate: Annotated[threading.BoundedSemaphore, Depends(get_agent_gate)],
+) -> AgentOrchestrator:
+    settings = get_settings()
+    return AgentOrchestrator(
+        sentences,
+        UserSettingsRepository(session),
+        LearningOutcomeRepository(session),
+        AiUsageRepository(session),
+        grammar=grammar,
+        cache=cache,
+        gate=gate,
+        limits=AgentLimits(daily_limit=settings.agent_daily_limit, wait_seconds=settings.agent_wait_seconds),
+    )
+
+
+AgentOrchestratorDep = Annotated[AgentOrchestrator, Depends(get_agent_orchestrator)]
 
 
 @lru_cache

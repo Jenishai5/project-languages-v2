@@ -164,3 +164,27 @@ test("training menu shows four trainings with their results", () => {
   fireEvent.click(screen.getByRole("button", { name: "Picture" }));
   expect(onOpen).toHaveBeenCalledWith("picture");
 });
+
+test("build step offers an AI explanation for a wrong order", async () => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok:   true,
+    json: async () => ({
+      correct: false, available: true, cached: false, message: null, remaining_today: 29,
+      explanation: "El verbo va después del sujeto.",
+      mistakes: [{ wrong: "doctor the Call", right: "Call the doctor", why: "imperativo primero" }],
+      tip: "Empieza por el verbo.",
+    }),
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  render(<BuildStep sentences={[sentence(4, "Call the doctor.", "Llama al médico.")]} learning="eng" native="spa" onDone={vi.fn()} />);
+
+  clickWords(["doctor", "the", "Call"]);
+  fireEvent.click(screen.getByText("Check"));
+  fireEvent.click(screen.getByText("Why is this wrong?"));
+
+  expect(await screen.findByText("El verbo va después del sujeto.")).toBeInTheDocument();
+  expect(screen.getByText("29 explanations left today")).toBeInTheDocument();
+  const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+  expect(body).toEqual({ sentence_id: 4, answer: ["doctor", "the", "Call"], learning: "eng", native: "spa" });
+  vi.unstubAllGlobals();
+});

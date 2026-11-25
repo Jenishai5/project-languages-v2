@@ -75,3 +75,25 @@ def test_empty_or_broken_answers_raise():
         make_client().chat("m", [])
     with pytest.raises(OpenRouterError, match="no image"):
         make_client().generate_image("m", "p")
+
+
+@respx.mock
+def test_chat_json_sends_fallback_models_and_reads_usage():
+    route = respx.post(f"{BASE}/chat/completions").mock(
+        return_value=httpx.Response(
+            200,
+            json={"model": "b:free", "choices": [{"message": {"content": "{}"}}], "usage": {"total_tokens": 77}},
+        )
+    )
+
+    reply = make_client().chat_json(["a:free", "b:free"], [{"role": "user", "content": "hi"}], user="u1", max_tokens=300)
+
+    body = json.loads(route.calls.last.request.content)
+    assert body["model"] == "a:free" and body["models"] == ["a:free", "b:free"]
+    assert body["max_tokens"] == 300 and body["user"] == "u1"
+    assert (reply.model, reply.tokens) == ("b:free", 77)
+
+
+def test_chat_json_needs_a_model():
+    with pytest.raises(OpenRouterError):
+        make_client().chat_json([], [{"role": "user", "content": "hi"}])

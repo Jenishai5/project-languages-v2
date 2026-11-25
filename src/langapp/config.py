@@ -30,6 +30,12 @@ class Settings(BaseSettings):
 
     mnemonic_daily_limit: int = 5
 
+    agent_models: str = ""
+    agent_daily_limit: int = 30
+    agent_max_concurrent: int = 4
+    agent_wait_seconds: float = 5.0
+    agent_max_tokens: int = 400
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -4,6 +4,7 @@ import { SPEECH_LANG, type LessonSentence, type Tile } from "../../lib/lessonsAp
 import { wordTypeLabel } from "../../lib/wordTypes";
 import { Attribution, Feedback, PrimaryButton, SecondaryButton, StepCard } from "./shared";
 import { playRecording, shuffle } from "../../lib/lessonUtils";
+import GrammarTip from "./GrammarTip";
 
 interface PlacedTile extends Tile {
   uid: string;
@@ -25,10 +26,12 @@ function TileChip({ tile, onClick }: { tile: PlacedTile; onClick: () => void }) 
 export default function BuildStep({
   sentences,
   learning,
+  native,
   onDone,
 }: {
   sentences: LessonSentence[];
   learning: string;
+  native?: string;
   onDone: (correct: number, total: number) => void;
 }) {
   const { speak } = useSpeechSynthesis();
@@ -89,6 +92,9 @@ export default function BuildStep({
         <Feedback correct={result === "correct"}>
           {result === "correct" ? "✅ Correct!" : `❌ The answer is: ${sentence.full_text}`}
         </Feedback>
+      )}
+      {result === "wrong" && native && (
+        <GrammarTip key={sentence.id} sentenceId={sentence.id} answer={placed.map(t => t.form)} learning={learning} native={native} />
       )}
       {result && <Attribution recording={sentence.audio} />}
 

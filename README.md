@@ -279,6 +279,27 @@ Decisions:
 
 Without the OpenRouter key or the storage key, sentences are saved without pictures and the flashcards use the emoji.
 
+## AI agents
+
+The AI agents live inside the backend in `src/langapp/services/agents/`. A rule-based orchestrator (`orchestrator.py`) picks the agent for each app event, checks the per-user daily limit, reuses cached answers and caps how many model calls run at the same time. The agents use OpenRouter through the existing client.
+
+**Grammar Agent (Shuffle).** When a learner builds a sentence in the wrong order, "Why is this wrong?" sends the tiles to `POST /api/agents/grammar/check`.
+
+- A correct order is checked in Python, so no AI call is made.
+- The tiles must be exactly the words of that sentence, so nobody can send their own text to the model.
+- The same mistake is explained once and then served from a cache.
+- Each mistake is saved in `learning_outcomes`, and each AI call is counted in `ai_usage`. Chat text is never saved.
+
+Settings in `.env`:
+
+```
+AGENT_MODELS=model-a:free,model-b:free
+AGENT_DAILY_LIMIT=30
+AGENT_MAX_CONCURRENT=4
+```
+
+`AGENT_MODELS` is a list in priority order; OpenRouter tries the next one when a model fails. When it is empty, `OPENROUTER_TEXT_MODEL` is used. The learner's level comes from `user_settings.level` (A1 when empty).
+
 ## Tests
 
 ```bash

@@ -263,3 +263,27 @@ class MnemonicListOut(BaseModel):
     daily_limit: int
     remaining_today: int
     pictures_enabled: bool
+
+
+class GrammarCheckIn(BaseModel):
+    sentence_id: int
+    answer: list[Annotated[str, Field(min_length=1, max_length=60)]] = Field(min_length=1, max_length=40)
+    learning: str = Field(pattern=LANG_PATTERN)
+    native: str = Field(pattern=LANG_PATTERN)
+
+
+class MistakeOut(BaseModel):
+    wrong: str
+    right: str
+    why: str
+
+
+class GrammarCheckOut(BaseModel):
+    correct: bool
+    available: bool
+    explanation: str | None
+    mistakes: list[MistakeOut]
+    tip: str | None
+    cached: bool
+    message: str | None
+    remaining_today: int

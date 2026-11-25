@@ -1,7 +1,7 @@
 import base64
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import httpx
 
@@ -55,6 +55,28 @@ class OpenRouterClient:
         if not text.strip():
             raise OpenRouterError("The AI model sent an empty answer.")
         return ChatReply(text=text, model=payload.get("model", model))
+
+    def chat_json(
+        self, models: Sequence[str], messages: list[dict], user: str | None = None, max_tokens: int = 400
+    ) -> ChatReply:
+        names = [name for name in models if name]
+        if not names:
+            raise OpenRouterError("No AI model is configured.")
+        body: dict = {"model": names[0], "messages": messages, "max_tokens": max_tokens, "temperature": 0.2}
+        if len(names) > 1:
+            body["models"] = names
+        if user:
+            body["user"] = user
+        payload = self._post("/chat/completions", body)
+        try:
+            text = payload["choices"][0]["message"]["content"] or ""
+        except (KeyError, IndexError, TypeError) as exc:
+            raise OpenRouterError("The AI model sent an answer in an unexpected format.") from exc
+        if not text.strip():
+            raise OpenRouterError("The AI model sent an empty answer.")
+        usage = payload.get("usage") or {}
+        tokens = usage.get("total_tokens") if isinstance(usage.get("total_tokens"), int) else None
+        return ChatReply(text=text, model=payload.get("model", names[0]), tokens=tokens)
 
     def generate_image(self, model: str, prompt: str, user: str | None = None) -> GeneratedImage:
         body: dict = {"model": model, "prompt": prompt, "aspect_ratio": "1:1", "n": 1}

@@ -143,6 +143,7 @@ class Page:
 class ChatReply:
     text: str
     model: str
+    tokens: int | None = None
 
 
 @dataclass(frozen=True)

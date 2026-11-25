@@ -18,6 +18,7 @@ from sqlalchemy import (
     false,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -179,11 +180,15 @@ class LessonSentence(Base):
 
 class UserSettings(Base):
     __tablename__ = "user_settings"
-    __table_args__ = (CheckConstraint("native_lang <> learning_lang", name="different_languages"),)
+    __table_args__ = (
+        CheckConstraint("native_lang <> learning_lang", name="different_languages"),
+        CheckConstraint("level IN ('A1', 'A2', 'B1', 'B2', 'C1', 'C2')", name="known_level"),
+    )
 
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
     native_lang: Mapped[str] = mapped_column(String(8))
     learning_lang: Mapped[str] = mapped_column(String(8))
+    level: Mapped[str | None] = mapped_column(String(2))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -218,4 +223,32 @@ class ImageGeneration(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
     model: Mapped[str] = mapped_column(String(200))
     succeeded: Mapped[bool] = mapped_column(Boolean)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class LearningOutcome(Base):
+    __tablename__ = "learning_outcomes"
+    __table_args__ = (Index("ix_learning_outcomes_user_created", "user_id", "created_at"),)
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    agent: Mapped[str] = mapped_column(String(32))
+    kind: Mapped[str] = mapped_column(String(32))
+    lesson_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("lessons.id", ondelete="SET NULL"))
+    concept_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("concepts.id", ondelete="SET NULL"))
+    detail: Mapped[dict] = mapped_column(JSONB)
+    model: Mapped[str | None] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AiUsage(Base):
+    __tablename__ = "ai_usage"
+    __table_args__ = (Index("ix_ai_usage_user_created", "user_id", "created_at"),)
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    agent: Mapped[str] = mapped_column(String(32))
+    model: Mapped[str] = mapped_column(String(200))
+    succeeded: Mapped[bool] = mapped_column(Boolean)
+    tokens: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

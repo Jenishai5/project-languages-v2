@@ -32,6 +32,12 @@ class ChatModel(Protocol):
     def chat(self, model: str, messages: list[dict], user: str | None = None) -> ChatReply: ...
 
 
+class JsonChatModel(Protocol):
+    def chat_json(
+        self, models: Sequence[str], messages: list[dict], user: str | None = None, max_tokens: int = 400
+    ) -> ChatReply: ...
+
+
 class ImageModel(Protocol):
     def generate_image(self, model: str, prompt: str, user: str | None = None) -> GeneratedImage: ...
 

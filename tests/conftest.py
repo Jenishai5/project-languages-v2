@@ -14,7 +14,8 @@ ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = Path(__file__).parent / "fixtures"
 TABLES = (
     "lesson_sentences, lesson_concepts, lessons, concept_terms, concepts, user_settings, "
-    "image_generations, mnemonics, audios, sentence_links, sentences, import_runs, word_pairs, user_progress"
+    "ai_usage, learning_outcomes, image_generations, mnemonics, audios, sentence_links, sentences, "
+    "import_runs, word_pairs, user_progress"
 )
 
 

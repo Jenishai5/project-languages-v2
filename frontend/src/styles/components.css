@@ -93,6 +93,19 @@
 .feedback[data-state="correct"] { background: var(--mint); }
 .feedback[data-state="wrong"] { background: var(--pink); }
 
+.grammar-tip__ask { align-self: flex-start; }
+.grammar-tip {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 16px 18px; border-radius: 16px;
+  background: var(--cream); border: 1.5px solid var(--line-strong);
+}
+.grammar-tip--quiet { padding: 10px 14px; background: transparent; border-style: dashed; color: var(--ink-muted); font-size: 14px; }
+.grammar-tip__text { margin: 0; font-size: 16px; line-height: 1.45; }
+.grammar-tip__list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+.grammar-tip__list s { color: var(--ink-muted); }
+.grammar-tip__hint { margin: 0; font-size: 15px; }
+.grammar-tip__meta { margin: 0; font-size: 12px; color: var(--ink-muted); }
+
 .attribution { font-size: 13px; color: var(--ink-soft); }
 
 .choice {
