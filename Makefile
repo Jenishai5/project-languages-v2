@@ -1,4 +1,4 @@
-.PHONY: install db migrate import import-builder import-words import-concepts build-lessons api frontend test down
+.PHONY: install db migrate import import-builder import-words import-concepts build-lessons api frontend test down lint
 
 install:
 	python3 -m venv .venv
@@ -33,6 +33,9 @@ frontend:
 
 test:
 	.venv/bin/pytest -q
+
+lint:
+	.venv/bin/ruff check src tests
 
 down:
 	docker compose down

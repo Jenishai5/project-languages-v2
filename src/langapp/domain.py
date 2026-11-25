@@ -1,10 +1,18 @@
 import unicodedata
+from dataclasses import dataclass, field
 from datetime import datetime
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 LANG_PATTERN = r"^[a-z]{3,4}$"
 PAIR_PATTERN = r"^[a-z]{2,3}-[a-z]{2,10}$"
+
+
+class ItemType(StrEnum):
+    SENTENCE = "sentence"
+    WORD = "word"
+    LESSON = "lesson"
 
 
 def clean_text(value: object) -> str:
@@ -107,3 +115,25 @@ class ParsedWordPair(BaseModel):
     @classmethod
     def optional_category(cls, value: object) -> object:
         return blank_to_none(value)
+
+
+@dataclass
+class ParsedConcept:
+    slug: str
+    category: str
+    terms: dict[str, str] = field(default_factory=dict)
+    emoji: str | None = None
+
+
+@dataclass(frozen=True)
+class PlannedLesson:
+    slug: str
+    title: str
+    position: int
+    concept_slugs: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class Page:
+    payload: dict
+    next_url: str | None

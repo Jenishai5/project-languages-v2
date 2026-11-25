@@ -2,17 +2,21 @@ import logging
 import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from sqlalchemy.orm import Session, sessionmaker
 
 from langapp.domain import ParsedSentence
+from langapp.errors import ExternalSourceError
 from langapp.ingestion.concepts import ARTICLES, WORDS_PER_LESSON, build_concepts, core_word, plan_lessons
 from langapp.ingestion.dictionary_parser import load_dictionary_file, pair_from_file_name
 from langapp.ingestion.parser import parse_page
-from langapp.ingestion.tatoeba_client import TatoebaClient, TatoebaError
+from langapp.repositories.concepts import ConceptRepository
 from langapp.repositories.lessons import LessonRepository, LessonWord
 from langapp.repositories.sentences import SentenceRepository
-from langapp.services.word_tagger import ADVERBS, ARTICLES as ARTICLE_WORDS, CONJUNCTIONS, PREPOSITIONS, PRONOUNS, VERBS
+from langapp.services.ports import SentenceSearch
+from langapp.services.word_tagger import ADVERBS, CONJUNCTIONS, PREPOSITIONS, PRONOUNS, VERBS
+from langapp.services.word_tagger import ARTICLES as ARTICLE_WORDS
 
 logger = logging.getLogger(__name__)
 
@@ -37,14 +41,17 @@ class LessonBuildSummary:
     failed: list[str] = field(default_factory=list)
 
 
-def import_concepts(paths: Sequence, session_factory: sessionmaker[Session], words_per_lesson: int = WORDS_PER_LESSON) -> ConceptImportSummary:
+def import_concepts(
+    paths: Sequence[Path],
+    session_factory: sessionmaker[Session],
+    words_per_lesson: int = WORDS_PER_LESSON,
+) -> ConceptImportSummary:
     pairs_by_file = {pair_from_file_name(path): load_dictionary_file(path)[0] for path in paths}
     concepts = build_concepts(pairs_by_file)
     lessons = plan_lessons(concepts, words_per_lesson)
     with session_factory.begin() as session:
-        repo = LessonRepository(session)
-        ids = repo.upsert_concepts(concepts)
-        count = repo.upsert_lessons(lessons, ids)
+        ids = ConceptRepository(session).upsert_concepts(concepts)
+        count = LessonRepository(session).upsert_lessons(lessons, ids)
     return ConceptImportSummary(concepts=len(ids), lessons=count)
 
 
@@ -96,7 +103,7 @@ def rank_candidates(
 class LessonSentenceBuilder:
     def __init__(
         self,
-        client: TatoebaClient,
+        client: SentenceSearch,
         session_factory: sessionmaker[Session],
         per_word: int = 2,
         min_coverage: float = 0.6,
@@ -108,15 +115,14 @@ class LessonSentenceBuilder:
 
     def build(self, learning_lang: str, natives: Sequence[str], first_lessons: int | None) -> LessonBuildSummary:
         with self._session_factory() as session:
-            repo = LessonRepository(session)
-            words = repo.words_to_fill(learning_lang, first_lessons)
-            known = known_vocabulary(repo.all_terms(learning_lang), learning_lang)
+            words = LessonRepository(session).words_to_fill(learning_lang, first_lessons)
+            known = known_vocabulary(ConceptRepository(session).all_terms(learning_lang), learning_lang)
 
         summary = LessonBuildSummary(words=len(words))
         for word in words:
             try:
                 linked = self._fill_word(word, learning_lang, natives, known)
-            except TatoebaError as exc:
+            except ExternalSourceError as exc:
                 logger.warning("%s: %s", word.slug, exc)
                 summary.failed.append(word.slug)
                 continue

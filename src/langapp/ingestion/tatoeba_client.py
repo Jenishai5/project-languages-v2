@@ -2,9 +2,11 @@ import logging
 import random
 import time
 from collections.abc import Callable, Iterator, Sequence
-from dataclasses import dataclass
 
 import httpx
+
+from langapp.domain import Page
+from langapp.errors import ExternalSourceError
 
 logger = logging.getLogger(__name__)
 
@@ -12,14 +14,8 @@ RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 MAX_PAGE_SIZE = 50
 
 
-class TatoebaError(Exception):
+class TatoebaError(ExternalSourceError):
     pass
-
-
-@dataclass(frozen=True)
-class Page:
-    payload: dict
-    next_url: str | None
 
 
 class TatoebaClient:

@@ -1,8 +1,10 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from langapp.db.models import Sentence
+from langapp.domain import LANG_PATTERN, PAIR_PATTERN
 
 
 class TranslationOut(BaseModel):
@@ -70,3 +72,167 @@ class HealthOut(BaseModel):
     status: str
     database: str
     sentences: int
+
+
+ShortText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+LangCode = Annotated[str, StringConstraints(pattern=LANG_PATTERN)]
+
+
+class ErrorOut(BaseModel):
+    detail: str
+
+
+class LanguageSettingsIn(BaseModel):
+    native_lang: LangCode
+    learning_lang: LangCode
+
+
+class LanguageSettingsOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    native_lang: str
+    learning_lang: str
+
+
+class SentenceResultIn(BaseModel):
+    exercise_id: int = Field(gt=0)
+    correct: bool
+
+
+class WordResultIn(BaseModel):
+    lemma: ShortText
+    language: Annotated[str, StringConstraints(pattern=PAIR_PATTERN)] = "en-es"
+    correct: bool
+
+
+class LessonResultIn(BaseModel):
+    lesson_id: int = Field(gt=0)
+    correct: bool
+
+
+class ProgressSavedOut(BaseModel):
+    success: bool = True
+    mastery: int
+    next_review_at: datetime
+
+
+class SentenceProgressOut(BaseModel):
+    attempts: int
+    correct: int
+    mastery: int
+    last_attempted: datetime
+    next_review: datetime
+
+
+class LessonProgressOut(BaseModel):
+    attempts: int
+    correct: int
+    mastery: int
+
+
+class SentenceProgressMap(BaseModel):
+    progress: dict[str, SentenceProgressOut]
+
+
+class LessonProgressMap(BaseModel):
+    progress: dict[str, LessonProgressOut]
+
+
+class RecordingOut(BaseModel):
+    url: str
+    author: str | None
+    license: str | None
+    attribution_url: str | None
+
+
+class TileOut(BaseModel):
+    form: str
+    position: int
+    word_type: str
+
+
+class BuilderSentenceOut(BaseModel):
+    id: int
+    full_text: str
+    translation: dict[str, str | None]
+    words: list[TileOut]
+    level: str
+    audio: RecordingOut | None
+
+
+class BuilderRoundOut(BaseModel):
+    sentences: list[BuilderSentenceOut]
+
+
+class WordPairOut(BaseModel):
+    question: str
+    answer: str
+
+
+class WordMatchOut(BaseModel):
+    pairs: list[WordPairOut]
+    imageMode: str | None = None
+
+
+class LanguageOut(BaseModel):
+    code: str
+    name: str
+    words: int
+
+
+class LanguagesOut(BaseModel):
+    languages: list[LanguageOut]
+
+
+class LessonSummaryOut(BaseModel):
+    id: int
+    slug: str
+    title: str
+    position: int
+    word_count: int
+    sentence_count: int
+
+
+class LessonListOut(BaseModel):
+    learning: str
+    native: str
+    lessons: list[LessonSummaryOut]
+
+
+class WordCardOut(BaseModel):
+    concept_id: int
+    slug: str
+    word: str
+    translation: str
+    emoji: str | None
+    image_url: str | None
+
+
+class ShuffleSentenceOut(BaseModel):
+    id: int
+    concept_slug: str
+    full_text: str
+    prompt: str
+    words: list[TileOut]
+    level: str
+    audio: RecordingOut | None
+
+
+class PictureRoundOut(BaseModel):
+    slug: str
+    emoji: str | None
+    image_url: str | None
+    options: list[str]
+    answer: str
+
+
+class LessonDetailOut(BaseModel):
+    id: int
+    slug: str
+    title: str
+    position: int
+    learning: str
+    native: str
+    words: list[WordCardOut]
+    sentences: list[ShuffleSentenceOut]
+    pictures: list[PictureRoundOut]

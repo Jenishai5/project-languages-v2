@@ -30,7 +30,7 @@ function shuffle<T>(arr: T[]): T[] {
 async function fetchPairs(language: Language): Promise<{ pairs: Pair[]; imageMode: ImageMode }> {
   const res  = await fetch(`/api/game/wordmatch?language=${language}&limit=${TOTAL_PAIRS}`);
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? "Failed to load words");
+  if (!res.ok) throw new Error(data.detail ?? data.error ?? "Failed to load words");
   return { pairs: data.pairs as Pair[], imageMode: data.imageMode as ImageMode };
 }
 

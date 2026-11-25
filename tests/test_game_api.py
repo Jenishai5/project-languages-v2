@@ -26,7 +26,7 @@ class FakeVerifier:
 @pytest.fixture
 def client(session_factory):
     def override_session():
-        with session_factory() as session:
+        with session_factory.begin() as session:
             yield session
 
     app.dependency_overrides[get_session] = override_session
@@ -62,7 +62,7 @@ def test_sentences_without_data_explain_what_to_do(client):
     response = client.get("/game/sentences")
 
     assert response.status_code == 404
-    assert "make import-builder" in response.json()["error"]
+    assert "make import-builder" in response.json()["detail"]
 
 
 def test_word_match_round(client, with_data):
@@ -82,7 +82,7 @@ def test_word_match_emoji_and_errors(client, with_data):
 
     assert emojis.status_code == 200
     assert image.status_code == 400
-    assert "Image modes" in image.json()["error"]
+    assert "Image modes" in image.json()["detail"]
     assert unknown.status_code == 400
 
 

@@ -1,9 +1,8 @@
 import re
 import unicodedata
 from collections.abc import Mapping
-from dataclasses import dataclass, field
 
-from langapp.domain import ParsedWordPair
+from langapp.domain import ParsedConcept, ParsedWordPair, PlannedLesson
 
 ARTICLES = {
     "eng": ("the ", "an ", "a "),
@@ -12,22 +11,6 @@ ARTICLES = {
 LANG_OF = {"en": "eng", "es": "spa", "ru": "rus"}
 MIN_LAST_LESSON = 5
 WORDS_PER_LESSON = 10
-
-
-@dataclass
-class ParsedConcept:
-    slug: str
-    category: str
-    terms: dict[str, str] = field(default_factory=dict)
-    emoji: str | None = None
-
-
-@dataclass(frozen=True)
-class PlannedLesson:
-    slug: str
-    title: str
-    position: int
-    concept_slugs: tuple[str, ...]
 
 
 def slugify(text: str) -> str:

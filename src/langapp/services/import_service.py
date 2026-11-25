@@ -5,10 +5,11 @@ from dataclasses import dataclass, field
 from sqlalchemy.orm import Session, sessionmaker
 
 from langapp.db.models import ImportRun
+from langapp.errors import ExternalSourceError
 from langapp.ingestion.parser import ParseIssue, ParsePageError, parse_page
-from langapp.ingestion.tatoeba_client import TatoebaClient, TatoebaError
 from langapp.repositories.import_runs import ImportRunRepository
 from langapp.repositories.sentences import SentenceRepository
+from langapp.services.ports import SentencePageSource
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class ImportSummary:
 
 
 class SentenceImporter:
-    def __init__(self, client: TatoebaClient, session_factory: sessionmaker[Session]) -> None:
+    def __init__(self, client: SentencePageSource, session_factory: sessionmaker[Session]) -> None:
         self._client = client
         self._session_factory = session_factory
 
@@ -59,7 +60,7 @@ class SentenceImporter:
                     stats.unchanged,
                     len(result.issues),
                 )
-        except (TatoebaError, ParsePageError) as exc:
+        except (ExternalSourceError, ParsePageError) as exc:
             logger.error("import failed: %s", exc)
             return ImportSummary(run=self._finish(run_id, "failed", str(exc)), issues=issues)
 

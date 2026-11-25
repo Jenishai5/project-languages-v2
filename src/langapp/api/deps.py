@@ -8,15 +8,25 @@ from sqlalchemy.orm import Session
 from langapp.auth import AuthError, AuthUser, SupabaseTokenVerifier
 from langapp.config import get_settings
 from langapp.db.session import get_session_factory
+from langapp.repositories.concepts import ConceptRepository
 from langapp.repositories.import_runs import ImportRunRepository
 from langapp.repositories.lessons import LessonRepository
 from langapp.repositories.progress import ProgressRepository
 from langapp.repositories.sentences import SentenceRepository
+from langapp.repositories.system import DatabaseCheck
+from langapp.repositories.user_settings import UserSettingsRepository
 from langapp.repositories.word_pairs import WordPairRepository
+from langapp.services.games import GameService
+from langapp.services.languages import LanguageCatalog
+from langapp.services.lessons import LessonService
+from langapp.services.progress import ProgressService
+from langapp.services.sentences import SentenceService
+from langapp.services.system import SystemService
+from langapp.services.user_settings import UserSettingsService
 
 
 def get_session() -> Iterator[Session]:
-    with get_session_factory()() as session:
+    with get_session_factory().begin() as session:
         yield session
 
 
@@ -27,20 +37,46 @@ def get_sentence_repository(session: SessionDep) -> SentenceRepository:
     return SentenceRepository(session)
 
 
-def get_import_run_repository(session: SessionDep) -> ImportRunRepository:
-    return ImportRunRepository(session)
+SentenceRepoDep = Annotated[SentenceRepository, Depends(get_sentence_repository)]
 
 
-def get_word_pair_repository(session: SessionDep) -> WordPairRepository:
-    return WordPairRepository(session)
+def get_language_catalog(session: SessionDep) -> LanguageCatalog:
+    return LanguageCatalog(ConceptRepository(session))
 
 
-def get_progress_repository(session: SessionDep) -> ProgressRepository:
-    return ProgressRepository(session)
+LanguageCatalogDep = Annotated[LanguageCatalog, Depends(get_language_catalog)]
 
 
-def get_lesson_repository(session: SessionDep) -> LessonRepository:
-    return LessonRepository(session)
+def get_system_service(session: SessionDep, sentences: SentenceRepoDep) -> SystemService:
+    return SystemService(DatabaseCheck(session), sentences, ImportRunRepository(session))
+
+
+def get_sentence_service(sentences: SentenceRepoDep) -> SentenceService:
+    return SentenceService(sentences)
+
+
+def get_game_service(session: SessionDep, sentences: SentenceRepoDep) -> GameService:
+    return GameService(sentences, WordPairRepository(session))
+
+
+def get_progress_service(session: SessionDep) -> ProgressService:
+    return ProgressService(ProgressRepository(session))
+
+
+def get_lesson_service(session: SessionDep, sentences: SentenceRepoDep, catalog: LanguageCatalogDep) -> LessonService:
+    return LessonService(LessonRepository(session), sentences, catalog)
+
+
+def get_user_settings_service(session: SessionDep, catalog: LanguageCatalogDep) -> UserSettingsService:
+    return UserSettingsService(UserSettingsRepository(session), catalog)
+
+
+SystemServiceDep = Annotated[SystemService, Depends(get_system_service)]
+SentenceServiceDep = Annotated[SentenceService, Depends(get_sentence_service)]
+GameServiceDep = Annotated[GameService, Depends(get_game_service)]
+ProgressServiceDep = Annotated[ProgressService, Depends(get_progress_service)]
+LessonServiceDep = Annotated[LessonService, Depends(get_lesson_service)]
+UserSettingsServiceDep = Annotated[UserSettingsService, Depends(get_user_settings_service)]
 
 
 @lru_cache
@@ -65,9 +101,4 @@ def get_current_user(
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 
 
-SentenceRepoDep = Annotated[SentenceRepository, Depends(get_sentence_repository)]
-ImportRunRepoDep = Annotated[ImportRunRepository, Depends(get_import_run_repository)]
-WordPairRepoDep = Annotated[WordPairRepository, Depends(get_word_pair_repository)]
-ProgressRepoDep = Annotated[ProgressRepository, Depends(get_progress_repository)]
-LessonRepoDep = Annotated[LessonRepository, Depends(get_lesson_repository)]
 CurrentUser = Annotated[AuthUser, Depends(get_current_user)]

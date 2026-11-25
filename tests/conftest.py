@@ -12,6 +12,10 @@ from langapp.db.session import make_engine, make_session_factory
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = Path(__file__).parent / "fixtures"
+TABLES = (
+    "lesson_sentences, lesson_concepts, lessons, concept_terms, concepts, user_settings, "
+    "audios, sentence_links, sentences, import_runs, word_pairs, user_progress"
+)
 
 
 def load_fixture(name: str) -> dict:
@@ -48,6 +52,6 @@ def engine():
 def session_factory(engine):
     with engine.begin() as connection:
         connection.execute(
-            text("TRUNCATE lesson_sentences, lesson_concepts, lessons, concept_terms, concepts, user_settings, audios, sentence_links, sentences, import_runs, word_pairs, user_progress RESTART IDENTITY CASCADE")
+            text(f"TRUNCATE {TABLES} RESTART IDENTITY CASCADE")
         )
     return make_session_factory(engine)
