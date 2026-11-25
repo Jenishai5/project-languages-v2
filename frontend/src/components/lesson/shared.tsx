@@ -5,10 +5,10 @@ export function Attribution({ recording }: { recording: Recording | null }) {
   if (!recording) return null;
   const author = recording.author ?? "unknown";
   return (
-    <p className="text-[11px] text-[var(--text-tertiary)] mt-2 mb-0">
+    <p>
       Recording by{" "}
       {recording.attribution_url ? (
-        <a href={recording.attribution_url} target="_blank" rel="noreferrer" className="underline">{author}</a>
+        <a href={recording.attribution_url} target="_blank" rel="noreferrer">{author}</a>
       ) : author}
       {recording.license ? ` · ${recording.license}` : ""} · from Tatoeba
     </p>
@@ -17,9 +17,9 @@ export function Attribution({ recording }: { recording: Recording | null }) {
 
 export function StepCard({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode }) {
   return (
-    <section className="bg-[var(--bg-card)] rounded-[24px] border-[1.5px] border-[var(--border-subtle)] p-7 shadow-[var(--shadow-card)]">
-      <p className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-[var(--c-purple-muted)] mb-1">{eyebrow}</p>
-      <h2 className="text-xl font-extrabold text-[var(--text-primary)] mt-0 mb-5">{title}</h2>
+    <section>
+      <p>{eyebrow}</p>
+      <h2>{title}</h2>
       {children}
     </section>
   );
@@ -30,11 +30,6 @@ export function PrimaryButton({ children, onClick, disabled }: { children: React
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`px-6 py-3 rounded-[14px] font-bold text-[0.95rem] border-none ${
-        disabled
-          ? "cursor-not-allowed bg-[var(--bg-surface)] text-[var(--text-tertiary)]"
-          : "cursor-pointer bg-[var(--grad-purple-green)] text-white"
-      }`}
     >
       {children}
     </button>
@@ -45,7 +40,6 @@ export function SecondaryButton({ children, onClick }: { children: ReactNode; on
   return (
     <button
       onClick={onClick}
-      className="px-5 py-3 rounded-[14px] font-bold text-[0.9rem] cursor-pointer border-[1.5px] border-[var(--border-medium)] bg-transparent text-[var(--text-primary)]"
     >
       {children}
     </button>
@@ -54,13 +48,7 @@ export function SecondaryButton({ children, onClick }: { children: ReactNode; on
 
 export function Feedback({ correct, children }: { correct: boolean; children: ReactNode }) {
   return (
-    <div
-      className={`px-5 py-[14px] rounded-[14px] my-5 font-bold text-[15px] border-[1.5px] ${
-        correct
-          ? "bg-[var(--state-correct-bg)] border-[var(--state-correct-bd)] text-[var(--state-correct)]"
-          : "bg-[var(--state-wrong-bg)] border-[var(--state-wrong-bd)] text-[var(--state-wrong)]"
-      }`}
-    >
+    <div role="status" data-state={correct ? "correct" : "wrong"}>
       {children}
     </div>
   );

@@ -23,28 +23,28 @@ export default function PictureStep({ rounds, onDone }: { rounds: PictureRound[]
     setChoice(null);
   };
 
-  const optionStyle = (option: string) => {
-    if (!choice) return "border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)]";
-    if (option === round.answer) return "border-[var(--state-correct-bd)] bg-[var(--state-correct-bg)] text-[var(--state-correct)]";
-    if (option === choice) return "border-[var(--state-wrong-bd)] bg-[var(--state-wrong-bg)] text-[var(--state-wrong)]";
-    return "border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-tertiary)]";
+  const optionState = (option: string) => {
+    if (!choice) return "idle";
+    if (option === round.answer) return "correct";
+    if (option === choice) return "wrong";
+    return "muted";
   };
 
   return (
     <StepCard eyebrow={`Picture · ${index + 1} of ${rounds.length}`} title="What is in the picture?">
-      <div className="flex justify-center mb-6">
+      <div>
         {round.image_url ? (
-          <img src={round.image_url} alt="Guess the word" className="w-40 h-40 object-contain rounded-[18px]" />
+          <img src={round.image_url} alt="Guess the word" />
         ) : (
-          <span role="img" aria-label="Guess the word" className="text-[96px] leading-none">{round.emoji}</span>
+          <span role="img" aria-label="Guess the word">{round.emoji}</span>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div>
         {round.options.map(option => (
           <button
             key={option}
             onClick={() => pick(option)}
-            className={`rounded-[14px] border-[1.5px] px-4 py-3 font-semibold cursor-pointer ${optionStyle(option)}`}
+            data-state={optionState(option)}
           >
             {option}
           </button>

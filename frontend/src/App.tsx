@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import { useState } from "react";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { ThemeProvider } from "./context/ThemeContext";
 
 import Landing         from "./pages/Landing";
 import Dashboard       from "./pages/Dashboard";
@@ -17,15 +16,15 @@ function RootLayout() {
   const [showAuth, setShowAuth] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-base)]">
+    <div>
       <AppNavbar onSignIn={() => setShowAuth(true)} />
-      <div className="flex-1 flex flex-col pt-[60px]">
+      <div>
         <Outlet context={{ showAuth, setShowAuth }} />
       </div>
-      <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-base)] text-sm text-[var(--text-tertiary)]">
-        <div className="max-w-[1200px] mx-auto px-10 py-7 flex justify-between items-center flex-wrap gap-2">
-          <div className="flex items-center gap-[10px] font-bold text-[var(--text-primary)] text-base">
-            <img src="/turtle.png" alt="logo" className="w-7 h-7" />
+      <footer>
+        <div>
+          <div>
+            <img src="/turtle.png" alt="logo" />
             TurtleTalk
           </div>
           <span>© 2026 · Built with ❤️ and a lot of vocabulary</span>
@@ -40,8 +39,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-base)]">
-        <div className="w-10 h-10 border-[3px] border-[var(--border-medium)] border-t-[var(--c-orange)] rounded-full animate-spin" />
+      <div>
       </div>
     );
   }
@@ -51,7 +49,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -71,6 +68,5 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
-    </ThemeProvider>
   );
 }

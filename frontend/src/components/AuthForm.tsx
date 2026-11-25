@@ -59,28 +59,23 @@ export default function AuthForm({ onPasswordFocus, onPasswordBlur, onPasswordTy
       type="button"
       tabIndex={-1}
       onClick={() => setShowPassword(p => !p)}
-      className="bg-transparent border-none cursor-pointer text-base text-[var(--text-secondary)]"
     >
       {showPassword ? "🙈" : "👁️"}
     </button>
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div>
 
       {/* Tabs */}
-      <div className="flex bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[14px] p-1 gap-1">
+      <div>
         {(["Sign In", "Register"] as const).map((label, i) => {
           const active = isLogin ? i === 0 : i === 1;
           return (
             <button
               key={label}
               onClick={() => { setIsLogin(i === 0); setError(""); }}
-              className={`flex-1 p-[10px] rounded-[10px] text-sm font-bold border-none cursor-pointer transition-all duration-[250ms] ${
-                active
-                  ? "bg-[var(--grad-purple-green)] text-white shadow-[var(--shadow-tab-active)]"
-                  : "bg-transparent text-[var(--text-secondary)]"
-              }`}
+              aria-pressed={active}
             >
               {label}
             </button>
@@ -89,7 +84,7 @@ export default function AuthForm({ onPasswordFocus, onPasswordBlur, onPasswordTy
       </div>
 
       {/* Fields */}
-      <div className="flex flex-col gap-5">
+      <div>
         {!isLogin && (
           <Input label="Your name" placeholder="Jane Doe" value={name} onChange={v => { setName(v); onTyping?.(); }} onKeyDown={onKey} autoComplete="name" />
         )}
@@ -112,17 +107,15 @@ export default function AuthForm({ onPasswordFocus, onPasswordBlur, onPasswordTy
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full py-4 min-h-[52px] text-base bg-[var(--grad-3color)] text-white font-extrabold border-none cursor-pointer rounded-[14px] shadow-[var(--shadow-purple)] flex items-center justify-center transition-[transform,opacity] duration-[250ms] tracking-[0.02em] hover:enabled:-translate-y-[2px] disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          {loading ? <span className="spinner-light" /> : isLogin ? "Sign In →" : "Create Account →"}
+          {loading ? "Please wait…" : isLogin ? "Sign In →" : "Create Account →"}
         </button>
       </div>
 
-      <p className="text-center text-sm text-[var(--text-tertiary)] m-0">
+      <p>
         {isLogin ? "No account yet? " : "Already have one? "}
         <span
           onClick={switchMode}
-          className="bg-[var(--grad-purple-green)] bg-clip-text text-transparent font-bold cursor-pointer"
         >
           {isLogin ? "Register here" : "Sign in"}
         </span>

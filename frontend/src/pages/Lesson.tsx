@@ -65,9 +65,9 @@ export default function Lesson() {
 
   if (error) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
-        <div className="text-[40px]">😕</div>
-        <p className="text-[var(--text-secondary)]">{error}</p>
+      <div>
+        <div>😕</div>
+        <p>{error}</p>
         <SecondaryButton onClick={() => navigate("/lessons")}>Back to lessons</SecondaryButton>
       </div>
     );
@@ -75,33 +75,31 @@ export default function Lesson() {
 
   if (!lesson) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-10 h-10 border-[3px] border-[var(--c-purple-ring)] border-t-[var(--c-purple)] rounded-full animate-spin" />
+      <div>
       </div>
     );
   }
 
   if (lesson.words.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 px-5 text-center">
-        <div className="text-[40px]">🐢</div>
-        <p className="text-[var(--text-secondary)]">This lesson has no words in your languages yet.</p>
+      <div>
+        <div>🐢</div>
+        <p>This lesson has no words in your languages yet.</p>
         <SecondaryButton onClick={() => navigate("/lessons")}>Back to lessons</SecondaryButton>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 bg-[var(--bg-base)] min-h-full">
-      <main className="max-w-[760px] mx-auto px-5 py-10 flex flex-col gap-6">
+    <div>
+      <main>
         <div>
           <button
             onClick={() => (active ? setActive(null) : navigate("/lessons"))}
-            className="text-sm font-bold text-[var(--text-secondary)] bg-transparent border-none cursor-pointer p-0"
           >
             {active ? "← Back to lesson" : "← All lessons"}
           </button>
-          <h1 className="text-[1.75rem] font-extrabold text-[var(--text-primary)] mt-1 mb-0">
+          <h1>
             Lesson {lesson.position}: {lesson.title}
           </h1>
         </div>
@@ -115,11 +113,11 @@ export default function Lesson() {
           <>
             {allDone && (
               <StepCard eyebrow="Lesson complete" title={percent >= PASS_RATE * 100 ? "🎉 Well done!" : "Good effort — try the trainings again!"}>
-                <p className="text-[var(--text-secondary)] mt-0">
-                  You got <span className="font-bold text-[var(--text-primary)]">{correct} of {total}</span> answers right ({percent}%).
+                <p>
+                  You got <span>{correct} of {total}</span> answers right ({percent}%).
                 </p>
-                {!user && <p className="text-sm text-[var(--text-tertiary)]">Sign in to save your progress.</p>}
-                <div className="flex gap-3 flex-wrap mt-4">
+                {!user && <p>Sign in to save your progress.</p>}
+                <div>
                   <PrimaryButton onClick={() => navigate(`/lessons/${lesson.id + 1}`)}>Next lesson →</PrimaryButton>
                   <SecondaryButton onClick={() => setResults({})}>Start again</SecondaryButton>
                 </div>
@@ -133,7 +131,7 @@ export default function Lesson() {
             <StepCard eyebrow={`${openTrainings.filter(t => results[t.id]).length} of ${openTrainings.length} done`} title="Choose a training">
               <TrainingMenu available={available} results={results} onOpen={setActive} />
               {!available.shuffle && (
-                <p className="text-sm text-[var(--text-tertiary)] mb-0 mt-4">Shuffle needs sentences. Run: make build-lessons</p>
+                <p>Shuffle needs sentences. Run: make build-lessons</p>
               )}
             </StepCard>
           </>

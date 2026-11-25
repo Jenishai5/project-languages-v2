@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
 import Logo   from "../atoms/Logo";
 import Avatar from "../atoms/Avatar";
 import Button from "../atoms/Button";
-import { Alert, GlassCard, GradientText, Input, ModalBackdrop } from "../ui";
+import { Alert, Input, ModalBackdrop } from "../ui";
 
 interface AppNavbarProps {
   onSignIn?: () => void;
@@ -17,21 +16,6 @@ export default function AppNavbar({ onSignIn }: AppNavbarProps) {
   const isLanding = location.pathname === "/";
 
   const { user, logout, changePassword } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-
-  const [visible, setVisible]   = useState(true);
-  const lastScrollY              = useRef(0);
-
-  useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY;
-      if (y <= 10 || y < lastScrollY.current) setVisible(true);
-      else setVisible(false);
-      lastScrollY.current = y;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const [dropOpen, setDropOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
@@ -81,64 +65,45 @@ export default function AppNavbar({ onSignIn }: AppNavbarProps) {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-40 bg-[var(--nav-bg)] backdrop-blur-[12px] border-b border-[var(--nav-border)] px-6 py-3 min-h-[60px] flex items-center justify-center shadow-[var(--shadow-nav)] transition-transform duration-300 ${visible ? "translate-y-0" : "-translate-y-full"}`}>
+      <nav>
 
         {!isLanding && (
-          <div className="absolute left-6">
+          <div>
             <button
               onClick={() => location.pathname === "/dashboard" ? navigate("/") : navigate("/dashboard")}
               title={location.pathname === "/dashboard" ? "Back to home" : "Back to dashboard"}
-              className="w-8 h-8 rounded-full bg-[var(--bg-surface)] border border-[var(--border-medium)] cursor-pointer flex items-center justify-center text-sm text-[var(--text-secondary)]"
             >←</button>
           </div>
         )}
 
-        <div className="text-[var(--text-primary)]">
-          <Logo size="md" />
+        <div>
+          <Logo />
         </div>
 
-        <div className="absolute right-6 flex items-center gap-3" ref={dropRef}>
-          {/* ── Theme toggle ── */}
-          <button
-            onClick={toggleTheme}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className={`relative w-11 h-6 rounded-[12px] border-[1.5px] border-[var(--border-medium)] cursor-pointer flex-shrink-0 transition-[background,border-color] duration-300 ${
-              theme === "light" ? "bg-[var(--c-green-demo)]" : "bg-[var(--bg-hover)]"
-            }`}
-          >
-            <span className={`absolute top-[2px] w-4 h-4 rounded-full bg-white shadow-[var(--shadow-toggle-knob)] flex items-center justify-center text-[9px] select-none transition-[left] duration-[250ms] ${
-              theme === "dark" ? "left-[2px]" : "left-[20px]"
-            }`}>
-              {theme === "dark" ? "🌙" : "☀️"}
-            </span>
-          </button>
+        <div ref={dropRef}>
           {user ? (
             <>
-              <span className="text-sm text-[var(--text-secondary)]">{displayName}</span>
+              <span>{displayName}</span>
               <button
                 onClick={() => setDropOpen(o => !o)}
-                className="bg-transparent border-none cursor-pointer rounded-full p-0"
               >
-                <Avatar initial={initial} size="md" />
+                <Avatar initial={initial} />
               </button>
 
               {dropOpen && (
-                <div className="absolute right-0 top-[calc(100%+8px)] w-[220px] z-50 bg-[var(--dropdown-bg)] backdrop-blur-[20px] border border-[var(--border-light)] rounded-[18px] shadow-[var(--dropdown-shadow)] overflow-hidden">
-                  <div className="h-[2px] opacity-70 bg-[var(--grad-nav-accent)]" />
-                  <div className="px-4 py-[14px] border-b border-[var(--border-subtle)]">
-                    <p className="text-sm font-bold text-[var(--text-primary)] m-0">{displayName || "User"}</p>
-                    <p className="text-xs text-[var(--text-secondary)] mt-[3px] mb-0">{displayEmail}</p>
+                <div>
+                  <div>
+                    <p>{displayName || "User"}</p>
+                    <p>{displayEmail}</p>
                   </div>
-                  <div className="py-[6px]">
+                  <div>
                     <button
                       onClick={openPasswordModal}
-                      className="w-full text-left px-4 py-[11px] text-sm text-[var(--text-primary)] bg-none border-none cursor-pointer flex items-center gap-[10px] transition-all duration-[150ms] hover:bg-[var(--c-purple-focus)]"
                     >
                       🔑 Change password
                     </button>
                     <button
                       onClick={handleSignOut}
-                      className="w-full text-left px-4 py-[11px] text-sm text-[var(--text-primary)] bg-none border-none cursor-pointer flex items-center gap-[10px] transition-all duration-[150ms] hover:bg-[var(--c-red-tint)] hover:text-[var(--c-red)]"
                     >
                       🚪 Sign out
                     </button>
@@ -154,16 +119,14 @@ export default function AppNavbar({ onSignIn }: AppNavbarProps) {
 
       {modalOpen && (
         <ModalBackdrop onClose={() => setModalOpen(false)}>
-          <GlassCard className="w-full max-w-[400px] p-8 flex flex-col gap-5">
+          <div>
 
-            <div className="flex items-start justify-between">
+            <div>
               <div>
-                <GradientText as="h2" gradient="purple_yellow_green" className="text-[1.25rem] font-black m-0">
-                  Change password
-                </GradientText>
-                <p className="text-sm text-[var(--text-secondary)] mt-1 mb-0">Choose a new secure password</p>
+                <h2>Change password</h2>
+                <p>Choose a new secure password</p>
               </div>
-              <button onClick={() => setModalOpen(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[var(--bg-surface)] border border-[var(--border-light)] cursor-pointer flex items-center justify-center text-[13px] text-[var(--text-secondary)] flex-shrink-0 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]">✕</button>
+              <button onClick={() => setModalOpen(false)}>✕</button>
             </div>
 
             <Input label="New password"     type="password" placeholder="Min. 6 characters"  value={newPw}     onChange={setNewPw}     />
@@ -172,22 +135,20 @@ export default function AppNavbar({ onSignIn }: AppNavbarProps) {
             {pwError && <Alert type="error"   message={pwError} />}
             {pwMsg   && <Alert type="success" message={pwMsg}   />}
 
-            <div className="flex gap-3">
+            <div>
               <button
                 onClick={handleChangePassword}
                 disabled={pwLoading}
-                className="flex-1 px-6 py-[13px] text-[0.9rem] bg-[var(--grad-3color)] text-white font-extrabold border-none cursor-pointer rounded-[14px] shadow-[var(--shadow-purple)] flex items-center justify-center transition-[transform,opacity] duration-[250ms] tracking-[0.02em] hover:enabled:-translate-y-[2px] disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {pwLoading ? "Saving…" : "Save password"}
               </button>
               <button
                 onClick={() => setModalOpen(false)}
-                className="px-5 py-[13px] text-[0.9rem] bg-[var(--bg-surface)] border border-[var(--border-light)] text-[var(--text-secondary)] font-semibold cursor-pointer rounded-[14px] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
               >
                 Cancel
               </button>
             </div>
-          </GlassCard>
+          </div>
         </ModalBackdrop>
       )}
     </>

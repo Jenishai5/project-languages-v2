@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSpeechSynthesis } from "../../hooks/useSpeechSynthesis";
 import { SPEECH_LANG, type LessonSentence, type Tile } from "../../lib/lessonsApi";
-import * as S from "../../css/SentenceGame.styles";
+import { wordTypeLabel } from "../../lib/wordTypes";
 import { Attribution, Feedback, PrimaryButton, SecondaryButton, StepCard } from "./shared";
 import { playRecording, shuffle } from "../../lib/lessonUtils";
 
@@ -14,15 +14,10 @@ function tilesOf(sentence: LessonSentence): PlacedTile[] {
 }
 
 function TileChip({ tile, onClick }: { tile: PlacedTile; onClick: () => void }) {
-  const style = S.getTokenStyle(tile.word_type);
   return (
-    <button
-      onClick={onClick}
-      className="rounded-[12px] px-3 py-2 cursor-pointer flex flex-col items-center"
-      style={{ border: `2px solid ${style.border}`, background: style.bg }}
-    >
-      <span className="font-bold text-[15px]" style={{ color: style.text }}>{tile.form}</span>
-      {style.label && <span className="text-[9px] opacity-70 font-semibold" style={{ color: style.text }}>{style.label}</span>}
+    <button onClick={onClick} data-word-type={tile.word_type}>
+      <span>{tile.form}</span>
+      <span>{wordTypeLabel(tile.word_type)}</span>
     </button>
   );
 }
@@ -69,21 +64,21 @@ export default function BuildStep({
 
   return (
     <StepCard eyebrow={`Shuffle · ${index + 1} of ${sentences.length}`} title="Build the sentence">
-      <div className={S.promptBox}>
-        <p className={`${S.promptEyebrow} m-0`}>Translate</p>
-        <p className={S.promptText}>{sentence.prompt}</p>
+      <div>
+        <p>Translate</p>
+        <p>{sentence.prompt}</p>
       </div>
 
-      <p className={S.sectionLabel}>Your sentence</p>
-      <div className="min-h-[64px] rounded-[16px] p-3 flex flex-wrap gap-2 items-center border-[1.5px] border-dashed border-[var(--border-medium)] mb-5">
-        {placed.length === 0 && <span className="text-sm text-[var(--text-tertiary)]">Tap the words below in the right order</span>}
+      <p>Your sentence</p>
+      <div>
+        {placed.length === 0 && <span>Tap the words below in the right order</span>}
         {placed.map(tile => (
           <TileChip key={tile.uid} tile={tile} onClick={() => result === null && setPlaced(p => p.filter(t => t.uid !== tile.uid))} />
         ))}
       </div>
 
-      <p className={S.sectionLabel}>Words</p>
-      <div className="flex flex-wrap gap-2 mb-2 min-h-[48px]">
+      <p>Words</p>
+      <div>
         {bank.map(tile => (
           <TileChip key={tile.uid} tile={tile} onClick={() => result === null && setPlaced(p => [...p, tile])} />
         ))}
@@ -96,7 +91,7 @@ export default function BuildStep({
       )}
       {result && <Attribution recording={sentence.audio} />}
 
-      <div className="flex gap-3 flex-wrap mt-5">
+      <div>
         {result === null ? (
           <>
             <PrimaryButton onClick={check} disabled={bank.length > 0}>Check</PrimaryButton>

@@ -1,7 +1,23 @@
 # TurtleTalk frontend
 
-React + TypeScript + Vite + Tailwind. This is the original TurtleTalk app from
+React + TypeScript + Vite. This is the original TurtleTalk app from
 [project-languages](https://github.com/Jenishai5/project-languages), now connected to the FastAPI backend in this repo.
+
+## Design
+
+All styling has been removed so the design can be rebuilt from scratch: no CSS files, no Tailwind, no `className` or `style` attributes, no theme switcher. Pages and logic are unchanged and work as plain HTML.
+
+State that used to be shown only with colour is kept as attributes, so a new stylesheet can target it:
+
+| Attribute | Where | Values |
+|---|---|---|
+| `data-state` | Match / Picture options, word-match buttons, feedback messages, training buttons | `idle`, `selected`, `correct`, `wrong`, `muted`, `done`, `todo` |
+| `aria-pressed` | Selected word in Match, auth tabs, translation language buttons | `true` / `false` |
+| `aria-current="step"` | Current sentence in the sentence-shuffle navigation | — |
+| `data-word-type` | Sentence tiles and legend | `noun`, `verb`, `adjective`, … |
+| `data-variant`, `data-size` | `Button` component | `primary`, `secondary`, `dark`, `ghost` / `sm`, `md`, `lg` |
+
+Progress in the sentence game is a native `<progress>` element, and modals have `role="dialog"`.
 
 ## Run it
 

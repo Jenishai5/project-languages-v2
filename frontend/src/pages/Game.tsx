@@ -3,7 +3,6 @@ import { useSpeechSynthesis } from "../hooks/useSpeechSynthesis";
 import { getSpeechLang } from "../utils/getSpeechLang";
 import { useAuth } from "../context/AuthContext";
 import { saveWordResult } from "../lib/progressService";
-import * as S from "../css/Game.styles";
 
 type Pair      = { question: string; answer: string };
 type ImageMode = "question" | "answer" | null;
@@ -36,13 +35,12 @@ async function fetchPairs(language: Language): Promise<{ pairs: Pair[]; imageMod
 }
 
 // ── Image answer card ──────────────────────────────────────────────────────────
-function ImageCard({ url, state }: { url: string; state: BtnState }) {
+function ImageCard({ url }: { url: string }) {
   return (
     <img
       src={url}
       alt="word"
       draggable={false}
-      className={`w-full h-full object-contain rounded-[10px] pointer-events-none select-none transition-transform duration-300 ease-out ${state === "correct" ? "opacity-[0.45]" : "opacity-100"}`}
     />
   );
 }
@@ -154,15 +152,14 @@ export default function Game() {
   };
 
   return (
-    <div className={S.page}>
+    <div>
 
-      <header className={S.header}>
-        <div className="flex items-center justify-center mb-4">
-          <h2 className={S.title}>Word Match</h2>
+      <header>
+        <div>
+          <h2>Word Match</h2>
         </div>
-        <div className={S.score}>🏆 Score: {score}</div>
+        <div>🏆 Score: {score}</div>
         <select
-          className={S.select}
           value={language}
           onChange={e => setLanguage(e.target.value as Language)}
         >
@@ -171,32 +168,31 @@ export default function Game() {
       </header>
 
       {loading ? (
-        <div className={S.spinner}>
-          <div className={S.ring} />
+        <div>
           <p>Loading words…</p>
         </div>
       ) : error ? (
-        <div className={S.errorBox}>
-          <div className="text-[40px]">😕</div>
-          <p className="text-[var(--text-secondary)] text-sm">{error}</p>
-          <button className={S.errorRetry} onClick={() => startRound(language, true)}>
+        <div>
+          <div>😕</div>
+          <p>{error}</p>
+          <button onClick={() => startRound(language, true)}>
             Try again
           </button>
         </div>
       ) : (
         <>
-          <div className={S.card}>
+          <div>
 
-            <div className={S.column}>
+            <div>
               {pairs.map((p, i) => (
                 <button
                   key={i}
                   onClick={() => handleQuestion(i)}
                   disabled={qStates[i] === "correct"}
-                  className={`${questionsAreImages ? S.btn.image : S.btn.base} ${qStates[i]}`}
+                  data-state={qStates[i]}
                 >
                   {questionsAreImages
-                    ? <ImageCard url={p.question} state={qStates[i]} />
+                    ? <ImageCard url={p.question} />
                     : p.question
                   }
                 </button>
@@ -204,16 +200,16 @@ export default function Game() {
             </div>
 
             {/* Answers — text or image */}
-            <div className={S.column}>
+            <div>
               {answers.map((a, i) => (
                 <button
                   key={i}
                   onClick={() => handleAnswer(i)}
                   disabled={aStates[i] === "correct"}
-                  className={`${answersAreImages ? S.btn.image : S.btn.base} ${aStates[i]}`}
+                  data-state={aStates[i]}
                 >
                   {answersAreImages
-                    ? <ImageCard url={a.answer} state={aStates[i]} />
+                    ? <ImageCard url={a.answer} />
                     : a.answer
                   }
                 </button>
@@ -223,8 +219,8 @@ export default function Game() {
           </div>
 
           {matchedPairs === TOTAL_PAIRS && (
-            <div className={S.roundComplete}>
-              <p className={S.roundText}>🎉 Round complete! Next round loading…</p>
+            <div>
+              <p>🎉 Round complete! Next round loading…</p>
             </div>
           )}
         </>

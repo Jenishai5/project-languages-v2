@@ -1,4 +1,5 @@
-import { variants, sizes, base, type Variant, type Size } from "../../css/Button.styles";
+export type Variant = "primary" | "secondary" | "dark" | "ghost";
+export type Size = "sm" | "md" | "lg";
 
 interface ButtonProps {
   children:  React.ReactNode;
@@ -7,25 +8,18 @@ interface ButtonProps {
   size?:     Size;
   disabled?: boolean;
   type?:     "button" | "submit";
-  className?: string;
 }
 
 export default function Button({
   children,
   onClick,
-  variant   = "primary",
-  size      = "md",
-  disabled  = false,
-  type      = "button",
-  className = "",
+  variant  = "primary",
+  size     = "md",
+  disabled = false,
+  type     = "button",
 }: ButtonProps) {
   return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
-    >
+    <button type={type} onClick={onClick} disabled={disabled} data-variant={variant} data-size={size}>
       {children}
     </button>
   );

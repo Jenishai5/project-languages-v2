@@ -10,7 +10,7 @@ export default function TrainingMenu({
   onOpen: (training: Training) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div>
       {TRAININGS.map(({ id, icon, title, hint }) => {
         const result = results[id];
         const enabled = available[id];
@@ -20,15 +20,11 @@ export default function TrainingMenu({
             onClick={() => onOpen(id)}
             disabled={!enabled}
             aria-label={title}
-            className={`flex flex-col items-center gap-1 rounded-[20px] border-[1.5px] p-6 ${
-              result
-                ? "border-[var(--state-correct-bd)] bg-[var(--state-correct-bg)]"
-                : "border-[var(--border-subtle)] bg-[var(--bg-card)]"
-            } ${enabled ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+            data-state={result ? "done" : "todo"}
           >
-            <span className="text-[40px] leading-none">{icon}</span>
-            <span className="text-lg font-extrabold text-[var(--text-primary)]">{title}</span>
-            <span className="text-xs text-[var(--text-secondary)]">
+            <span>{icon}</span>
+            <span>{title}</span>
+            <span>
               {!enabled ? "Not ready yet" : !result ? hint : result.total === 0 ? "✓ Skipped" : `✓ ${result.correct} of ${result.total}`}
             </span>
           </button>

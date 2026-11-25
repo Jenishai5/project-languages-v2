@@ -41,7 +41,7 @@ export default function PronounceStep({
   if (!Recognizer) {
     return (
       <StepCard eyebrow="Pronounce" title="Say the words">
-        <p className="text-[var(--text-secondary)] mt-0">
+        <p>
           Your browser can't listen to speech. Open the app in Chrome or Safari to practise pronunciation.
         </p>
         <PrimaryButton onClick={() => onDone(0, 0)}>Skip this step →</PrimaryButton>
@@ -94,17 +94,17 @@ export default function PronounceStep({
 
   return (
     <StepCard eyebrow={`Pronounce · ${index + 1} of ${words.length}`} title="Say the word out loud">
-      <div className="flex flex-col items-center gap-2 mb-6">
+      <div>
         {word.image_url ? (
-          <img src={word.image_url} alt="" className="w-24 h-24 object-contain rounded-[12px]" />
+          <img src={word.image_url} alt="" />
         ) : (
-          <span className="text-[56px] leading-none">{word.emoji ?? "🐢"}</span>
+          <span>{word.emoji ?? "🐢"}</span>
         )}
-        <span className="text-2xl font-extrabold text-[var(--text-primary)]">{word.word}</span>
-        <span className="text-sm text-[var(--text-secondary)]">{word.translation}</span>
+        <span>{word.word}</span>
+        <span>{word.translation}</span>
       </div>
 
-      <div className="flex gap-3 flex-wrap justify-center">
+      <div>
         <SecondaryButton onClick={() => speak(word.word, voice)}>🔊 Hear it</SecondaryButton>
         <PrimaryButton onClick={listen} disabled={status === "listening"}>
           {status === "listening" ? "🎙️ Listening…" : finished ? "🎤 Try again" : "🎤 Say it"}
@@ -115,7 +115,7 @@ export default function PronounceStep({
       {status === "wrong" && <Feedback correct={false}>❌ I heard “{heard || "…"}”. Listen and try again.</Feedback>}
       {status === "error" && <Feedback correct={false}>{message}</Feedback>}
 
-      <div className="mt-5 flex justify-center">
+      <div>
         {status === "correct" ? (
           <PrimaryButton onClick={next}>{index + 1 >= words.length ? "Finish →" : "Next word →"}</PrimaryButton>
         ) : (
