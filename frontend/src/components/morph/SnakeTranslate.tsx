@@ -61,7 +61,7 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
     const reduced = prefersReducedMotion();
     const fontSize = parseFloat(getComputedStyle(el).fontSize) || 40;
     const width = el.offsetWidth;
-    const wallWidth = Math.max(10, fontSize * 0.22);
+    const wallWidth = Math.max(5, fontSize * 0.12);
     const wallX = width / 2;
     const leftWidth = wallX - wallWidth / 2;
     const rightOrigin = wallX + wallWidth / 2;
@@ -129,28 +129,23 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
       });
     };
 
-    const glow = el.querySelector<HTMLElement>(".snake__glow")!;
-    const core = el.querySelector<HTMLElement>(".snake__core")!;
     const flash = (kind: "in" | "out") => {
       const burst = el.querySelector<HTMLElement>(`.snake__flash--${kind}`)!;
       const ring = el.querySelector<HTMLElement>(`.snake__ring--${kind}`)!;
       gsap.killTweensOf([burst, ring]);
       gsap.fromTo(burst, { opacity: 0.95, scale: 0.35 }, { opacity: 0, scale: 1.25, duration: 0.75, ease: "power2.out" });
       gsap.fromTo(ring, { opacity: 0.8, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.9, ease: "power3.out" });
-      gsap.fromTo(wall, { scaleX: 2.4, filter: "blur(3px) brightness(1.5)" }, { scaleX: 1, filter: "blur(3px) brightness(1)", duration: 0.7, ease: "power3.out" });
+      gsap.fromTo(wall, { scaleX: 2.2, filter: "brightness(1.5)" }, { scaleX: 1, filter: "brightness(1)", duration: 0.6, ease: "power3.out" });
     };
 
     let travelled = reduced ? items[0].start + Math.max(items[0].src.width, items[0].tgt.width) + fontSize : 0;
     const previous = items.map(() => Number.NaN);
-    let energy = 0;
     const render = (animate: boolean) => {
-      let active = false;
       items.forEach(({ src, tgt, start }, i) => {
         const d = ((((travelled - start + approach) % period) + period) % period) - approach;
         place(src, leftWidth + d - src.width, "left", leftWidth);
         place(tgt, d - tgt.width, "right", rightWidth);
         const through = Math.max(src.width, tgt.width);
-        if (d > 0 && d < through) active = true;
         const before = previous[i];
         if (animate && !Number.isNaN(before) && before < d) {
           if (before < 0 && d >= 0) flash("in");
@@ -158,10 +153,6 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
         }
         previous[i] = d;
       });
-      energy += ((active ? 1 : 0) - energy) * 0.06;
-      glow.style.opacity = (0.25 + energy * 0.7).toFixed(3);
-      glow.style.transform = `scaleY(${(0.75 + energy * 0.3).toFixed(3)})`;
-      core.style.opacity = (energy * 0.9).toFixed(3);
     };
     render(false);
 
@@ -171,15 +162,7 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
       render(true);
     };
     gsap.ticker.add(tick);
-    const flicker = gsap.to(wall, {
-      opacity: "random(0.45, 1)",
-      duration: "random(0.05, 0.22)",
-      ease: "none",
-      repeat: -1,
-      repeatRefresh: true,
-    });
     return () => {
-      flicker.kill();
       gsap.ticker.remove(tick);
       gsap.killTweensOf(el.querySelectorAll(".snake__flash, .snake__ring, .snake__wall"));
     };
@@ -197,8 +180,6 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
         {stream.map(([, b], i) => <Line key={i} phrase={b} index={i} role="tgt" />)}
       </div>
       <span className="snake__wall" aria-hidden="true">
-        <span className="snake__glow" />
-        <span className="snake__core" />
         <span className="snake__flash snake__flash--in" />
         <span className="snake__flash snake__flash--out" />
         <span className="snake__ring snake__ring--in" />
