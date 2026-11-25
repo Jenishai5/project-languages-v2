@@ -25,6 +25,7 @@ from langapp.repositories.word_pairs import WordPairRepository
 from langapp.services.agents.base import model_list
 from langapp.services.agents.conversation import ConversationAgent
 from langapp.services.agents.conversation_service import ConversationService
+from langapp.services.agents.cultural import CulturalAgent
 from langapp.services.agents.grammar import GrammarAgent
 from langapp.services.agents.orchestrator import AgentLimits, AgentOrchestrator, ReplyCache
 from langapp.services.agents.vocabulary import VocabularyAgent
@@ -171,11 +172,21 @@ def get_vocabulary_agent(
     return VocabularyAgent(openrouter, models, max_tokens=max_tokens)
 
 
+def get_cultural_agent(
+    openrouter: Annotated[OpenRouterClient | None, Depends(get_openrouter)],
+) -> CulturalAgent | None:
+    if openrouter is None:
+        return None
+    models, max_tokens = _agent_settings()
+    return CulturalAgent(openrouter, models, max_tokens=max_tokens)
+
+
 def get_agent_orchestrator(
     session: SessionDep,
     sentences: SentenceRepoDep,
     grammar: Annotated[GrammarAgent | None, Depends(get_grammar_agent)],
     vocabulary: Annotated[VocabularyAgent | None, Depends(get_vocabulary_agent)],
+    cultural: Annotated[CulturalAgent | None, Depends(get_cultural_agent)],
     cache: Annotated[ReplyCache, Depends(get_reply_cache)],
     gate: Annotated[threading.BoundedSemaphore, Depends(get_agent_gate)],
 ) -> AgentOrchestrator:
@@ -191,6 +202,7 @@ def get_agent_orchestrator(
         cache=cache,
         gate=gate,
         limits=AgentLimits(daily_limit=settings.agent_daily_limit, wait_seconds=settings.agent_wait_seconds),
+        cultural=cultural,
     )
 
 

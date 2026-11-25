@@ -1,8 +1,12 @@
 import json
 import uuid
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from typing import TypeVar
 
+from langapp.errors import ExternalSourceError, UpstreamRateLimited
 from langapp.services.languages import LANGUAGE_NAMES
+from langapp.services.ports import JsonChatModel
 
 LEVELS = ("A1", "A2", "B1", "B2", "C1", "C2")
 DEFAULT_LEVEL = "A1"
@@ -42,3 +46,32 @@ def json_object(text: str) -> dict | None:
     except ValueError:
         return None
     return data if isinstance(data, dict) else None
+
+
+T = TypeVar("T")
+
+
+def ask_with_retry(
+    model: JsonChatModel,
+    models: Sequence[str],
+    messages: list[dict],
+    user: str,
+    max_tokens: int,
+    attempts: int,
+    parse: Callable[[str, str | None, int | None], T],
+    usable: Callable[[T], bool],
+) -> T:
+    for attempt in range(max(1, attempts)):
+        last = attempt + 1 >= max(1, attempts)
+        try:
+            reply = model.chat_json(models, messages, user=user, max_tokens=max_tokens)
+        except UpstreamRateLimited:
+            raise
+        except ExternalSourceError:
+            if last:
+                raise
+            continue
+        result = parse(reply.text, reply.model, reply.tokens)
+        if usable(result) or last:
+            return result
+    raise ExternalSourceError("The AI teacher gave no answer.")

@@ -2,8 +2,7 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from langapp.errors import ExternalSourceError, UpstreamRateLimited
-from langapp.services.agents.base import LearnerContext, clip, json_object
+from langapp.services.agents.base import LearnerContext, ask_with_retry, clip, json_object
 from langapp.services.ports import JsonChatModel
 
 AGENT = "vocabulary"
@@ -102,17 +101,13 @@ class VocabularyAgent:
         return self._models[0] if self._models else "unknown"
 
     def help(self, context: LearnerContext, word: str, translation: str) -> WordHelp:
-        messages = build_messages(context, word, translation)
-        for attempt in range(self._attempts):
-            try:
-                reply = self._model.chat_json(self._models, messages, user=str(context.user_id), max_tokens=self._max_tokens)
-            except UpstreamRateLimited:
-                raise
-            except ExternalSourceError:
-                if attempt + 1 >= self._attempts:
-                    raise
-                continue
-            result = parse_word_help(reply.text, reply.model, reply.tokens)
-            if result.useful or attempt + 1 >= self._attempts:
-                return result
-        raise ExternalSourceError("The AI teacher gave no answer.")
+        return ask_with_retry(
+            self._model,
+            self._models,
+            build_messages(context, word, translation),
+            str(context.user_id),
+            self._max_tokens,
+            self._attempts,
+            parse_word_help,
+            lambda result: result.useful,
+        )

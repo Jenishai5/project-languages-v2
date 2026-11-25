@@ -2,8 +2,7 @@ import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from langapp.errors import ExternalSourceError, UpstreamRateLimited
-from langapp.services.agents.base import LearnerContext, clip, json_object
+from langapp.services.agents.base import LearnerContext, ask_with_retry, clip, json_object
 from langapp.services.ports import JsonChatModel
 
 AGENT = "grammar"
@@ -85,17 +84,13 @@ class GrammarAgent:
         return self._models[0] if self._models else "unknown"
 
     def explain(self, context: LearnerContext, target: str, answer: str, meaning: str | None) -> GrammarFeedback:
-        messages = build_messages(context, target, answer, meaning)
-        for attempt in range(self._attempts):
-            try:
-                reply = self._model.chat_json(self._models, messages, user=str(context.user_id), max_tokens=self._max_tokens)
-            except UpstreamRateLimited:
-                raise
-            except ExternalSourceError:
-                if attempt + 1 >= self._attempts:
-                    raise
-                continue
-            feedback = parse_feedback(reply.text, reply.model, reply.tokens)
-            if feedback.explanation or attempt + 1 >= self._attempts:
-                return feedback
-        raise ExternalSourceError("The AI teacher gave no answer.")
+        return ask_with_retry(
+            self._model,
+            self._models,
+            build_messages(context, target, answer, meaning),
+            str(context.user_id),
+            self._max_tokens,
+            self._attempts,
+            parse_feedback,
+            lambda feedback: bool(feedback.explanation),
+        )

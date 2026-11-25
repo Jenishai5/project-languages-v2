@@ -303,6 +303,10 @@ The AI agents live inside the backend in `src/langapp/services/agents/`. A rule-
 - "End conversation" calls `/conversation/finish` without any AI call. It saves the lesson words the learner used (as `word_used` outcomes and correct word results in `user_progress`) and the corrections (as `mistake` outcomes). The messages themselves are never written to the database or to logs.
 - Closing the tab without "End conversation" saves nothing.
 
+**Cultural Agent (word list and conversations).** "🌍 Culture" under a lesson word, or in the chat header, calls `POST /api/agents/cultural/explain`. It returns how native speakers really use the word, up to three common idioms with their meaning, and a fun fact when a true one exists. The note is the same for every learner at a level, so it is cached.
+
+All text agents share one retry helper (`ask_with_retry`): if a free model fails or answers empty, the request is tried once more.
+
 Settings in `.env`:
 
 ```

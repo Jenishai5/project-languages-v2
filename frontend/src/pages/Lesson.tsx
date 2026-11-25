@@ -124,7 +124,7 @@ export default function Lesson() {
             )}
 
             <StepCard eyebrow={`${lesson.words.length} words`} title="Your words · tap to hear">
-              <WordList words={lesson.words} learning={lesson.learning} />
+              <WordList words={lesson.words} learning={lesson.learning} native={lesson.native} />
             </StepCard>
 
             <StepCard eyebrow={`${openTrainings.filter(t => results[t.id]).length} of ${openTrainings.length} done`} title="Choose a training">

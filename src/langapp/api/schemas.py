@@ -384,3 +384,21 @@ class ConversationStartOut(ConversationReplyOut):
 class ConversationSummaryOut(BaseModel):
     words_used: list[str]
     mistakes_saved: int
+
+
+class ExpressionOut(BaseModel):
+    phrase: str
+    meaning: str
+
+
+class CultureNoteOut(BaseModel):
+    concept_id: int
+    word: str
+    translation: str
+    available: bool
+    note: str | None
+    expressions: list[ExpressionOut]
+    fun_fact: str | None
+    cached: bool
+    message: str | None
+    remaining_today: int

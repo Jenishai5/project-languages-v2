@@ -10,6 +10,7 @@ from langapp.api.schemas import (
     ConversationStartOut,
     ConversationSummaryOut,
     ConversationTurnIn,
+    CultureNoteOut,
     ErrorOut,
     GrammarCheckIn,
     GrammarCheckOut,
@@ -63,3 +64,8 @@ def conversation_turn(body: ConversationTurnIn, user: CurrentUser, chat: Convers
 def finish_conversation(body: ConversationFinishIn, user: CurrentUser, chat: ConversationServiceDep) -> dict:
     corrections = [Correction(c.wrong, c.right, c.why) for c in body.corrections]
     return chat.finish(user.id, body.mnemonic_id, body.learning, body.native, body.messages, corrections)
+
+
+@router.post("/cultural/explain", response_model=CultureNoteOut, responses=AGENT_ERRORS)
+def explain_culture(body: WordHelpIn, user: CurrentUser, agents: AgentOrchestratorDep) -> dict:
+    return agents.culture_note(user.id, body.concept_id, body.learning, body.native)

@@ -10,6 +10,7 @@ import {
 import { SPEECH_LANG } from "../../lib/lessonsApi";
 import type { Mnemonic } from "../../lib/mnemonicsApi";
 import { getRecognition, transcriptsOf, type Recognition } from "../../lib/speech";
+import CulturePanel from "./CulturePanel";
 
 const VOICE_KEY = "turtletalk.chat-voice";
 
@@ -58,6 +59,7 @@ export default function ConversationPanel({
   const [listening, setListening] = useState(false);
   const [summary, setSummary]   = useState<ConversationSummary | null>(null);
   const [voiceOn, setVoiceOn]   = useState(voicePreference);
+  const [showCulture, setShowCulture] = useState(false);
   const voiceRef = useRef(voiceOn);
   const started = useRef(false);
   const recognition = useRef<Recognition | null>(null);
@@ -189,11 +191,18 @@ export default function ConversationPanel({
           <p className="eyebrow">Talk about your picture · {card.word}</p>
           <p className="chat__sentence">“{card.sentence}”</p>
         </div>
+        <button className="btn btn--ghost btn--sm" onClick={() => setShowCulture(on => !on)} aria-pressed={showCulture}>
+          🌍 Culture
+        </button>
         <button className="btn btn--ghost btn--sm" onClick={toggleVoice} aria-pressed={voiceOn}>
           {voiceOn ? "🔊 Voice on" : "🔇 Voice off"}
         </button>
         <button className="btn btn--ghost btn--sm" onClick={onClose}>Close</button>
       </header>
+
+      {showCulture && (
+        <CulturePanel conceptId={card.concept_id} learning={learning} native={native} onClose={() => setShowCulture(false)} />
+      )}
 
       <div className="chat__log" aria-live="polite">
         {messages.map((message, i) => (

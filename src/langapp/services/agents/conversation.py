@@ -1,8 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
-from langapp.errors import ExternalSourceError, UpstreamRateLimited
-from langapp.services.agents.base import LearnerContext, clip, json_object
+from langapp.services.agents.base import LearnerContext, ask_with_retry, clip, json_object
 from langapp.services.ports import JsonChatModel
 
 AGENT = "conversation"
@@ -92,18 +91,14 @@ class ConversationAgent:
         return self._models[0] if self._models else "unknown"
 
     def reply(self, context: LearnerContext, topic: Topic, history: Sequence[Turn], message: str | None) -> PartnerReply:
-        messages = build_messages(context, topic, history, message)
-        for attempt in range(self._attempts):
-            try:
-                answer = self._model.chat_json(self._models, messages, user=str(context.user_id), max_tokens=self._max_tokens)
-            except UpstreamRateLimited:
-                raise
-            except ExternalSourceError:
-                if attempt + 1 >= self._attempts:
-                    raise
-                continue
-            parsed = parse_reply(answer.text, answer.model, answer.tokens)
-            if parsed.reply or attempt + 1 >= self._attempts:
-                return parsed
-        raise ExternalSourceError("The AI partner gave no answer.")
+        return ask_with_retry(
+            self._model,
+            self._models,
+            build_messages(context, topic, history, message),
+            str(context.user_id),
+            self._max_tokens,
+            self._attempts,
+            parse_reply,
+            lambda parsed: bool(parsed.reply),
+        )
 

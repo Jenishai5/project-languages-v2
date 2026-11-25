@@ -15,6 +15,8 @@ from langapp.repositories.outcomes import LearningOutcomeRepository
 from langapp.repositories.sentences import SentenceRepository
 from langapp.repositories.user_settings import UserSettingsRepository
 from langapp.services.agents.base import DEFAULT_LEVEL, LearnerContext
+from langapp.services.agents.cultural import AGENT as CULTURAL
+from langapp.services.agents.cultural import CulturalAgent, CultureNote
 from langapp.services.agents.grammar import AGENT as GRAMMAR
 from langapp.services.agents.grammar import GrammarAgent, GrammarFeedback
 from langapp.services.agents.vocabulary import AGENT as VOCABULARY
@@ -85,6 +87,7 @@ class AgentOrchestrator:
         gate: threading.Semaphore,
         limits: AgentLimits | None = None,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+        cultural: CulturalAgent | None = None,
     ) -> None:
         self._sentences = sentences
         self._concepts = concepts
@@ -93,6 +96,7 @@ class AgentOrchestrator:
         self._usage = usage
         self._grammar = grammar
         self._vocabulary = vocabulary
+        self._cultural = cultural
         self._cache = cache
         self._gate = gate
         self._limits = limits or AgentLimits()
@@ -134,12 +138,44 @@ class AgentOrchestrator:
             self._outcomes.add(user_id, agent=GRAMMAR, kind="mistake", model=result.value.model, detail=detail)
         return self._grammar_view(user_id, correct=False, answer=result)
 
-    def word_help(self, user_id: uuid.UUID, concept_id: int, learning: str, native: str) -> dict:
+    def _card(self, concept_id: int, learning: str, native: str) -> dict:
         concept = self._concepts.get_with_terms(concept_id)
         cards = word_cards([concept], learning, native) if concept is not None else []
         if not cards:
             raise NotFound("Word not found.")
-        card = cards[0]
+        return cards[0]
+
+    def culture_note(self, user_id: uuid.UUID, concept_id: int, learning: str, native: str) -> dict:
+        card = self._card(concept_id, learning, native)
+        context = self.learner(user_id, learning, native)
+        result = self.ask(
+            context,
+            CULTURAL,
+            self._cultural,
+            cache_key(CULTURAL, card["word"], card["translation"], learning, native, context.level),
+            lambda agent: agent.explain(context, card["word"], card["translation"]),
+            lambda note: bool(note.note),
+        )
+        note = result.value if isinstance(result.value, CultureNote) else None
+        if note is not None:
+            detail = {"slug": card["slug"]}
+            self._outcomes.add(
+                user_id, agent=CULTURAL, kind="culture_note", concept_id=concept_id, model=note.model, detail=detail
+            )
+        view = note.view() if note else {"note": None, "expressions": [], "fun_fact": None}
+        return {
+            "concept_id": concept_id,
+            "word": card["word"],
+            "translation": card["translation"],
+            "available": note is not None,
+            **view,
+            "cached": result.cached,
+            "message": result.message,
+            "remaining_today": self.remaining_today(user_id),
+        }
+
+    def word_help(self, user_id: uuid.UUID, concept_id: int, learning: str, native: str) -> dict:
+        card = self._card(concept_id, learning, native)
 
         context = self.learner(user_id, learning, native)
         result = self.ask(

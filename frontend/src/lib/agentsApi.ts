@@ -127,3 +127,20 @@ export function finishConversation(
 ): Promise<ConversationSummary> {
   return post("/api/agents/conversation/finish", { mnemonic_id: mnemonicId, learning, native, messages, corrections });
 }
+
+export interface CultureNote {
+  concept_id:      number;
+  word:            string;
+  translation:     string;
+  available:       boolean;
+  note:            string | null;
+  expressions:     { phrase: string; meaning: string }[];
+  fun_fact:        string | null;
+  cached:          boolean;
+  message:         string | null;
+  remaining_today: number;
+}
+
+export function getCultureNote(conceptId: number, learning: LangCode, native: LangCode): Promise<CultureNote> {
+  return post("/api/agents/cultural/explain", { concept_id: conceptId, learning, native });
+}

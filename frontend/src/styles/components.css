@@ -266,3 +266,8 @@ progress::-moz-progress-bar { background: var(--brown); border-radius: var(--rad
 .chat__typing { margin: 0; color: var(--ink-muted); font-size: 20px; letter-spacing: 2px; }
 .chat__form { display: flex; gap: 8px; }
 .chat-summary { display: flex; flex-direction: column; gap: 10px; }
+
+.word-tile { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.word-tile .word-card { width: 100%; }
+.word-tile__culture { align-self: center; font-size: 13px; }
+.culture-note .row { align-items: center; }
