@@ -1,0 +1,209 @@
+openapi: 3.1.0
+info:
+  title: TurtleTalk API
+  version: 1.0.0
+  description: |
+    The contract of the TurtleTalk backend. The code must match this file.
+    New needs are added here first, together with a decision record in docs/decisions/.
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+  - url: http://localhost:8000
+    description: Local backend
+security:
+  - bearerAuth: []
+tags:
+  - name: agents
+    description: AI agents and their usage
+paths:
+  /agents/usage/summary:
+    get:
+      operationId: getAiUsageSummary
+      tags: [agents]
+      summary: AI usage of every agent for the whole app
+      description: |
+        Totals per agent for the last `days` days, for all learners together.
+        Only counts are returned, never what a learner wrote. Admins only.
+        All five agents are always listed, also when they had no calls.
+      parameters:
+        - name: days
+          in: query
+          required: false
+          description: How many days back to count, including today.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 90
+            default: 7
+      responses:
+        "200":
+          description: Usage per agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiUsageSummary"
+              example:
+                days: 7
+                generated_at: "2026-11-26T09:30:00Z"
+                agents:
+                  - agent: grammar
+                    calls: 12
+                    failures: 1
+                    failure_rate: 0.083
+                    tokens: 4100
+                    learners: 2
+                    models: ["openrouter/free"]
+                    last_call_at: "2026-11-26T09:12:00Z"
+                    daily:
+                      - day: "2026-11-26"
+                        calls: 5
+                        failures: 0
+                        tokens: 1800
+                  - agent: cultural
+                    calls: 0
+                    failures: 0
+                    failure_rate: 0
+                    tokens: 0
+                    learners: 0
+                    models: []
+                    last_call_at: null
+                    daily: []
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase access token of the logged-in user.
+  responses:
+    Unauthorized:
+      description: No token, or the token is not valid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: No token provided.
+    Forbidden:
+      description: Logged in, but not allowed to see this.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: Only admins can see AI usage for the whole app.
+    ValidationFailed:
+      description: A parameter or the body does not match this contract.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationError"
+  schemas:
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          description: A sentence a person can read.
+    ValidationError:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            required: [loc, msg, type]
+            properties:
+              loc:
+                type: array
+                description: Where the problem is, for example ["query", "days"].
+                items:
+                  oneOf:
+                    - type: string
+                    - type: integer
+              msg:
+                type: string
+              type:
+                type: string
+    AgentName:
+      type: string
+      enum: [grammar, vocabulary, conversation, pronunciation, cultural]
+    AiUsageSummary:
+      type: object
+      required: [days, generated_at, agents]
+      properties:
+        days:
+          type: integer
+          minimum: 1
+          maximum: 90
+        generated_at:
+          type: string
+          format: date-time
+        agents:
+          type: array
+          description: Always the five agents, in a fixed order.
+          items:
+            $ref: "#/components/schemas/AgentUsage"
+    AgentUsage:
+      type: object
+      required: [agent, calls, failures, failure_rate, tokens, learners, models, last_call_at, daily]
+      properties:
+        agent:
+          $ref: "#/components/schemas/AgentName"
+        calls:
+          type: integer
+          minimum: 0
+        failures:
+          type: integer
+          minimum: 0
+        failure_rate:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: failures divided by calls, 0 when there were no calls.
+        tokens:
+          type: integer
+          minimum: 0
+        learners:
+          type: integer
+          minimum: 0
+          description: Different learners who used this agent in the period.
+        models:
+          type: array
+          description: Models that answered, most used first.
+          items:
+            type: string
+        last_call_at:
+          type: [string, "null"]
+          format: date-time
+          description: Time of the newest call, null when the agent had no calls.
+        daily:
+          type: array
+          description: One item per day that had calls, oldest first. Days without calls are left out.
+          items:
+            $ref: "#/components/schemas/AgentDay"
+    AgentDay:
+      type: object
+      required: [day, calls, failures, tokens]
+      properties:
+        day:
+          type: string
+          format: date
+        calls:
+          type: integer
+          minimum: 0
+        failures:
+          type: integer
+          minimum: 0
+        tokens:
+          type: integer
+          minimum: 0

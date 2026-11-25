@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     agent_max_concurrent: int = 4
     agent_wait_seconds: float = 5.0
     agent_max_tokens: int = 2000
+    admin_emails: str = ""
 
     azure_speech_key: str | None = None
     azure_speech_region: str | None = None

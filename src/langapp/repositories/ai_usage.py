@@ -27,6 +27,21 @@ class AiUsageRepository:
         )
         return {agent: count for agent, count in self.session.execute(stmt)}
 
+    def agent_totals_since(self, since: datetime) -> list[dict]:
+        stmt = (
+            select(
+                AiUsage.agent,
+                func.count().label("calls"),
+                func.coalesce(func.sum(cast(~AiUsage.succeeded, Integer)), 0).label("failures"),
+                func.coalesce(func.sum(AiUsage.tokens), 0).label("tokens"),
+                func.count(func.distinct(AiUsage.user_id)).label("learners"),
+                func.max(AiUsage.created_at).label("last_call_at"),
+            )
+            .where(AiUsage.created_at >= since)
+            .group_by(AiUsage.agent)
+        )
+        return [dict(row._mapping) for row in self.session.execute(stmt)]
+
     def summary_since(self, since: datetime) -> list[dict]:
         day = func.date_trunc("day", func.timezone("UTC", AiUsage.created_at))
         stmt = (

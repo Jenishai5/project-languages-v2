@@ -3,13 +3,16 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Query
 
 from langapp.api.deps import (
+    AdminUser,
     AgentOrchestratorDep,
     ConversationServiceDep,
     CurrentUser,
     LearnerServiceDep,
     PronunciationServiceDep,
+    UsageReportDep,
 )
 from langapp.api.schemas import (
+    AiUsageSummaryOut,
     AiUsageTodayOut,
     ConversationFinishIn,
     ConversationReplyOut,
@@ -39,6 +42,15 @@ LangQuery = Annotated[str, Query(pattern=LANG_PATTERN)]
 @router.get("/usage", response_model=AiUsageTodayOut)
 def usage_today(user: CurrentUser, agents: AgentOrchestratorDep) -> dict:
     return agents.usage_today(user.id)
+
+
+@router.get("/usage/summary", response_model=AiUsageSummaryOut, responses={401: {"model": ErrorOut}, 403: {"model": ErrorOut}})
+def usage_summary(
+    _: AdminUser,
+    report: UsageReportDep,
+    days: Annotated[int, Query(ge=1, le=90)] = 7,
+) -> dict:
+    return report.summary(days)
 
 
 @router.post("/grammar/check", response_model=GrammarCheckOut, responses=AGENT_ERRORS)

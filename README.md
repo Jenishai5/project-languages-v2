@@ -336,6 +336,10 @@ make ai-usage DAYS=30
 
 The table shows calls, failures, tokens and learners per day, agent and model, with a total failure rate at the end. On the dashboard, each learner sees "AI answers today: X of 30" (`GET /api/agents/usage`).
 
+**Staff room (admin dashboard).** `/staff-room` shows the five agents as teachers walking around a staff room. Busy teachers walk faster, teachers with many failed answers look tired, and teachers with no calls read at their desks. Click a teacher (or use the Table view) to see calls, failures, tokens, learners, models and calls per day. It reads `GET /api/agents/usage/summary?days=7`, which only admins can call: put your e-mail in `ADMIN_EMAILS` in `.env`.
+
+**Contract first.** `openapi.yaml` is the API contract and is checked with `npx @redocly/cli lint openapi.yaml`. Tests compare real responses with its schemas. Decisions are written in `docs/decisions/`.
+
 **Timing logs.** Each agent call writes one log line, for example `agent=grammar model=... ok=true tokens=210 ms=1840`. The line has no user id, no words and no sentences, so logs are safe to share.
 
 **Read-only MCP server (for development).** `src/langapp/mcp_server.py` lets Claude Code read learning data while you work on the app. All five tools are read-only, and the database session itself is opened with `SET TRANSACTION READ ONLY`:

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
@@ -428,6 +428,31 @@ class PronunciationOut(BaseModel):
 
 class PronunciationSupportOut(BaseModel):
     supported: bool
+
+
+class AgentDayOut(BaseModel):
+    day: date
+    calls: int
+    failures: int
+    tokens: int
+
+
+class AgentUsageOut(BaseModel):
+    agent: Literal["grammar", "vocabulary", "conversation", "pronunciation", "cultural"]
+    calls: int
+    failures: int
+    failure_rate: float
+    tokens: int
+    learners: int
+    models: list[str]
+    last_call_at: datetime | None
+    daily: list[AgentDayOut]
+
+
+class AiUsageSummaryOut(BaseModel):
+    days: int
+    generated_at: datetime
+    agents: list[AgentUsageOut]
 
 
 class AiUsageTodayOut(BaseModel):

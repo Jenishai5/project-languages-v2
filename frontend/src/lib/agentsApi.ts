@@ -184,3 +184,49 @@ export interface AiUsageToday {
 export async function fetchAiUsage(): Promise<AiUsageToday> {
   return getJson<AiUsageToday>("/api/agents/usage", { headers: await authHeaders() });
 }
+
+export type AgentName = "grammar" | "vocabulary" | "conversation" | "pronunciation" | "cultural";
+
+export interface AgentDay {
+  day:      string;
+  calls:    number;
+  failures: number;
+  tokens:   number;
+}
+
+export interface AgentUsage {
+  agent:        AgentName;
+  calls:        number;
+  failures:     number;
+  failure_rate: number;
+  tokens:       number;
+  learners:     number;
+  models:       string[];
+  last_call_at: string | null;
+  daily:        AgentDay[];
+}
+
+export interface AiUsageSummary {
+  days:         number;
+  generated_at: string;
+  agents:       AgentUsage[];
+}
+
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+export async function fetchAiUsageSummary(days: number): Promise<AiUsageSummary> {
+  const res  = await fetch(`/api/agents/usage/summary?days=${days}`, { headers: await authHeaders() });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = typeof data.detail === "string" ? data.detail : `Request failed (${res.status})`;
+    throw new ApiError(detail, res.status);
+  }
+  return data as AiUsageSummary;
+}

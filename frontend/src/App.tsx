@@ -10,6 +10,7 @@ import SentenceGame    from "./pages/SentenceGame";
 import Lessons         from "./pages/Lessons";
 import Lesson          from "./pages/Lesson";
 import Mnemonics       from "./pages/Mnemonics";
+import StaffRoom       from "./pages/StaffRoom";
 import ProtectedLayout from "./components/organisms/ProtectedLayout";
 import AppNavbar       from "./components/organisms/AppNavbar";
 
@@ -47,6 +48,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/staff-room" element={<ProtectedRoute><StaffRoom /></ProtectedRoute>} />
           <Route element={<RootLayout />}>
             <Route path="/" element={<Landing />} />
 

@@ -39,6 +39,7 @@ from langapp.services.mnemonics import MnemonicService, MnemonicSettings
 from langapp.services.progress import ProgressService
 from langapp.services.sentences import SentenceService
 from langapp.services.system import SystemService
+from langapp.services.usage_report import UsageReport
 from langapp.services.user_settings import UserSettingsService
 
 
@@ -293,3 +294,20 @@ def get_current_user(
 
 
 CurrentUser = Annotated[AuthUser, Depends(get_current_user)]
+
+
+def get_admin_user(user: CurrentUser) -> AuthUser:
+    admins = {email.strip().lower() for email in get_settings().admin_emails.split(",") if email.strip()}
+    if not user.email or user.email.lower() not in admins:
+        raise HTTPException(status_code=403, detail="Only admins can see AI usage for the whole app.")
+    return user
+
+
+AdminUser = Annotated[AuthUser, Depends(get_admin_user)]
+
+
+def get_usage_report(session: SessionDep) -> UsageReport:
+    return UsageReport(AiUsageRepository(session))
+
+
+UsageReportDep = Annotated[UsageReport, Depends(get_usage_report)]
