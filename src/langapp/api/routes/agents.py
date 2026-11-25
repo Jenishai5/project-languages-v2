@@ -10,6 +10,7 @@ from langapp.api.deps import (
     LearnerServiceDep,
     PronunciationServiceDep,
     UsageReportDep,
+    is_admin,
 )
 from langapp.api.schemas import (
     AiUsageSummaryOut,
@@ -41,7 +42,7 @@ LangQuery = Annotated[str, Query(pattern=LANG_PATTERN)]
 
 @router.get("/usage", response_model=AiUsageTodayOut)
 def usage_today(user: CurrentUser, agents: AgentOrchestratorDep) -> dict:
-    return agents.usage_today(user.id)
+    return {**agents.usage_today(user.id), "is_admin": is_admin(user)}
 
 
 @router.get("/usage/summary", response_model=AiUsageSummaryOut, responses={401: {"model": ErrorOut}, 403: {"model": ErrorOut}})

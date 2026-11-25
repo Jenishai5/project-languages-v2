@@ -296,9 +296,13 @@ def get_current_user(
 CurrentUser = Annotated[AuthUser, Depends(get_current_user)]
 
 
-def get_admin_user(user: CurrentUser) -> AuthUser:
+def is_admin(user: AuthUser) -> bool:
     admins = {email.strip().lower() for email in get_settings().admin_emails.split(",") if email.strip()}
-    if not user.email or user.email.lower() not in admins:
+    return bool(user.email) and user.email.lower() in admins
+
+
+def get_admin_user(user: CurrentUser) -> AuthUser:
+    if not is_admin(user):
         raise HTTPException(status_code=403, detail="Only admins can see AI usage for the whole app.")
     return user
 

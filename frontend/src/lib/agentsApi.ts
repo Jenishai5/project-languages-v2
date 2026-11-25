@@ -179,6 +179,7 @@ export interface AiUsageToday {
   daily_limit:     number;
   remaining_today: number;
   by_agent:        Record<string, number>;
+  is_admin:        boolean;
 }
 
 export async function fetchAiUsage(): Promise<AiUsageToday> {

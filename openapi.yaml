@@ -17,6 +17,31 @@ tags:
   - name: agents
     description: AI agents and their usage
 paths:
+  /agents/usage:
+    get:
+      operationId: getMyAiUsageToday
+      tags: [agents]
+      summary: The current learner's AI answers today
+      description: |
+        How many AI answers the logged-in learner used today and how many are left.
+        `is_admin` tells the UI whether to show the link to the Staff room.
+      responses:
+        "200":
+          description: Today's usage of the current learner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiUsageToday"
+              example:
+                daily_limit: 30
+                used_today: 15
+                remaining_today: 15
+                by_agent:
+                  grammar: 5
+                  conversation: 10
+                is_admin: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /agents/usage/summary:
     get:
       operationId: getAiUsageSummary
@@ -134,6 +159,28 @@ components:
                 type: string
               type:
                 type: string
+    AiUsageToday:
+      type: object
+      required: [daily_limit, used_today, remaining_today, by_agent, is_admin]
+      properties:
+        daily_limit:
+          type: integer
+          minimum: 0
+        used_today:
+          type: integer
+          minimum: 0
+        remaining_today:
+          type: integer
+          minimum: 0
+        by_agent:
+          type: object
+          description: Calls today per agent. Agents without calls are left out.
+          additionalProperties:
+            type: integer
+            minimum: 0
+        is_admin:
+          type: boolean
+          description: True when this learner can open the Staff room.
     AgentName:
       type: string
       enum: [grammar, vocabulary, conversation, pronunciation, cultural]

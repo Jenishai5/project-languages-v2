@@ -460,3 +460,4 @@ class AiUsageTodayOut(BaseModel):
     used_today: int
     remaining_today: int
     by_agent: dict[str, int]
+    is_admin: bool

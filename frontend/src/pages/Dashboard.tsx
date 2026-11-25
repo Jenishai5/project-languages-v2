@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useLanguages } from "../hooks/useLanguages";
 import { fetchAiUsage, type AiUsageToday } from "../lib/agentsApi";
 import { fetchLessonProgress, fetchLessons, type LessonSummary } from "../lib/lessonsApi";
@@ -61,6 +61,7 @@ export default function Dashboard() {
           {usage && (
             <p className="small ai-usage" aria-live="polite">
               AI answers today: {usage.used_today} of {usage.daily_limit}
+              {usage.is_admin && <> · <Link to="/staff-room" className="ai-usage__admin">Open staff room →</Link></>}
             </p>
           )}
         </div>

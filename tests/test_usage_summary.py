@@ -1,6 +1,5 @@
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 import yaml
@@ -10,6 +9,7 @@ from jsonschema import Draft202012Validator
 from langapp.api import deps
 from langapp.api.deps import get_session, get_token_verifier
 from langapp.api.main import app
+from langapp.config import get_settings
 from langapp.db.models import AiUsage
 from langapp.services.usage_report import AGENT_NAMES
 from tests.test_lessons import USER, FakeVerifier
@@ -17,6 +17,11 @@ from tests.test_lessons import USER, FakeVerifier
 AUTH = {"Authorization": "Bearer good-token"}
 CONTRACT = yaml.safe_load((Path(__file__).parents[1] / "openapi.yaml").read_text(encoding="utf-8"))
 OTHER = "11111111-2222-3333-4444-555555555555"
+
+
+def admins(emails: str):
+    settings = get_settings().model_copy(update={"admin_emails": emails})
+    return lambda: settings
 
 
 def contract_validator(schema_name: str) -> Draft202012Validator:
@@ -46,7 +51,7 @@ def api(session_factory, monkeypatch):
 
     app.dependency_overrides[get_session] = override_session
     app.dependency_overrides[get_token_verifier] = lambda: FakeVerifier()
-    monkeypatch.setattr(deps, "get_settings", lambda: SimpleNamespace(admin_emails="someone@x.org, JENI@example.com"))
+    monkeypatch.setattr(deps, "get_settings", admins("someone@x.org, JENI@example.com"))
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -74,7 +79,7 @@ def test_summary_matches_the_contract(api, session_factory):
 
 
 def test_summary_is_only_for_admins(api, monkeypatch):
-    monkeypatch.setattr(deps, "get_settings", lambda: SimpleNamespace(admin_emails="boss@x.org"))
+    monkeypatch.setattr(deps, "get_settings", admins("boss@x.org"))
     forbidden = api.get("/agents/usage/summary", headers=AUTH)
 
     assert forbidden.status_code == 403
@@ -94,3 +99,12 @@ def test_every_contract_path_exists_in_the_code():
     for path, operations in CONTRACT["paths"].items():
         for method in operations:
             assert method in code_paths.get(path, {}), f"{method.upper()} {path} is in openapi.yaml but not in the code"
+
+
+def test_usage_today_tells_the_ui_who_is_admin(api, monkeypatch):
+    admin = api.get("/agents/usage", headers=AUTH).json()
+    assert admin["is_admin"] is True
+    assert contract_validator("AiUsageToday").is_valid(admin)
+
+    monkeypatch.setattr(deps, "get_settings", admins(""))
+    assert api.get("/agents/usage", headers=AUTH).json()["is_admin"] is False
