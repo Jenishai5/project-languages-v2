@@ -121,7 +121,7 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
       gsap.killTweensOf([burst, ring]);
       gsap.fromTo(burst, { opacity: 0.95, scale: 0.35 }, { opacity: 0, scale: 1.25, duration: 0.75, ease: "power2.out" });
       gsap.fromTo(ring, { opacity: 0.8, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.9, ease: "power3.out" });
-      gsap.fromTo(wall, { scaleX: 1.9, filter: "brightness(1.6)" }, { scaleX: 1, filter: "brightness(1)", duration: 0.6, ease: "elastic.out(1, 0.45)" });
+      gsap.fromTo(wall, { scaleX: 2.4, filter: "blur(3px) brightness(1.5)" }, { scaleX: 1, filter: "blur(3px) brightness(1)", duration: 0.7, ease: "power3.out" });
     };
 
     let travelled = reduced ? items[0].start + Math.max(items[0].src.width, items[0].tgt.width) + fontSize : 0;
@@ -155,7 +155,15 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
       render(true);
     };
     gsap.ticker.add(tick);
+    const flicker = gsap.to(wall, {
+      opacity: "random(0.45, 1)",
+      duration: "random(0.05, 0.22)",
+      ease: "none",
+      repeat: -1,
+      repeatRefresh: true,
+    });
     return () => {
+      flicker.kill();
       gsap.ticker.remove(tick);
       gsap.killTweensOf(el.querySelectorAll(".snake__flash, .snake__ring, .snake__wall"));
     };

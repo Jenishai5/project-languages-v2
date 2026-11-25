@@ -146,18 +146,24 @@
   font-size: clamp(22px, 3.6vw, 48px); letter-spacing: -0.01em; color: var(--ink);
 }
 .snake__clip { position: absolute; top: 0; bottom: 0; left: 0; overflow: hidden; }
-.snake__clip--left { mask-image: linear-gradient(90deg, transparent, #000 14%); }
-.snake__clip--right { mask-image: linear-gradient(270deg, transparent, #000 14%); }
+.snake__clip--left { mask-image: linear-gradient(90deg, transparent, #000 14%, #000 calc(100% - 1.1em), transparent); }
+.snake__clip--right { mask-image: linear-gradient(270deg, transparent, #000 14%, #000 calc(100% - 1.1em), transparent); }
 .snake__line {
   position: absolute; top: 50%; left: 0; margin-top: calc(var(--snake-line) / -2);
   line-height: var(--snake-line); white-space: nowrap; will-change: transform; visibility: hidden;
 }
 .snake__char { display: inline-block; white-space: pre; transform-origin: 50% 60%; will-change: transform; }
 .snake__wall {
-  position: absolute; top: 6%; bottom: 6%;
+  position: absolute; top: -18%; bottom: -18%;
   border-radius: 999px;
-  background: linear-gradient(180deg, var(--brown), #8f4226);
-  box-shadow: 0 10px 24px -12px rgba(46, 51, 32, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  background: linear-gradient(180deg,
+    rgba(240, 168, 170, 0) 0%,
+    rgba(240, 168, 170, 0.55) 22%,
+    rgba(255, 240, 228, 0.95) 50%,
+    rgba(240, 168, 170, 0.55) 78%,
+    rgba(240, 168, 170, 0) 100%);
+  box-shadow: 0 0 22px 6px rgba(240, 168, 170, 0.35);
+  filter: blur(3px);
 }
 .snake__glow {
   position: absolute; inset: -14% -220%;
@@ -166,10 +172,10 @@
   opacity: 0.25; transform: scaleY(0.75); pointer-events: none;
 }
 .snake__core {
-  position: absolute; inset: 8% 30%;
+  position: absolute; inset: 14% 25%;
   border-radius: 999px;
-  background: linear-gradient(180deg, #fff6e9, #f8d5d7);
-  box-shadow: 0 0 12px 2px rgba(255, 240, 230, 0.8);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 50%, rgba(255, 255, 255, 0));
+  box-shadow: 0 0 16px 4px rgba(255, 236, 224, 0.9);
   opacity: 0;
 }
 .snake__flash, .snake__ring {
