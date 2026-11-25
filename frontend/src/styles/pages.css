@@ -137,36 +137,13 @@
 .flashcard__sentence { font-family: var(--font-display); font-size: 24px; line-height: 1.3; }
 .flashcard__word { font-family: var(--font-display); font-size: 56px; line-height: 1; }
 
-.morph { position: relative; width: 100%; }
-.morph__defs { position: absolute; width: 0; height: 0; overflow: hidden; }
-.morph__measure {
-  position: absolute; top: 0; left: 0; right: 0;
-  visibility: hidden; pointer-events: none; text-align: center;
-}
-.morph__word { white-space: nowrap; }
-.morph__cell { display: inline-block; }
-.morph__stage { position: absolute; inset: 0; }
-.morph__blobs { position: absolute; inset: 0; }
-.morph__blob {
-  position: absolute; top: 0; left: 0; width: 0; height: 0;
-  border-radius: 999px; background: currentColor;
-  will-change: transform, width, height;
-}
-.morph__glyph {
-  position: absolute; top: 0; left: 0;
-  display: inline-block; white-space: pre;
-  transform-origin: 50% 65%; will-change: transform, opacity, filter;
-}
-.morph__old { position: absolute; top: 0; left: 0; transform-origin: 50% 65%; }
-.morph__new { display: inline-block; transform-origin: 50% 65%; }
-
 .morph-showcase {
   margin: 64px auto 0; max-width: 860px;
   padding: 0 clamp(16px, 4vw, 40px) 24px;
   text-align: center;
 }
 .morph-showcase__langs {
-  display: inline-flex; align-items: center; gap: 12px; margin-bottom: 28px;
+  display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 28px;
   font-size: 13px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted);
   animation: langs-in 0.6s ease;
 }
@@ -182,8 +159,15 @@
   to { opacity: 1; transform: none; }
 }
 
-.hourglass__stream {
-  position: absolute; top: 0; left: 0;
-  border-radius: 999px; background: currentColor;
-  will-change: transform;
+.liquid {
+  position: relative; display: inline-grid; place-items: center;
+  padding: 0.22em 0.55em 0.28em;
 }
+.liquid__defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.liquid__pill {
+  position: absolute; top: 0; bottom: 0; left: 50%;
+  translate: -50% 0; border-radius: 999px;
+}
+.liquid__stack { position: relative; display: grid; }
+.liquid__line { grid-area: 1 / 1; justify-self: center; white-space: nowrap; }
+.liquid__char { display: inline-block; white-space: pre; will-change: transform, opacity, filter; }
