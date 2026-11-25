@@ -74,39 +74,41 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="container ways-section">
-        <SnakeTranslate />
-        <div className="section-head">
-          <h2 className="h1">Learn your way.<br />Same words, two paths.</h2>
-          <p className="lead">Follow the path lesson by lesson, or drop into free practice whenever you have five minutes.</p>
-        </div>
-        <div className="ways">
-          <article className="way way--path">
-            <span className="eyebrow">Learning path</span>
-            <h3 className="h2">36 lessons, 10 words each</h3>
-            <p className="muted">Every lesson trains the same words four ways.</p>
-            <div className="choice-grid">
-              {TRAININGS.map(t => (
-                <div key={t.name} className="training">
-                  <span className="training__title">{t.name}</span>
-                  <span className="training__hint">{t.hint}</span>
-                </div>
-              ))}
-            </div>
-            <button className="btn btn--primary self-start" onClick={() => go("/lessons")}>Open the lessons</button>
-          </article>
+      <section className="ways-section grid-bg grid-bg--light">
+        <div className="container">
+          <SnakeTranslate />
+          <div className="section-head">
+            <h2 className="h1">Learn your way.<br />Same words, two paths.</h2>
+            <p className="lead">Follow the path lesson by lesson, or drop into free practice whenever you have five minutes.</p>
+          </div>
+          <div className="ways">
+            <article className="way way--path">
+              <span className="eyebrow">Learning path</span>
+              <h3 className="h2">36 lessons, 10 words each</h3>
+              <p className="muted">Every lesson trains the same words four ways.</p>
+              <div className="choice-grid">
+                {TRAININGS.map(t => (
+                  <div key={t.name} className="training">
+                    <span className="training__title">{t.name}</span>
+                    <span className="training__hint">{t.hint}</span>
+                  </div>
+                ))}
+              </div>
+              <button className="btn btn--primary self-start" onClick={() => go("/lessons")}>Open the lessons</button>
+            </article>
 
-          <article className="way way--practice">
-            <span className="eyebrow">Free practice</span>
-            <h3 className="h2">Any word, any time.</h3>
-            <p className="muted">Random words and real sentences from the whole dictionary.</p>
-            <button className="way__link way__link--pink" onClick={() => go("/game")}>
-              <span>Match</span><span>5 pairs a round →</span>
-            </button>
-            <button className="way__link way__link--mint" onClick={() => go("/sentence-builder")}>
-              <span>Sentence shuffle</span><span>Real Tatoeba sentences →</span>
-            </button>
-          </article>
+            <article className="way way--practice">
+              <span className="eyebrow">Free practice</span>
+              <h3 className="h2">Any word, any time.</h3>
+              <p className="muted">Random words and real sentences from the whole dictionary.</p>
+              <button className="way__link way__link--pink" onClick={() => go("/game")}>
+                <span>Match</span><span>5 pairs a round →</span>
+              </button>
+              <button className="way__link way__link--mint" onClick={() => go("/sentence-builder")}>
+                <span>Sentence shuffle</span><span>Real Tatoeba sentences →</span>
+              </button>
+            </article>
+          </div>
         </div>
       </section>
 

@@ -63,6 +63,10 @@ p { margin: 0; }
   background-size: var(--grid-size) var(--grid-size);
   background-position: -1px -1px;
 }
+.grid-bg--light {
+  --grid-line: rgba(187, 201, 148, 0.5);
+  background-color: var(--white);
+}
 
 .visually-hidden {
   position: absolute; width: 1px; height: 1px; overflow: hidden;
