@@ -104,11 +104,11 @@ export default function TextMorph({ from, to, duration = 2.6, delay = 0, fromLan
     const D = reduced ? 0.6 : duration;
     const wave = reduced ? 0 : D * 0.2;
     const move = D * 0.62;
-    const blurPeak = reduced ? 0 : fontSize * 0.075;
+    const blurPeak = reduced ? 0 : fontSize * 0.05;
     const liquid = { t: 0 };
     const applyLiquid = () => {
       blur.setAttribute("stdDeviation", String(liquid.t * blurPeak));
-      matrix.setAttribute("values", `1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${1 + 17 * liquid.t} ${-7 * liquid.t}`);
+      matrix.setAttribute("values", `1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${1 + 11 * liquid.t} ${-4.5 * liquid.t}`);
     };
 
     const ctx = gsap.context(() => {
@@ -152,19 +152,19 @@ export default function TextMorph({ from, to, duration = 2.6, delay = 0, fromLan
             const oldGlyph = g.querySelector(".morph__old");
             const newGlyph = g.querySelector(".morph__new");
             gsap.set(g, { x: start!.x, y: start!.y });
-            gsap.set(newGlyph, { opacity: 0, scaleX: 1.3, scaleY: 0.55, filter: "blur(6px)" });
+            gsap.set(newGlyph, { opacity: 0, scaleX: 1.25, scaleY: 0.6, filter: "blur(3px)" });
             tl.to(g, { x: end!.x, y: end!.y, ...travel }, D * 0.08 + offset);
-            tl.to(oldGlyph, { opacity: 0, scaleX: 0.7, scaleY: 1.35, filter: "blur(6px)", duration: D * 0.42, ease: "power2.in" }, D * 0.12 + offset);
-            tl.to(newGlyph, { opacity: 1, scaleX: 1, scaleY: 1, filter: "blur(0px)", duration: D * 0.46, ease: "power3.out" }, D * 0.32 + offset);
+            tl.to(oldGlyph, { opacity: 0, scaleX: 0.75, scaleY: 1.3, filter: "blur(3px)", duration: D * 0.5, ease: "power1.in" }, D * 0.14 + offset);
+            tl.to(newGlyph, { opacity: 1, scaleX: 1, scaleY: 1, filter: "blur(0px)", duration: D * 0.5, ease: "power2.out" }, D * 0.26 + offset);
             break;
           }
           case "remove":
             gsap.set(g, { x: start!.x, y: start!.y });
-            tl.to(g, { opacity: 0, scaleX: 1.3, scaleY: 0.2, y: start!.y + fontSize * 0.18, filter: "blur(8px)", duration: D * 0.4, ease: "power2.in" }, D * 0.1 + offset);
+            tl.to(g, { opacity: 0, scaleX: 1.3, scaleY: 0.2, y: start!.y + fontSize * 0.18, filter: "blur(4px)", duration: D * 0.45, ease: "power1.in" }, D * 0.1 + offset);
             break;
           case "add":
-            gsap.set(g, { x: end!.x, y: end!.y - fontSize * 0.18, opacity: 0, scaleX: 1.3, scaleY: 0.2, filter: "blur(8px)" });
-            tl.to(g, { y: end!.y, opacity: 1, scaleX: 1, scaleY: 1, filter: "blur(0px)", duration: D * 0.4, ease: "power3.out" }, D * 0.38 + offset);
+            gsap.set(g, { x: end!.x, y: end!.y - fontSize * 0.18, opacity: 0, scaleX: 1.3, scaleY: 0.2, filter: "blur(4px)" });
+            tl.to(g, { y: end!.y, opacity: 1, scaleX: 1, scaleY: 1, filter: "blur(0px)", duration: D * 0.45, ease: "power2.out" }, D * 0.32 + offset);
             break;
         }
       });
