@@ -214,3 +214,4 @@ progress::-moz-progress-bar { background: var(--brown); border-radius: var(--rad
 .flag-list { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; padding: 0; list-style: none; }
 .flag-chip { display: inline-flex; align-items: center; gap: 12px; padding: 8px 20px 8px 8px; border-radius: var(--radius-pill); background: var(--cream); font-weight: 700; }
 .lang-select { display: flex; align-items: center; gap: 12px; }
+.flag-chip--light { background: var(--white); }

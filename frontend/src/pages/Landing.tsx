@@ -28,6 +28,11 @@ export default function Landing() {
             <h1 className="display">
               Ten words today.<br />A <em>conversation</em><br />tomorrow.
             </h1>
+            <ul className="flag-list" aria-label="Languages">
+              <li className="flag-chip flag-chip--light"><Flag lang="eng" size={48} /><span>English</span></li>
+              <li className="flag-chip flag-chip--light"><Flag lang="spa" size={48} /><span>Español</span></li>
+              <li className="flag-chip flag-chip--light"><Flag lang="rus" size={48} /><span>Русский</span></li>
+            </ul>
             <p className="lead">
               Short lessons built from real sentences. Match the words, put sentences back together,
               say them out loud and see them in pictures.
