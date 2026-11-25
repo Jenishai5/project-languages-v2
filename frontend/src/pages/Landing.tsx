@@ -72,12 +72,10 @@ export default function Landing() {
             </div>
           </div>
         </div>
-        <div className="container">
-          <SnakeTranslate />
-        </div>
       </section>
 
       <section className="container ways-section">
+        <SnakeTranslate />
         <div className="section-head">
           <h2 className="h1">Learn your way.<br />Same words, two paths.</h2>
           <p className="lead">Follow the path lesson by lesson, or drop into free practice whenever you have five minutes.</p>
