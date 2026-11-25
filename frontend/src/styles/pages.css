@@ -172,3 +172,4 @@
 }
 .snake__tag--in { right: calc(50% + 14px); }
 .snake__tag--out { left: calc(50% + 14px); color: var(--brown); }
+.snake__clip--left .snake__line { color: #8a8a84; }
