@@ -137,3 +137,16 @@ class PlannedLesson:
 class Page:
     payload: dict
     next_url: str | None
+
+
+@dataclass(frozen=True)
+class ChatReply:
+    text: str
+    model: str
+
+
+@dataclass(frozen=True)
+class GeneratedImage:
+    data: bytes
+    media_type: str
+    model: str

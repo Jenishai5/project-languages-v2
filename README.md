@@ -234,6 +234,48 @@ AI image generation is **not connected yet**: choose a provider first (account, 
 - **Alternatives:** terms like *el médico / la médica* are shown in full, and searched by the first one.
 - **Production builds need the `VITE_*` values.** Vite writes them into the code at build time. Without `frontend/.env`, the Supabase check fails and Vite drops the whole app as unreachable code.
 
+## Mnemonics (AI memory tricks)
+
+On every lesson page, "Memory tricks" lets a logged-in learner ask the AI for a picture story for a word
+(the keyword method: link how the word *sounds* to what it *means*). The text and the picture are made once,
+saved to the learner's account and shown again on the lesson page and on **My memory tricks** (`/mnemonics`).
+
+```
+browser ──POST /mnemonics──▶ FastAPI ──▶ MnemonicService
+                                          ├─ already saved?  → return it (no AI call)
+                                          ├─ daily limit reached? → 429
+                                          ├─ OpenRouter chat (openrouter/free) → {"mnemonic", "image_prompt"}
+                                          ├─ OpenRouter image (grok-imagine :free) → PNG
+                                          ├─ Supabase Storage (private bucket) ← PNG
+                                          └─ PostgreSQL `mnemonics` row (text, image path, models)
+```
+
+| Piece | File |
+|---|---|
+| OpenRouter adapter (chat + images, no retry on 429) | `src/langapp/integrations/openrouter.py` |
+| Supabase Storage adapter (upload + signed URLs) | `src/langapp/integrations/supabase_storage.py` |
+| Interfaces the service needs (`ChatModel`, `ImageModel`, `ImageStore`) | `src/langapp/services/ports.py` |
+| Prompt, answer parsing, daily limit, image fallback | `src/langapp/services/mnemonics.py` |
+| Table | `mnemonics` (one per user, word and language pair) |
+
+Decisions:
+
+- **Free models only.** `openrouter/free` picks any working free text model; images use the free Grok Imagine model.
+  OpenRouter allows 20 free requests a minute and 50 a day per account (1,000 a day after buying $10 of credits once),
+  so each learner gets `MNEMONIC_DAILY_LIMIT` (default 5) new memory tricks a day and nothing is ever generated twice.
+- **Graceful fallback.** Free image models come and go. If the picture fails, the text is still saved and the word's emoji is shown.
+- **Private images.** The bucket is private; the API returns short-lived signed URLs (1 hour).
+- **Secrets stay on the backend.** `OPENROUTER_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` live only in the backend `.env`. Never put them in `frontend/.env`.
+
+### Setup
+
+1. Create a key at openrouter.ai → Keys, and put it in `.env` as `OPENROUTER_API_KEY`.
+2. In Supabase: Storage → New bucket → name `mnemonics`, **private**.
+3. In Supabase: Project Settings → API keys → copy the **secret / service_role** key into `.env` as `SUPABASE_SERVICE_ROLE_KEY`.
+4. `make migrate`, restart `make api`.
+
+Without the OpenRouter key the button answers "AI is not configured"; without the storage key memory tricks are saved without pictures.
+
 ## Tests
 
 ```bash

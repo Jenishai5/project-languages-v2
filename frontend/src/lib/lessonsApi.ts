@@ -74,7 +74,7 @@ export interface LanguageSettings {
   learning_lang: LangCode;
 }
 
-async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
+export async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res  = await fetch(url, init);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.detail ?? data.error ?? `Request failed (${res.status})`);

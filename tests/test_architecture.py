@@ -9,6 +9,7 @@ RULES = {
     "api/routes": ("langapp.repositories", "langapp.db", "sqlalchemy"),
     "services": ("langapp.api", "fastapi"),
     "repositories": ("langapp.api", "langapp.services", "fastapi"),
+    "integrations": ("langapp.api", "langapp.services", "langapp.repositories", "langapp.db", "fastapi"),
     "domain.py": ("langapp.api", "langapp.services", "langapp.repositories", "langapp.db", "sqlalchemy", "fastapi"),
 }
 

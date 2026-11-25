@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useLanguages } from "../hooks/useLanguages";
 import { fetchLessonProgress, fetchLessons, type LessonSummary } from "../lib/lessonsApi";
 
-interface PracticeLinkProps { heading: string; sub: string; tone?: "pink" | "mint"; onClick: () => void; }
+interface PracticeLinkProps { heading: string; sub: string; tone?: "pink" | "mint" | "lime"; onClick: () => void; }
 
 function PracticeLink({ heading, sub, tone = "pink", onClick }: PracticeLinkProps) {
   return (
@@ -79,6 +79,7 @@ export default function Dashboard() {
           <p className="muted">Uses all words and sentences, not one lesson.</p>
           <PracticeLink heading="Match" sub="5 random pairs a round →" tone="pink" onClick={() => navigate("/game")} />
           <PracticeLink heading="Sentence shuffle" sub="Real Tatoeba sentences →" tone="mint" onClick={() => navigate("/sentence-builder")} />
+          <PracticeLink heading="My memory tricks" sub="AI picture stories →" tone="lime" onClick={() => navigate("/mnemonics")} />
         </section>
       </div>
     </>

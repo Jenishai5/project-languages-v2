@@ -2,7 +2,7 @@ from collections.abc import Sequence
 
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from langapp.db.models import Concept, ConceptTerm
 from langapp.domain import ParsedConcept
@@ -53,3 +53,7 @@ class ConceptRepository:
         concept.image_url = image_url
         concept.image_approved = approved
         return True
+
+    def get_with_terms(self, concept_id: int) -> Concept | None:
+        stmt = select(Concept).options(selectinload(Concept.terms)).where(Concept.id == concept_id)
+        return self.session.scalars(stmt).first()

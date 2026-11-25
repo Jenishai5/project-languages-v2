@@ -96,6 +96,9 @@ export default function AppNavbar({ onSignIn }: AppNavbarProps) {
                       <p className="h3">{displayName || "User"}</p>
                       <p className="small muted">{displayEmail}</p>
                     </div>
+                    <button className="menu__item" role="menuitem" onClick={() => { setDropOpen(false); navigate("/mnemonics"); }}>
+                      My memory tricks
+                    </button>
                     <button className="menu__item" role="menuitem" onClick={openPasswordModal}>
                       Change password
                     </button>

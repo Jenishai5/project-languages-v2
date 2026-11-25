@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Identity,
+    Index,
     Integer,
     SmallInteger,
     String,
@@ -184,3 +185,26 @@ class UserSettings(Base):
     native_lang: Mapped[str] = mapped_column(String(8))
     learning_lang: Mapped[str] = mapped_column(String(8))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Mnemonic(Base):
+    __tablename__ = "mnemonics"
+    __table_args__ = (
+        UniqueConstraint("user_id", "concept_id", "learning_lang", "native_lang", name="uq_mnemonic_per_user_word"),
+        CheckConstraint("length(text) > 0", name="text_not_empty"),
+        CheckConstraint("native_lang <> learning_lang", name="different_languages"),
+        Index("ix_mnemonics_user_created", "user_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, Identity(), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid)
+    concept_id: Mapped[int] = mapped_column(Integer, ForeignKey("concepts.id", ondelete="CASCADE"))
+    learning_lang: Mapped[str] = mapped_column(String(8))
+    native_lang: Mapped[str] = mapped_column(String(8))
+    text: Mapped[str] = mapped_column(Text)
+    image_path: Mapped[str | None] = mapped_column(Text)
+    text_model: Mapped[str] = mapped_column(String(200))
+    image_model: Mapped[str | None] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    concept: Mapped[Concept] = relationship()

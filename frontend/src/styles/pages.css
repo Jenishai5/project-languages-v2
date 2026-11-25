@@ -114,3 +114,14 @@
   .choice { font-size: 15px; padding: 10px 12px; }
 }
 .ways-section { padding-top: 112px; }
+
+.way__link--lime { background: var(--lime); }
+
+.mnemonic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.mnemonic-card { display: flex; flex-direction: column; overflow: hidden; border-radius: var(--radius-lg); border: 1.5px solid var(--line); background: var(--white); }
+.mnemonic-card__pic { display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 1; background: var(--cream); font-size: 72px; }
+.mnemonic-card__pic img { width: 100%; height: 100%; object-fit: cover; }
+.mnemonic-card__body { display: flex; flex-direction: column; gap: 8px; padding: 18px 20px 20px; }
+.mnemonic-card__word { font-family: var(--font-display); font-size: 26px; line-height: 1.1; }
+.mnemonic-card__text { font-size: 15px; line-height: 1.5; }
+.mnemonic-card .btn { align-self: flex-start; margin-top: 4px; }

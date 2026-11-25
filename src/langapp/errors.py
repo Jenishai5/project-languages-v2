@@ -16,3 +16,11 @@ class ServiceUnavailable(AppError):
 
 class ExternalSourceError(AppError):
     status_code = 502
+
+
+class RateLimited(AppError):
+    status_code = 429
+
+
+class UpstreamRateLimited(ExternalSourceError):
+    status_code = 429

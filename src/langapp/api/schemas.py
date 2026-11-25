@@ -236,3 +236,27 @@ class LessonDetailOut(BaseModel):
     words: list[WordCardOut]
     sentences: list[ShuffleSentenceOut]
     pictures: list[PictureRoundOut]
+
+
+class MnemonicIn(BaseModel):
+    concept_id: int = Field(gt=0)
+    learning: LangCode
+    native: LangCode
+
+
+class MnemonicOut(BaseModel):
+    id: int
+    concept_id: int
+    slug: str
+    word: str
+    translation: str
+    emoji: str | None
+    mnemonic: str
+    image_url: str | None
+    created_at: datetime
+
+
+class MnemonicListOut(BaseModel):
+    mnemonics: list[MnemonicOut]
+    daily_limit: int
+    remaining_today: int

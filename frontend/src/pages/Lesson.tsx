@@ -7,6 +7,7 @@ import PronounceStep from "../components/lesson/PronounceStep";
 import TrainingMenu from "../components/lesson/TrainingMenu";
 import { TRAININGS, type Training, type TrainingResult } from "../lib/trainings";
 import WordList from "../components/lesson/WordList";
+import MnemonicsPanel from "../components/mnemonics/MnemonicsPanel";
 import { PrimaryButton, SecondaryButton, StepCard } from "../components/lesson/shared";
 import { useAuth } from "../context/AuthContext";
 import { useLanguages } from "../hooks/useLanguages";
@@ -132,6 +133,8 @@ export default function Lesson() {
                 <p className="small muted">Shuffle needs sentences. Run: make build-lessons</p>
               )}
             </StepCard>
+
+            <MnemonicsPanel words={lesson.words} learning={lesson.learning} native={lesson.native} />
           </>
         )}
       </div>

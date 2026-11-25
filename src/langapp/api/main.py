@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 
-from langapp.api.routes import games, lessons, progress, sentences, system
+from langapp.api.routes import games, lessons, mnemonics, progress, sentences, system
 from langapp.errors import AppError
 
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
@@ -19,6 +19,7 @@ def handle_app_error(_: Request, exc: AppError) -> JSONResponse:
 
 
 app.include_router(system.router)
+app.include_router(mnemonics.router)
 app.include_router(sentences.router)
 app.include_router(games.router)
 app.include_router(progress.router)
