@@ -159,17 +159,6 @@
   background: linear-gradient(180deg, var(--brown), #8f4226);
   box-shadow: 0 6px 16px -8px rgba(46, 51, 32, 0.55);
 }
-.snake__flash, .snake__ring {
-  position: absolute; top: 50%; left: 50%;
-  translate: -50% -50%; border-radius: 50%;
-  pointer-events: none; opacity: 0;
-}
-.snake__flash { width: 3.2em; height: 3.2em; mix-blend-mode: screen; }
-.snake__flash--in { background: radial-gradient(closest-side, #fff 0%, rgba(240, 168, 170, 0.9) 35%, rgba(240, 168, 170, 0) 100%); }
-.snake__flash--out { background: radial-gradient(closest-side, #fff 0%, rgba(227, 234, 174, 0.95) 35%, rgba(227, 234, 174, 0) 100%); }
-.snake__ring { width: 2.4em; height: 2.4em; border: 2px solid; }
-.snake__ring--in { border-color: rgba(240, 168, 170, 0.9); }
-.snake__ring--out { border-color: rgba(181, 87, 50, 0.7); }
 .snake__clip--right .snake__line {
   font-family: var(--font-display); font-style: italic; font-weight: 400;
   font-variation-settings: "SOFT" 100, "WONK" 1, "opsz" 144;

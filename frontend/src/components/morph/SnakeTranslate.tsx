@@ -67,7 +67,7 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
     const rightOrigin = wallX + wallWidth / 2;
     const rightWidth = width - rightOrigin;
     const amplitude = reduced ? 0 : fontSize * wave;
-    const wavelength = fontSize * 3.6;
+    const wavelength = fontSize * 11;
     const velocity = reduced ? 0 : fontSize * speed;
 
     const leftClip = el.querySelector<HTMLElement>(".snake__clip--left")!;
@@ -129,42 +129,24 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
       });
     };
 
-    const flash = (kind: "in" | "out") => {
-      const burst = el.querySelector<HTMLElement>(`.snake__flash--${kind}`)!;
-      const ring = el.querySelector<HTMLElement>(`.snake__ring--${kind}`)!;
-      gsap.killTweensOf([burst, ring]);
-      gsap.fromTo(burst, { opacity: 0.95, scale: 0.35 }, { opacity: 0, scale: 1.25, duration: 0.75, ease: "power2.out" });
-      gsap.fromTo(ring, { opacity: 0.8, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.9, ease: "power3.out" });
-      gsap.fromTo(wall, { scaleX: 2.2, filter: "brightness(1.5)" }, { scaleX: 1, filter: "brightness(1)", duration: 0.6, ease: "power3.out" });
-    };
-
     let travelled = reduced ? items[0].start + Math.max(items[0].src.width, items[0].tgt.width) + fontSize : 0;
-    const previous = items.map(() => Number.NaN);
-    const render = (animate: boolean) => {
-      items.forEach(({ src, tgt, start }, i) => {
+    const render = () => {
+      items.forEach(({ src, tgt, start }) => {
         const d = ((((travelled - start + approach) % period) + period) % period) - approach;
         place(src, leftWidth + d - src.width, "left", leftWidth);
         place(tgt, d - tgt.width, "right", rightWidth);
-        const through = Math.max(src.width, tgt.width);
-        const before = previous[i];
-        if (animate && !Number.isNaN(before) && before < d) {
-          if (before < 0 && d >= 0) flash("in");
-          if (before < through && d >= through) flash("out");
-        }
-        previous[i] = d;
       });
     };
-    render(false);
+    render();
 
     if (reduced) return;
     const tick = (_time: number, deltaMs: number) => {
       travelled += (velocity * Math.min(deltaMs, 64)) / 1000;
-      render(true);
+      render();
     };
     gsap.ticker.add(tick);
     return () => {
       gsap.ticker.remove(tick);
-      gsap.killTweensOf(el.querySelectorAll(".snake__flash, .snake__ring, .snake__wall"));
     };
   }, [layoutVersion, speed, wave, stream]);
 
@@ -179,12 +161,7 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
       <div className="snake__clip snake__clip--right" aria-hidden="true">
         {stream.map(([, b], i) => <Line key={i} phrase={b} index={i} role="tgt" />)}
       </div>
-      <span className="snake__wall" aria-hidden="true">
-        <span className="snake__flash snake__flash--in" />
-        <span className="snake__flash snake__flash--out" />
-        <span className="snake__ring snake__ring--in" />
-        <span className="snake__ring snake__ring--out" />
-      </span>
+      <span className="snake__wall" aria-hidden="true" />
     </figure>
   );
 }
