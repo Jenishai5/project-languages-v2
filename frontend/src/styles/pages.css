@@ -141,33 +141,27 @@
 .snake {
   --snake-line: 1.2em;
   position: relative; margin: 72px 0 0;
-  height: calc(var(--snake-line) + 1.6em);
+  height: calc(var(--snake-line) + 0.9em);
   font-family: var(--font-display); font-weight: 400;
   font-size: clamp(22px, 3.6vw, 48px); letter-spacing: -0.01em; color: var(--ink);
 }
-.snake__clip { position: absolute; top: 0; bottom: 0.9em; left: 0; overflow: hidden; }
+.snake__clip { position: absolute; top: 0; bottom: 0; left: 0; overflow: hidden; }
+.snake__clip--left { mask-image: linear-gradient(90deg, transparent, #000 14%); }
+.snake__clip--right { mask-image: linear-gradient(270deg, transparent, #000 14%); }
 .snake__line {
   position: absolute; top: 50%; left: 0; margin-top: calc(var(--snake-line) / -2);
-  line-height: var(--snake-line); white-space: nowrap; will-change: transform;
+  line-height: var(--snake-line); white-space: nowrap; will-change: transform; visibility: hidden;
 }
 .snake__char { display: inline-block; white-space: pre; transform-origin: 50% 60%; will-change: transform; }
 .snake__wall {
-  position: absolute; top: 4%; bottom: calc(0.9em + 4%);
+  position: absolute; top: 6%; bottom: 6%;
   border-radius: 999px;
   background: linear-gradient(180deg, var(--brown), #8f4226);
   box-shadow: 0 10px 24px -12px rgba(46, 51, 32, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 .snake__glow {
-  position: absolute; inset: -18% -220%;
+  position: absolute; inset: -14% -220%;
   border-radius: 999px;
-  background: radial-gradient(closest-side, rgba(240, 168, 170, 0.75), rgba(240, 168, 170, 0));
-  opacity: 0; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(240, 168, 170, 0.7), rgba(240, 168, 170, 0));
+  opacity: 0.35; transform: scaleY(0.8); pointer-events: none;
 }
-.snake__labels {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 0.9em;
-  font-family: var(--font-ui); font-size: 13px; font-weight: 500;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted);
-}
-.snake__label { position: absolute; bottom: 0; width: 50%; text-align: center; visibility: hidden; }
-.snake__label--left { left: 0; }
-.snake__label--right { right: 0; }

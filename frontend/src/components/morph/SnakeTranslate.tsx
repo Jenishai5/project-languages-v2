@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 
 type Phrase = { code: string; name: string; text: string };
@@ -10,22 +10,24 @@ const EN: Phrase = { code: "en", name: "English", text: "Hello, how are you?" };
 const RU: Phrase = { code: "ru", name: "Russian", text: "Привет, как дела?" };
 
 const PAIRS: Pair[] = [[ES, CA], [EN, RU], [CA, EN], [RU, ES]];
+const LAPS = 2;
 
-type Props = { pairs?: Pair[] };
+type Props = { pairs?: Pair[]; speed?: number };
 
-type Mover = {
-  state: { left: number; amp: number };
+type Track = {
+  line: HTMLElement;
+  chars: HTMLElement[];
+  centers: number[];
   width: number;
-  render: () => void;
 };
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 }
 
-function Line({ phrase, pair, role }: { phrase: Phrase; pair: number; role: "src" | "tgt" }) {
+function Line({ phrase, index, role }: { phrase: Phrase; index: number; role: "src" | "tgt" }) {
   return (
-    <span className="snake__line" data-pair={pair} data-role={role} lang={phrase.code}>
+    <span className="snake__line" data-index={index} data-role={role} lang={phrase.code}>
       {[...phrase.text].map((char, i) => (
         <span key={i} className="snake__char">{char}</span>
       ))}
@@ -33,9 +35,10 @@ function Line({ phrase, pair, role }: { phrase: Phrase; pair: number; role: "src
   );
 }
 
-export default function SnakeTranslate({ pairs = PAIRS }: Props) {
+export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6 }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const [layoutVersion, setLayoutVersion] = useState(0);
+  const stream = useMemo(() => Array.from({ length: LAPS }, () => pairs).flat(), [pairs]);
 
   useEffect(() => {
     const el = root.current;
@@ -63,90 +66,75 @@ export default function SnakeTranslate({ pairs = PAIRS }: Props) {
     const leftWidth = wallX - wallWidth / 2;
     const rightOrigin = wallX + wallWidth / 2;
     const rightWidth = width - rightOrigin;
-    const amplitude = reduced ? 0 : fontSize * 0.3;
-    const wavelength = fontSize * 3.4;
+    const amplitude = reduced ? 0 : fontSize * 0.24;
+    const wavelength = fontSize * 3.6;
+    const velocity = reduced ? 0 : fontSize * speed;
+
     const leftClip = el.querySelector<HTMLElement>(".snake__clip--left")!;
     const rightClip = el.querySelector<HTMLElement>(".snake__clip--right")!;
     const wall = el.querySelector<HTMLElement>(".snake__wall")!;
-    const glow = el.querySelector<HTMLElement>(".snake__glow")!;
+    leftClip.style.width = `${leftWidth}px`;
+    rightClip.style.left = `${rightOrigin}px`;
+    rightClip.style.width = `${rightWidth}px`;
+    wall.style.left = `${wallX - wallWidth / 2}px`;
+    wall.style.width = `${wallWidth}px`;
 
-    const mover = (line: HTMLElement, origin: number): Mover => {
-      const chars = gsap.utils.toArray<HTMLElement>(".snake__char", line);
-      const centers = chars.map(c => c.offsetLeft + c.offsetWidth / 2);
-      const state = { left: 0, amp: 0 };
-      const render = () => {
-        line.style.transform = `translateX(${state.left}px)`;
-        chars.forEach((c, i) => {
-          const phase = ((origin + state.left + centers[i]) / wavelength) * Math.PI * 2;
-          const y = state.amp * Math.sin(phase);
-          const slope = state.amp * ((Math.PI * 2) / wavelength) * Math.cos(phase);
-          c.style.transform = `translateY(${y.toFixed(2)}px) rotate(${(Math.atan(slope) * 57.3 * 0.8).toFixed(2)}deg)`;
-        });
-      };
-      return { state, width: line.offsetWidth, render };
+    const track = (role: "src" | "tgt", index: number): Track => {
+      const line = el.querySelector<HTMLElement>(`.snake__line[data-role="${role}"][data-index="${index}"]`)!;
+      const chars = Array.from(line.querySelectorAll<HTMLElement>(".snake__char"));
+      return { line, chars, centers: chars.map(c => c.offsetLeft + c.offsetWidth / 2), width: line.offsetWidth };
     };
 
-    const ctx = gsap.context(() => {
-      gsap.set(leftClip, { width: leftWidth });
-      gsap.set(rightClip, { left: rightOrigin, width: rightWidth });
-      gsap.set(wall, { left: wallX - wallWidth / 2, width: wallWidth });
+    const minGap = fontSize * 1.4;
+    let cursor = 0;
+    const items = stream.map((_, i) => {
+      const src = track("src", i);
+      const tgt = track("tgt", i);
+      const start = cursor;
+      const gap = Math.max(minGap * 1.4, tgt.width - src.width + minGap);
+      cursor += src.width + gap;
+      return { src, tgt, start };
+    });
+    const period = cursor;
+    const approach = leftWidth + fontSize;
 
-      const movers = pairs.map((_, i) => ({
-        src: mover(el.querySelector<HTMLElement>(`[data-pair="${i}"][data-role="src"]`)!, 0),
-        tgt: mover(el.querySelector<HTMLElement>(`[data-pair="${i}"][data-role="tgt"]`)!, rightOrigin),
-      }));
-      const labels = (i: number, side: "src" | "tgt") =>
-        el.querySelector<HTMLElement>(`.snake__label[data-pair="${i}"][data-role="${side}"]`)!;
-
-      const inTime = 1.5;
-      const pause = 0.9;
-      const cross = 2.8;
-      const rest = 1.8;
-      const outTime = 1.5;
-      const cycle = inTime + pause + cross + rest;
-      const tl = gsap.timeline({ repeat: -1 });
-
-      const slither = (m: Mover, from: number, to: number, at: number, duration: number, ease: string) => {
-        tl.fromTo(m.state, { left: from }, { left: to, duration, ease, onUpdate: m.render, immediateRender: false }, at);
-        tl.fromTo(m.state, { amp: 0 }, { amp: amplitude, duration: duration * 0.4, ease: "sine.out", onUpdate: m.render, immediateRender: false }, at);
-        tl.fromTo(m.state, { amp: amplitude }, { amp: 0, duration: duration * 0.4, ease: "sine.inOut", onUpdate: m.render, immediateRender: false }, at + duration * 0.6);
-      };
-      const fade = (target: HTMLElement, show: boolean, at: number) =>
-        tl.fromTo(target, { autoAlpha: show ? 0 : 1 }, { autoAlpha: show ? 1 : 0, duration: 0.5, ease: "sine.inOut", immediateRender: false }, at);
-
-      movers.forEach(({ src, tgt }, i) => {
-        const at = i * cycle;
-        const srcHidden = -src.width - fontSize;
-        const srcRest = (leftWidth - src.width) / 2;
-        const srcGone = leftWidth + fontSize * 0.2;
-        const tgtHidden = -tgt.width - fontSize * 0.2;
-        const tgtRest = (rightWidth - tgt.width) / 2;
-        const tgtGone = rightWidth + fontSize;
-        const crossAt = at + inTime + pause;
-        const last = i === movers.length - 1;
-        const exitAt = last ? 0 : crossAt + cross + rest;
-
-        src.state.left = srcHidden;
-        tgt.state.left = last ? tgtRest : tgtHidden;
-        src.render();
-        tgt.render();
-        gsap.set(labels(i, "src"), { autoAlpha: 0 });
-        gsap.set(labels(i, "tgt"), { autoAlpha: last ? 1 : 0 });
-
-        slither(src, srcHidden, srcRest, at, inTime, "power2.out");
-        fade(labels(i, "src"), true, at + inTime * 0.4);
-        slither(src, srcRest, srcGone, crossAt, cross, "power1.inOut");
-        fade(labels(i, "src"), false, crossAt + cross * 0.4);
-        slither(tgt, tgtHidden, tgtRest, crossAt, cross, "power1.inOut");
-        fade(labels(i, "tgt"), true, crossAt + cross * 0.5);
-        tl.fromTo(glow, { opacity: 0, scaleY: 0.7 }, { opacity: 1, scaleY: 1, duration: cross * 0.5, ease: "sine.inOut", yoyo: true, repeat: 1, immediateRender: false }, crossAt);
-        slither(tgt, tgtRest, tgtGone, exitAt, outTime, "power2.in");
-        fade(labels(i, "tgt"), false, exitAt);
+    const place = (t: Track, x: number, origin: number, visibleWidth: number) => {
+      if (x + t.width < -fontSize || x > visibleWidth + fontSize) {
+        if (t.line.style.visibility !== "hidden") t.line.style.visibility = "hidden";
+        return;
+      }
+      t.line.style.visibility = "visible";
+      t.line.style.transform = `translate3d(${x.toFixed(2)}px, 0, 0)`;
+      t.chars.forEach((c, i) => {
+        const phase = ((origin + x + t.centers[i]) / wavelength) * Math.PI * 2;
+        const y = amplitude * Math.sin(phase);
+        const tilt = Math.atan(amplitude * ((Math.PI * 2) / wavelength) * Math.cos(phase)) * 57.3 * 0.8;
+        c.style.transform = `translate3d(0, ${y.toFixed(2)}px, 0) rotate(${tilt.toFixed(2)}deg)`;
       });
-    }, el);
+    };
 
-    return () => ctx.revert();
-  }, [pairs, layoutVersion]);
+    let travelled = reduced ? items[0].start + Math.max(items[0].src.width, items[0].tgt.width) + fontSize : 0;
+    const render = () => {
+      items.forEach(({ src, tgt, start }) => {
+        const d = ((((travelled - start + approach) % period) + period) % period) - approach;
+        place(src, leftWidth + d - src.width, 0, leftWidth);
+        place(tgt, d - tgt.width, rightOrigin, rightWidth);
+      });
+    };
+    render();
+
+    if (reduced) return;
+    const tick = (_time: number, deltaMs: number) => {
+      travelled += (velocity * Math.min(deltaMs, 64)) / 1000;
+      render();
+    };
+    gsap.ticker.add(tick);
+    const pulse = gsap.to(el.querySelector(".snake__glow"), { opacity: 0.9, scaleY: 1, duration: 1.6, ease: "sine.inOut", yoyo: true, repeat: -1 });
+    return () => {
+      gsap.ticker.remove(tick);
+      pulse.kill();
+    };
+  }, [layoutVersion, speed, stream]);
 
   return (
     <figure ref={root} className="snake">
@@ -154,22 +142,14 @@ export default function SnakeTranslate({ pairs = PAIRS }: Props) {
         {pairs.map(([a, b]) => `${a.name} “${a.text}” becomes ${b.name} “${b.text}”`).join(". ")}
       </figcaption>
       <div className="snake__clip snake__clip--left" aria-hidden="true">
-        {pairs.map(([a], i) => <Line key={i} phrase={a} pair={i} role="src" />)}
+        {stream.map(([a], i) => <Line key={i} phrase={a} index={i} role="src" />)}
       </div>
       <div className="snake__clip snake__clip--right" aria-hidden="true">
-        {pairs.map(([, b], i) => <Line key={i} phrase={b} pair={i} role="tgt" />)}
+        {stream.map(([, b], i) => <Line key={i} phrase={b} index={i} role="tgt" />)}
       </div>
       <span className="snake__wall" aria-hidden="true">
         <span className="snake__glow" />
       </span>
-      <div className="snake__labels" aria-hidden="true">
-        {pairs.map(([a, b], i) => (
-          <span key={i}>
-            <span className="snake__label snake__label--left" data-pair={i} data-role="src">{a.name}</span>
-            <span className="snake__label snake__label--right" data-pair={i} data-role="tgt">{b.name}</span>
-          </span>
-        ))}
-      </div>
     </figure>
   );
 }
