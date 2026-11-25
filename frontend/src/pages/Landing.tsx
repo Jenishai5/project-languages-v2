@@ -31,10 +31,6 @@ export default function Landing() {
             <h1 className="display">
               Ten words today.<br />A <em>conversation</em><br />tomorrow.
             </h1>
-            <p className="lead">
-              Short lessons built from real sentences. Match the words, put sentences back together,
-              say them out loud and see them in pictures.
-            </p>
             <div className="row">
               <button className="btn btn--primary btn--lg" onClick={() => go("/lessons")}>
                 {user ? "Continue learning" : "Start lesson one"}
