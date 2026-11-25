@@ -1,180 +1,121 @@
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-
 import AuthModal from "../components/organisms/AuthModal";
 
-// ── Feature card data ──────────────────────────────────────
-const cards = [
-  {
-    icon: "⚡",
-    title: "Match Words",
-    desc: "5 pairs per round — pick the correct translation before time runs out. Fast and addictive.",
-  },
-  {
-    icon: "🧩",
-    title: "Build Sentences",
-    desc: "Drag coloured tiles into the right order. Every word is colour-coded by grammar role.",
-  },
-  {
-    icon: "🌍",
-    title: "4 Languages",
-    desc: "English ↔ Spanish, English ↔ Russian, Spanish ↔ Russian, and Español → Emojis.",
-  },
-  {
-    icon: "🏆",
-    title: "Track Progress",
-    desc: "Your score is saved every session. Watch your accuracy grow over time.",
-  },
-];
-
-// ── Word pairs shown in the 3D device mockup ──────────────
-const mockPairs = [
-  { q: "dog",   a: "perro" },
-  { q: "house", a: "casa" },
-  { q: "water", a: "agua" },
-  { q: "cat",   a: "gato" },
-  { q: "book",  a: "libro" },
+const TRAININGS = [
+  { name: "Match", hint: "Word and translation" },
+  { name: "Shuffle", hint: "Build 5 sentences" },
+  { name: "Pronounce", hint: "Say each word" },
+  { name: "Picture", hint: "Picture to word" },
 ];
 
 export default function Landing() {
   const { showAuth, setShowAuth } = useOutletContext<{ showAuth: boolean; setShowAuth: (v: boolean) => void }>();
-  const navigate  = useNavigate();
-  const { user }  = useAuth();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
+  const go = (path: string) => (user ? navigate(path) : setShowAuth(true));
 
   return (
     <div>
-
-      {/* ── HERO ─────────────────────────────────────────────── */}
-      <div>
-
-
-        <div>
-
-          {/* Left — headline */}
-          <div>
-
-            <div>
-              Free to use · No credit card needed
-            </div>
-
-            <h1>
-              Learn languages<br />
-              <span>the fun way.</span>
-            </h1>
-
-            <p>
-              Match words, build sentences, track your score. Four languages. Zero fluff.
+      <section className="hero grid-bg">
+        <div className="container hero__inner">
+          <div className="hero__copy">
+            <p className="eyebrow hero__kicker">
+              English <span aria-hidden="true">·</span> Español <span aria-hidden="true">·</span> Русский
             </p>
-
-            <div>
-              {["🇬🇧", "🇪🇸", "🇷🇺", "🌍"].map((f, i) => (
-                <div
-                  key={i}
-                >{f}</div>
-              ))}
-            </div>
-
-            <div>
-              {user ? (
-                <button
-                  onClick={() => navigate("/dashboard")}
-                >Go to Dashboard →</button>
-              ) : (
-                <>
-                  <button
-                    onClick={() => setShowAuth(true)}
-                  >Start for free →</button>
-                  <button
-                    onClick={() => setShowAuth(true)}
-                  >Sign in</button>
-                </>
-              )}
-            </div>
-
-            <div>
-              {[["4", "Languages"], ["500+", "Vocabulary words"], ["Free", "Always"]].map(([v, l]) => (
-                <div key={l}>
-                  <span>{v}</span>
-                  <span>{l}</span>
-                </div>
-              ))}
+            <h1 className="display">
+              Ten words today.<br />A <em>conversation</em><br />tomorrow.
+            </h1>
+            <p className="lead">
+              Short lessons built from real sentences. Match the words, put sentences back together,
+              say them out loud and see them in pictures.
+            </p>
+            <div className="row">
+              <button className="btn btn--primary btn--lg" onClick={() => go("/lessons")}>
+                {user ? "Continue learning" : "Start lesson one"}
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9h12M10 4l5 5-5 5" /></svg>
+              </button>
+              <button className="btn btn--light btn--lg" onClick={() => go("/game")}>Try free practice</button>
             </div>
           </div>
 
-          {/* Right — 3D device mockup */}
-          <div>
-            <div>
-              <div>
-                <div>
-                  <span>TurtleTalk</span>
-                  <span>🏆 Score: 4</span>
-                </div>
-                <div>
-                  <div>
-                    <div>English</div>
-                    {mockPairs.map(p => (
-                      <div
-                        key={p.q}
-                      >{p.q}</div>
-                    ))}
-                  </div>
-                  <div>
-                    <div>Spanish</div>
-                    {[...mockPairs].reverse().map(p => (
-                      <div
-                        key={p.a}
-                      >{p.a}</div>
-                    ))}
-                  </div>
-                </div>
+          <div className="hero__art" aria-hidden="true">
+            <div className="float float--card">
+              <div className="row row--between">
+                <span className="eyebrow">Translation</span>
+                <span className="badge">Lesson 3</span>
+              </div>
+              <p className="serif float__word">doctor</p>
+              <div className="stack stack--tight">
+                <div className="float__row"><b>ES</b>el médico</div>
+                <div className="float__row"><b>RU</b>врач</div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── FEATURE CARDS ────────────────────────────────────── */}
-      <section>
-        <div>
-          <p>
-            Why TurtleTalk
-          </p>
-          <h2>
-            Everything you need<br />to level up
-          </h2>
-
-          <div>
-            {cards.map((c, i) => (
-              <div
-                key={i}
-              >
-                <div>
-                  <div
-                  >{c.icon}</div>
-                  <div>{c.title}</div>
-                  <p>{c.desc}</p>
-                </div>
+            <div className="float float--bubble float--es">¿Cómo estás?</div>
+            <div className="float float--bubble float--ru">Как дела?</div>
+            <div className="float float--sentence stack">
+              <span className="eyebrow">Put it back together</span>
+              <div className="row">
+                <span className="tile"><span className="tile__word">The</span></span>
+                <span className="tile" data-word-type="noun"><span className="tile__word">doctor</span></span>
+                <span className="tile" data-word-type="verb"><span className="tile__word">reads</span></span>
+                <span className="tile tile--empty"><span className="tile__word">the</span></span>
+                <span className="tile tile--empty"><span className="tile__word">paper</span></span>
               </div>
-            ))}
+              <div className="row small"><progress value={3} max={5} /></div>
+            </div>
+            <div className="float float--say">
+              <span>
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="6" y="2" width="6" height="9" rx="3" /><path d="M3.5 8.5a5.5 5.5 0 0 0 11 0M9 14v2.5" /></svg>
+              </span>
+              <span>Say “el papel”</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── CTA ──────────────────────────────────────────────── */}
-      <section>
-        <div>
-          <h2>
-            Start learning today.<br />It's completely free.
-          </h2>
-          <p>
-            Join learners already building their vocabulary every day.
-          </p>
-          <button
-            onClick={() => user ? navigate("/dashboard") : setShowAuth(true)}
-          >
-            {user ? "Go to Dashboard →" : "Create free account →"}
-          </button>
+      <section className="container ways-section">
+        <div className="section-head">
+          <h2 className="h1">Two ways to learn.<br />One set of words.</h2>
+          <p className="lead">Follow the path lesson by lesson, or drop into free practice whenever you have five minutes.</p>
+        </div>
+        <div className="ways">
+          <article className="way way--path">
+            <span className="eyebrow">Learning path</span>
+            <h3 className="h2">36 lessons, 10 words each</h3>
+            <p className="muted">Every lesson trains the same words four ways.</p>
+            <div className="choice-grid">
+              {TRAININGS.map(t => (
+                <div key={t.name} className="training">
+                  <span className="training__title">{t.name}</span>
+                  <span className="training__hint">{t.hint}</span>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn--primary self-start" onClick={() => go("/lessons")}>Open the lessons</button>
+          </article>
+
+          <article className="way way--practice">
+            <span className="eyebrow">Free practice</span>
+            <h3 className="h2">Any word, any time.</h3>
+            <p className="muted">Random words and real sentences from the whole dictionary.</p>
+            <button className="way__link way__link--pink" onClick={() => go("/game")}>
+              <span>Match</span><span>5 pairs a round →</span>
+            </button>
+            <button className="way__link way__link--mint" onClick={() => go("/sentence-builder")}>
+              <span>Sentence shuffle</span><span>Real Tatoeba sentences →</span>
+            </button>
+          </article>
+        </div>
+      </section>
+
+      <section className="container quote-band">
+        <blockquote>“The same word, three ways: <em>doctor</em>, el médico, врач.”</blockquote>
+        <div className="row">
+          <span className="badge badge--en">EN · English</span>
+          <span className="badge badge--es">ES · Español</span>
+          <span className="badge badge--ru">RU · Русский</span>
         </div>
       </section>
 

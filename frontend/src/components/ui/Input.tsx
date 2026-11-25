@@ -1,4 +1,4 @@
-import type { KeyboardEvent, FocusEventHandler, ReactNode } from "react";
+import { useId, type KeyboardEvent, type FocusEventHandler, type ReactNode } from "react";
 
 interface InputProps {
   label?:        string;
@@ -17,15 +17,17 @@ export default function Input({
   label, type = "text", placeholder, value, onChange,
   onKeyDown, onFocus, onBlur, autoComplete, suffix,
 }: InputProps) {
+  const id = useId();
   return (
-    <div>
+    <div className="field">
       {label && (
-        <label>
+        <label className="field__label" htmlFor={id}>
           {label}
         </label>
       )}
-      <div>
+      <div className="field__control">
         <input
+          id={id}
           type={type}
           placeholder={placeholder}
           value={value}
@@ -36,7 +38,7 @@ export default function Input({
           autoComplete={autoComplete}
         />
         {suffix && (
-          <div>
+          <div className="field__suffix">
             {suffix}
           </div>
         )}

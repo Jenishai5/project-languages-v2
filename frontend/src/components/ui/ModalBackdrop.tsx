@@ -8,6 +8,7 @@ interface ModalBackdropProps {
 export default function ModalBackdrop({ onClose, children }: ModalBackdropProps) {
   return (
     <div
+      className="modal-backdrop"
       role="dialog"
       aria-modal="true"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}

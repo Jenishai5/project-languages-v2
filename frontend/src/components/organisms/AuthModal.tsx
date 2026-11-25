@@ -12,25 +12,15 @@ export default function AuthModal({ onClose }: AuthModalProps) {
 
   return (
     <ModalBackdrop onClose={onClose}>
-      <div
-        onClick={e => e.stopPropagation()}
-      >
-        {/* turtle */}
-        <div>
+      <div className="modal stack stack--loose" onClick={e => e.stopPropagation()}>
+        <button className="btn btn--ghost btn--sm modal__close" onClick={onClose} aria-label="Close">Close</button>
+
+        <div className="stack text-center">
           <TurtlePeek state={turtleState} />
-        </div>
-
-        {/* close */}
-        <button onClick={onClose}>✕</button>
-
-        {/* header */}
-        <div>
-          <h2>
-            {turtleState === "happy" ? "🎉 Welcome!" : "Welcome back"}
-          </h2>
-          <p>
-            Sign in or create your free account
-          </p>
+          <div className="stack stack--tight">
+            <h2 className="h2">{turtleState === "happy" ? "Welcome!" : "Welcome back"}</h2>
+            <p className="muted">Sign in or create your free account</p>
+          </div>
         </div>
 
         <AuthForm

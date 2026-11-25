@@ -15,9 +15,9 @@ function tilesOf(sentence: LessonSentence): PlacedTile[] {
 
 function TileChip({ tile, onClick }: { tile: PlacedTile; onClick: () => void }) {
   return (
-    <button onClick={onClick} data-word-type={tile.word_type}>
-      <span>{tile.form}</span>
-      <span>{wordTypeLabel(tile.word_type)}</span>
+    <button className="tile" onClick={onClick} data-word-type={tile.word_type}>
+      <span className="tile__word">{tile.form}</span>
+      <span className="tile__type">{wordTypeLabel(tile.word_type)}</span>
     </button>
   );
 }
@@ -64,21 +64,22 @@ export default function BuildStep({
 
   return (
     <StepCard eyebrow={`Shuffle · ${index + 1} of ${sentences.length}`} title="Build the sentence">
-      <div>
-        <p>Translate</p>
-        <p>{sentence.prompt}</p>
+      <progress value={index + 1} max={sentences.length} aria-label="Sentence progress" />
+      <div className="prompt-box">
+        <p className="eyebrow">Translate</p>
+        <p className="prompt-box__text">{sentence.prompt}</p>
       </div>
 
-      <p>Your sentence</p>
-      <div>
-        {placed.length === 0 && <span>Tap the words below in the right order</span>}
+      <p className="eyebrow">Your sentence</p>
+      <div className="tray" aria-live="polite">
+        {placed.length === 0 && <span className="tray__hint">Tap the words below in the right order</span>}
         {placed.map(tile => (
           <TileChip key={tile.uid} tile={tile} onClick={() => result === null && setPlaced(p => p.filter(t => t.uid !== tile.uid))} />
         ))}
       </div>
 
-      <p>Words</p>
-      <div>
+      <p className="eyebrow">Words</p>
+      <div className="tray tray--bank">
         {bank.map(tile => (
           <TileChip key={tile.uid} tile={tile} onClick={() => result === null && setPlaced(p => [...p, tile])} />
         ))}
@@ -91,7 +92,7 @@ export default function BuildStep({
       )}
       {result && <Attribution recording={sentence.audio} />}
 
-      <div>
+      <div className="row">
         {result === null ? (
           <>
             <PrimaryButton onClick={check} disabled={bank.length > 0}>Check</PrimaryButton>
@@ -99,7 +100,7 @@ export default function BuildStep({
           </>
         ) : (
           <>
-            <SecondaryButton onClick={listen}>🔊 Listen</SecondaryButton>
+            <SecondaryButton onClick={listen}>Listen</SecondaryButton>
             <PrimaryButton onClick={next}>{index + 1 >= sentences.length ? "Finish building →" : "Next →"}</PrimaryButton>
           </>
         )}

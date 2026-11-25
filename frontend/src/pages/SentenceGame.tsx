@@ -152,36 +152,29 @@ export default function SentenceGame() {
   const firstWord      = current?.words.find(w => w.position === 0)?.form ?? "";
   const translationText = current?.translation?.[transLang] ?? current?.translation?.es ?? "";
 
-  if (loading) return (
-    <div>
-    </div>
-  );
+  if (loading) return <div className="spinner" role="status" aria-label="Loading sentences" />;
 
   if (error) return (
-    <div>
-      <div>😕</div>
-      <div>{error}</div>
+    <div className="center-state">
+      <div className="center-state__icon" aria-hidden="true">😕</div>
+      <p>{error}</p>
     </div>
   );
 
   return (
-    <div>
-      <main>
-
-        {/* Header */}
-        <div>
-          <div>
-            <h1>Sentence Builder</h1>
-            <p>Translate the sentence into English</p>
-          </div>
-          <div>
-            <div>{score.correct}/{score.total}</div>
-            <div>Score</div>
+    <>
+      <header className="page-header grid-bg">
+        <div className="container page-header__inner">
+          <p className="eyebrow">Free practice</p>
+          <h1 className="display">Sentence <em>shuffle</em></h1>
+          <div className="game-toolbar">
+            <span className="score-pill" aria-live="polite"><b>{score.correct}/{score.total}</b> correct</span>
           </div>
         </div>
+      </header>
 
-        {/* Legend */}
-        <div>
+      <div className="container page-body">
+        <div className="legend" aria-label="Word types">
           {WORD_TYPE_LEGEND.map(l => (
             <div key={l.type} data-word-type={l.type}>
               {l.label}
@@ -189,40 +182,37 @@ export default function SentenceGame() {
           ))}
         </div>
 
-        {/* Game card */}
-        <div>
-
-          {/* Progress bar */}
-          <div>
-            <progress value={index + 1} max={sentences.length} />
-            <span>{index + 1} / {sentences.length}</span>
+        <section className="card step-card">
+          <div className="row">
+            <progress value={index + 1} max={sentences.length} aria-label="Sentence progress" className="grow" />
+            <span className="small">{index + 1} / {sentences.length}</span>
           </div>
 
-          {/* Sentence to translate */}
           {current && (
-            <div>
-              <div>
-                <p>Translate into English</p>
-                <div>
+            <div className="prompt-box">
+              <div className="row row--between">
+                <p className="eyebrow">Translate into English</p>
+                <div className="row row--tight">
                   {(["es", "ru"] as TransLang[]).map(lang => (
                     <button
                       key={lang}
                       onClick={() => setTransLang(lang)}
                       aria-pressed={transLang === lang}
+                      className="chip"
                     >
                       {lang.toUpperCase()}
                     </button>
                   ))}
                 </div>
               </div>
-              <p>{translationText || "—"}</p>
+              <p className="prompt-box__text">{translationText || "—"}</p>
             </div>
           )}
 
-          {/* Answer slots */}
-          <div>
-            <p>Build the sentence</p>
+          <div className="stack">
+            <p className="eyebrow">Build the sentence</p>
             <div
+              className="tray"
               onDragOver={e => { e.preventDefault(); dragOver.current = "bank"; }}
               onDrop={() => onDrop("bank")}
             >
@@ -231,6 +221,7 @@ export default function SentenceGame() {
                   <div
                     key={idx}
                     data-word-type={word?.word_type}
+                    className={word ? "tile" : "tile tile--empty"}
                     draggable={!!word}
                     onDragStart={() => word && onDragStartSlot(word, idx)}
                     onDragOver={e => { e.preventDefault(); e.stopPropagation(); dragOver.current = idx; }}
@@ -238,11 +229,11 @@ export default function SentenceGame() {
                   >
                     {word ? (
                       <>
-                        <span>{word.form}</span>
-                        <span>{wordTypeLabel(word.word_type)}</span>
+                        <span className="tile__word">{word.form}</span>
+                        <span className="tile__type">{wordTypeLabel(word.word_type)}</span>
                       </>
                     ) : (
-                      <span>_</span>
+                      <span className="tile__word" aria-hidden="true">·</span>
                     )}
                   </div>
                 );
@@ -250,46 +241,42 @@ export default function SentenceGame() {
             </div>
           </div>
 
-          {/* Word bank */}
-          <div>
-            <p>Word bank</p>
-            <div>
+          <div className="stack">
+            <p className="eyebrow">Word bank · drag words into the slots</p>
+            <div className="tray tray--bank">
               {bank.length === 0 ? (
-                <span>All words placed ✓</span>
+                <span className="tray__hint">All words placed ✓</span>
               ) : bank.map(word => {
                 return (
                   <div
                     key={word.uid}
                     data-word-type={word.word_type}
+                    className="tile"
                     draggable
                     onDragStart={() => onDragStartBank(word)}
                   >
-                    <span>{word.form}</span>
-                    <span>{wordTypeLabel(word.word_type)}</span>
+                    <span className="tile__word">{word.form}</span>
+                    <span className="tile__type">{wordTypeLabel(word.word_type)}</span>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Result */}
           {result && (
-            <div
-            >
-              {result === "correct" ? "✅ Correct!" : "❌ Not quite — try again or skip"}
-              {result === "correct" && current?.full_text && (
-                <span>→ {current.full_text}</span>
-              )}
+            <div className="feedback row row--between" data-state={result} role="status">
+              <span>
+                {result === "correct" ? "Correct!" : "Not quite. Try again or skip."}
+                {result === "correct" && current?.full_text && <> {current.full_text}</>}
+              </span>
               {result === "correct" && (
-                <button onClick={listen}>
-                  🔊 Listen
-                </button>
+                <button className="btn btn--light btn--sm" onClick={listen}>Listen</button>
               )}
             </div>
           )}
 
           {result === "correct" && current?.audio && (
-            <p>
+            <p className="attribution">
               Recording by{" "}
               {current.audio.attribution_url
                 ? <a href={current.audio.attribution_url} target="_blank" rel="noreferrer">{current.audio.author ?? "unknown"}</a>
@@ -298,55 +285,32 @@ export default function SentenceGame() {
             </p>
           )}
 
-          {/* Hint — reveals only the first word */}
           {showHint && (
-            <div>
-              💡 The sentence starts with: <span>"{firstWord}"</span>
+            <div className="prompt-box small">
+              The sentence starts with: <strong>“{firstWord}”</strong>
             </div>
           )}
-        </div>
 
-        {/* Action buttons */}
-        <div>
+        <div className="row">
           {result === "wrong" ? (
             <>
-              <button
-                onClick={tryAgain}
-              >
-                🔄 Try again
-              </button>
-              <button onClick={next}>
-                Skip →
-              </button>
+              <button className="btn btn--primary" onClick={tryAgain}>Try again</button>
+              <button className="btn btn--ghost" onClick={next}>Skip →</button>
             </>
           ) : result === "correct" ? (
-            <button
-              onClick={next}
-            >
-              Next →
-            </button>
+            <button className="btn btn--primary" onClick={next}>Next →</button>
           ) : (
             <>
-              <button
-                onClick={checkAnswer}
-                disabled={!allPlaced}
-              >
-                Check answer
-              </button>
-              <button
-                onClick={() => setShowHint(h => !h)}
-              >
-                💡 Hint
-              </button>
-              <button onClick={next}>
-                Skip →
-              </button>
+              <button className="btn btn--primary" onClick={checkAnswer} disabled={!allPlaced}>Check answer</button>
+              <button className="btn btn--secondary" onClick={() => setShowHint(h => !h)} aria-pressed={showHint}>Hint</button>
+              <button className="btn btn--ghost" onClick={next}>Skip →</button>
             </>
           )}
         </div>
 
-        {/* Dot navigation */}
-        <div>
+        </section>
+
+        <nav className="dots" aria-label="Sentences">
           {sentences.map((_, i) => (
             <button
               key={i}
@@ -358,9 +322,8 @@ export default function SentenceGame() {
               {i + 1}
             </button>
           ))}
-        </div>
-
-      </main>
-    </div>
+        </nav>
+      </div>
+    </>
   );
 }

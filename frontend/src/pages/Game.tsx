@@ -152,36 +152,39 @@ export default function Game() {
   };
 
   return (
-    <div>
-
-      <header>
-        <div>
-          <h2>Word Match</h2>
+    <>
+      <header className="page-header grid-bg">
+        <div className="container page-header__inner">
+          <p className="eyebrow">Free practice</p>
+          <h1 className="display">Word <em>match</em></h1>
+          <div className="game-toolbar">
+            <label className="visually-hidden" htmlFor="pair-select">Language pair</label>
+            <select id="pair-select" className="select" value={language} onChange={e => setLanguage(e.target.value as Language)}>
+              {LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+            </select>
+            <span className="score-pill" aria-live="polite"><b>{score}</b> points</span>
+          </div>
         </div>
-        <div>🏆 Score: {score}</div>
-        <select
-          value={language}
-          onChange={e => setLanguage(e.target.value as Language)}
-        >
-          {LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-        </select>
       </header>
 
+      <div className="container page-body">
       {loading ? (
-        <div>
-          <p>Loading words…</p>
-        </div>
+        <div className="spinner" role="status" aria-label="Loading words" />
       ) : error ? (
-        <div>
-          <div>😕</div>
+        <div className="center-state">
+          <div className="center-state__icon" aria-hidden="true">😕</div>
           <p>{error}</p>
-          <button onClick={() => startRound(language, true)}>
+          <button className="btn btn--secondary" onClick={() => startRound(language, true)}>
             Try again
           </button>
         </div>
       ) : (
-        <>
-          <div>
+        <section className="card step-card">
+          <div className="step-card__head">
+            <p className="eyebrow">{matchedPairs} of {TOTAL_PAIRS} matched</p>
+            <h2 className="h2">Pick a word, then its translation</h2>
+          </div>
+          <div className="match-grid">
 
             <div>
               {pairs.map((p, i) => (
@@ -190,6 +193,7 @@ export default function Game() {
                   onClick={() => handleQuestion(i)}
                   disabled={qStates[i] === "correct"}
                   data-state={qStates[i]}
+                  className="choice"
                 >
                   {questionsAreImages
                     ? <ImageCard url={p.question} />
@@ -199,7 +203,6 @@ export default function Game() {
               ))}
             </div>
 
-            {/* Answers — text or image */}
             <div>
               {answers.map((a, i) => (
                 <button
@@ -207,6 +210,7 @@ export default function Game() {
                   onClick={() => handleAnswer(i)}
                   disabled={aStates[i] === "correct"}
                   data-state={aStates[i]}
+                  className="choice"
                 >
                   {answersAreImages
                     ? <ImageCard url={a.answer} />
@@ -219,12 +223,13 @@ export default function Game() {
           </div>
 
           {matchedPairs === TOTAL_PAIRS && (
-            <div>
-              <p>🎉 Round complete! Next round loading…</p>
+            <div className="feedback" data-state="correct" role="status">
+              Round complete! The next round is loading…
             </div>
           )}
-        </>
+        </section>
       )}
-    </div>
+      </div>
+    </>
   );
 }

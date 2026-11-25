@@ -3,5 +3,5 @@ interface BadgeProps {
 }
 
 export default function Badge({ children }: BadgeProps) {
-  return <span>{children}</span>;
+  return <span className="badge">{children}</span>;
 }

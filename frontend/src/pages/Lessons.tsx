@@ -48,72 +48,70 @@ export default function Lessons() {
   const ready = lessons.filter(l => l.sentence_count > 0).length;
 
   return (
-    <div>
-      <main>
-        <div>
-          <p>Lessons</p>
-          <h1>Learn step by step</h1>
-          <p>
-            Each lesson teaches a few words, then uses them in real sentences you build and hear.
-          </p>
+    <>
+      <header className="page-header grid-bg">
+        <div className="container page-header__inner">
+          <p className="eyebrow">Learning path</p>
+          <h1 className="display">Learn <em>step</em> by step.</h1>
+          <p className="lead">Each lesson teaches ten words, then trains them in matching, sentences, speaking and pictures.</p>
         </div>
+      </header>
 
-        <section>
-          {!chosen && (
-            <p>First, tell us which languages you speak and learn.</p>
-          )}
-          <div>
-            <label>
-              I speak
-              <select value={settings.native_lang} onChange={e => choose("native_lang", e.target.value)}>
+      <div className="container page-body">
+        <section className="panel stack">
+          {!chosen && <p className="h3">First, tell us which languages you speak and learn.</p>}
+          <div className="lang-picker">
+            <label className="field">
+              <span className="field__label">I speak</span>
+              <select className="select" value={settings.native_lang} onChange={e => choose("native_lang", e.target.value)}>
                 {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
               </select>
             </label>
-            <label>
-              I want to learn
-              <select value={settings.learning_lang} onChange={e => choose("learning_lang", e.target.value)}>
+            <label className="field">
+              <span className="field__label">I want to learn</span>
+              <select className="select" value={settings.learning_lang} onChange={e => choose("learning_lang", e.target.value)}>
                 {languages.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}
               </select>
             </label>
           </div>
         </section>
 
-        {error && <p>{error}</p>}
+        {error && <p className="alert" data-type="error" role="alert">{error}</p>}
 
         {loading ? (
-          <div>
-          </div>
+          <div className="spinner" role="status" aria-label="Loading lessons" />
         ) : (
-          <section>
-            <p>
-              {lessons.length} lessons · {ready} with sentences
-            </p>
-            {lessons.length === 0 && (
-              <p>No lessons for this language pair yet. Try another one.</p>
-            )}
-            {lessons.map(lesson => {
-              const done = (progress[String(lesson.id)]?.mastery ?? 0) > 0;
-              return (
-                <button
-                  key={lesson.id}
-                  onClick={() => navigate(`/lessons/${lesson.id}`)}
-                >
-                  <span>
-                    {done ? "✓" : lesson.position}
-                  </span>
-                  <span>
-                    <span>{lesson.title}</span>
-                    <span>
-                      {lesson.word_count} words · {lesson.sentence_count > 0 ? `${lesson.sentence_count} sentences` : "words only"}
+          <section className="stack">
+            <p className="eyebrow">{lessons.length} lessons · {ready} with sentences</p>
+            {lessons.length === 0 && <p className="muted">No lessons for this language pair yet. Try another one.</p>}
+            <div className="lesson-list">
+              {lessons.map(lesson => {
+                const done = (progress[String(lesson.id)]?.mastery ?? 0) > 0;
+                return (
+                  <button
+                    key={lesson.id}
+                    className="lesson-row"
+                    data-state={done ? "done" : "todo"}
+                    onClick={() => navigate(`/lessons/${lesson.id}`)}
+                  >
+                    <span className="lesson-row__num" aria-hidden="true">{done ? "✓" : lesson.position}</span>
+                    <span className="lesson-row__body">
+                      <span className="lesson-row__title">
+                        {lesson.title}
+                        {done && <span className="visually-hidden"> (done)</span>}
+                      </span>
+                      <span className="lesson-row__meta">
+                        {lesson.word_count} words · {lesson.sentence_count > 0 ? `${lesson.sentence_count} sentences` : "words only"}
+                      </span>
                     </span>
-                  </span>
-                  <span>→</span>
-                </button>
-              );
-            })}
+                    <span aria-hidden="true">→</span>
+                  </button>
+                );
+              })}
+            </div>
           </section>
         )}
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

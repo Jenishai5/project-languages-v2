@@ -3,25 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useLanguages } from "../hooks/useLanguages";
 import { fetchLessonProgress, fetchLessons, type LessonSummary } from "../lib/lessonsApi";
 
-interface CardProps { label: string; heading: string; sub: string; cta: string; onClick: () => void; }
+interface PracticeLinkProps { heading: string; sub: string; tone?: "pink" | "mint"; onClick: () => void; }
 
-function Card({ label, heading, sub, cta, onClick }: CardProps) {
+function PracticeLink({ heading, sub, tone = "pink", onClick }: PracticeLinkProps) {
   return (
-    <section>
-      <p>{label}</p>
-      <h3>{heading}</h3>
-      <p>{sub}</p>
-      <button onClick={onClick}>{cta}</button>
-    </section>
-  );
-}
-
-function SectionTitle({ title, sub }: { title: string; sub: string }) {
-  return (
-    <div>
-      <h2>{title}</h2>
-      <p>{sub}</p>
-    </div>
+    <button className={`way__link way__link--${tone}`} onClick={onClick}>
+      <span>{heading}</span>
+      <span>{sub}</span>
+    </button>
   );
 }
 
@@ -53,50 +42,45 @@ export default function Dashboard() {
     ? "Loading your path…"
     : path.total === 0
       ? "No lessons yet"
-      : `${path.done} of ${path.total} lessons done · 10 words each · Match, Shuffle, Pronounce, Picture`;
+      : `${path.done} of ${path.total} lessons done · 10 words each, trained four ways`;
 
   return (
-    <div>
-      <main>
-        <div>
-          <p>Welcome back</p>
-          <h1>Ready to learn?</h1>
+    <>
+      <header className="page-header grid-bg">
+        <div className="container page-header__inner">
+          <p className="eyebrow">Welcome back</p>
+          <h1 className="display">Ready to <em>learn</em>?</h1>
         </div>
+      </header>
 
-        <section>
-          <SectionTitle title="📚 Learning path" sub="Lessons in order. Each lesson teaches 10 new words." />
-          <Card
-            label={next ? `Next · Lesson ${next.position}` : "Lessons"}
-            heading={next ? next.title : path && path.total > 0 && path.done === path.total ? "Path complete 🎉" : "Lessons"}
-            sub={pathSub}
-            cta={next ? "Continue →" : "Open →"}
-            onClick={() => navigate(next ? `/lessons/${next.id}` : "/lessons")}
-          />
-          <button
-            onClick={() => navigate("/lessons")}
-          >
-            See all lessons →
-          </button>
+      <div className="container ways">
+        <section className="way way--path" aria-labelledby="path-title">
+          <div className="path-card__meta">
+            <span className="eyebrow">Learning path</span>
+            <span className="small">{path ? `${path.done} of ${path.total} lessons done` : "Loading…"}</span>
+          </div>
+          <p className="eyebrow">{next ? `Next · Lesson ${next.position}` : "Lessons"}</p>
+          <h2 id="path-title" className="h1">
+            {next ? next.title : path && path.total > 0 && path.done === path.total ? "Path complete" : "Lessons"}
+          </h2>
+          <p className="muted">{pathSub}</p>
+          {path && path.total > 0 && <progress value={path.done} max={path.total} aria-label="Lessons done" />}
+          <div className="row">
+            <button className="btn btn--primary" onClick={() => navigate(next ? `/lessons/${next.id}` : "/lessons")}>
+              {next ? "Continue" : "Open lessons"}
+            </button>
+            <button className="btn btn--secondary" onClick={() => navigate("/lessons")}>See all lessons</button>
+          </div>
         </section>
 
-        <section>
-          <SectionTitle title="🎯 Free practice" sub="Train any time, in any order. Uses all words and sentences, not one lesson." />
-          <Card
-            label="Words"
-            heading="🧩 Match"
-            sub="5 random word pairs per round · choose a language pair"
-            cta="Play →"
-            onClick={() => navigate("/game")}
-          />
-          <Card
-            label="Sentences"
-            heading="🔀 Sentence shuffle"
-            sub="Put real Tatoeba sentences in the right order"
-            cta="Play →"
-            onClick={() => navigate("/sentence-builder")}
-          />
+        <section className="way way--practice" aria-labelledby="practice-title">
+          <span className="eyebrow">Free practice</span>
+          <h2 id="practice-title" className="h2">Train any time, in any order.</h2>
+          <p className="muted">Uses all words and sentences, not one lesson.</p>
+          <PracticeLink heading="Match" sub="5 random pairs a round →" tone="pink" onClick={() => navigate("/game")} />
+          <PracticeLink heading="Sentence shuffle" sub="Real Tatoeba sentences →" tone="mint" onClick={() => navigate("/sentence-builder")} />
         </section>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

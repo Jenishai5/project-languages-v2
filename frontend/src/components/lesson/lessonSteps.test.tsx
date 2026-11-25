@@ -126,11 +126,11 @@ test("pronounce step accepts the spoken word and counts it once", () => {
   const onDone = vi.fn();
   render(<PronounceStep words={words.slice(0, 1)} learning="eng" onDone={onDone} />);
 
-  fireEvent.click(screen.getByText("🎤 Say it"));
+  fireEvent.click(screen.getByText("Say it"));
   expect(FakeRecognition.last.lang).toBe("en-US");
   FakeRecognition.last.say("the doctor");
   expect(screen.getByText("✅ Great! I heard “the doctor”.")).toBeInTheDocument();
-  fireEvent.click(screen.getByText("🎤 Try again"));
+  fireEvent.click(screen.getByText("Try again"));
   FakeRecognition.last.say("doctor");
   fireEvent.click(screen.getByText("Finish →"));
 

@@ -32,19 +32,21 @@ export default function PictureStep({ rounds, onDone }: { rounds: PictureRound[]
 
   return (
     <StepCard eyebrow={`Picture · ${index + 1} of ${rounds.length}`} title="What is in the picture?">
-      <div>
+      <progress value={index + 1} max={rounds.length} aria-label="Picture progress" />
+      <div className="picture-frame">
         {round.image_url ? (
           <img src={round.image_url} alt="Guess the word" />
         ) : (
           <span role="img" aria-label="Guess the word">{round.emoji}</span>
         )}
       </div>
-      <div>
+      <div className="choice-grid">
         {round.options.map(option => (
           <button
             key={option}
             onClick={() => pick(option)}
             data-state={optionState(option)}
+            className="choice"
           >
             {option}
           </button>

@@ -3,5 +3,5 @@ interface AvatarProps {
 }
 
 export default function Avatar({ initial }: AvatarProps) {
-  return <span aria-hidden="true">{initial}</span>;
+  return <span className="avatar" aria-hidden="true">{initial}</span>;
 }

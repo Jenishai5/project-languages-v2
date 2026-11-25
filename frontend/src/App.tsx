@@ -16,18 +16,15 @@ function RootLayout() {
   const [showAuth, setShowAuth] = useState(false);
 
   return (
-    <div>
+    <div className="app">
       <AppNavbar onSignIn={() => setShowAuth(true)} />
-      <div>
+      <div className="app__main">
         <Outlet context={{ showAuth, setShowAuth }} />
       </div>
-      <footer>
-        <div>
-          <div>
-            <img src="/turtle.png" alt="logo" />
-            TurtleTalk
-          </div>
-          <span>© 2026 · Built with ❤️ and a lot of vocabulary</span>
+      <footer className="site-footer">
+        <div className="container site-footer__inner">
+          <span>TurtleTalk</span>
+          <span>Sentences and recordings from Tatoeba, CC BY 2.0 FR</span>
         </div>
       </footer>
     </div>
@@ -38,10 +35,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div>
-      </div>
-    );
+    return <div className="spinner" role="status" aria-label="Loading" />;
   }
 
   return user ? <>{children}</> : <Navigate to="/" replace />;

@@ -6,20 +6,19 @@ export default function WordList({ words, learning }: { words: LessonWord[]; lea
   const voice = SPEECH_LANG[learning] ?? "en-US";
 
   return (
-    <div>
+    <div className="word-grid">
       {words.map(word => (
         <button
           key={word.concept_id}
           onClick={() => speak(word.word, voice)}
           title="Tap to hear"
+          className="word-card"
         >
-          {word.image_url ? (
-            <img src={word.image_url} alt="" />
-          ) : (
-            <span>{word.emoji ?? "🐢"}</span>
-          )}
-          <span>{word.word}</span>
-          <span>{word.translation}</span>
+          <span className="word-card__pic" aria-hidden="true">
+            {word.image_url ? <img src={word.image_url} alt="" /> : word.emoji ?? "🐢"}
+          </span>
+          <span className="word-card__word">{word.word}</span>
+          <span className="word-card__tr">{word.translation}</span>
         </button>
       ))}
     </div>

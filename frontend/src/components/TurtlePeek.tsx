@@ -11,25 +11,15 @@ const IMG: Record<TurtleState, string> = {
 
 export default function TurtlePeek({ state }: Props) {
   return (
-    <div>
-      <img
-        src={IMG[state]}
-        alt="turtle"
-      />
-
+    <div className="turtle" data-state={state}>
+      <img src={IMG[state]} alt="" />
       {state === "happy" && (
         <>
-          <div
-          >✨</div>
-          <div
-          >⭐</div>
+          <span className="turtle__spark" aria-hidden="true">✨</span>
+          <span className="turtle__spark" aria-hidden="true">⭐</span>
         </>
       )}
-
-      {state === "wondered" && (
-        <div
-        >❓</div>
-      )}
+      {state === "wondered" && <span className="turtle__spark" aria-hidden="true">❓</span>}
     </div>
   );
 }

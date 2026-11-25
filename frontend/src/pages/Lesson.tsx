@@ -65,8 +65,8 @@ export default function Lesson() {
 
   if (error) {
     return (
-      <div>
-        <div>😕</div>
+      <div className="center-state">
+        <div className="center-state__icon" aria-hidden="true">😕</div>
         <p>{error}</p>
         <SecondaryButton onClick={() => navigate("/lessons")}>Back to lessons</SecondaryButton>
       </div>
@@ -74,16 +74,13 @@ export default function Lesson() {
   }
 
   if (!lesson) {
-    return (
-      <div>
-      </div>
-    );
+    return <div className="spinner" role="status" aria-label="Loading lesson" />;
   }
 
   if (lesson.words.length === 0) {
     return (
-      <div>
-        <div>🐢</div>
+      <div className="center-state">
+        <div className="center-state__icon" aria-hidden="true">🐢</div>
         <p>This lesson has no words in your languages yet.</p>
         <SecondaryButton onClick={() => navigate("/lessons")}>Back to lessons</SecondaryButton>
       </div>
@@ -91,18 +88,18 @@ export default function Lesson() {
   }
 
   return (
-    <div>
-      <main>
-        <div>
-          <button
-            onClick={() => (active ? setActive(null) : navigate("/lessons"))}
-          >
+    <>
+      <header className="page-header grid-bg">
+        <div className="container page-header__inner">
+          <button className="back-link" onClick={() => (active ? setActive(null) : navigate("/lessons"))}>
             {active ? "← Back to lesson" : "← All lessons"}
           </button>
-          <h1>
-            Lesson {lesson.position}: {lesson.title}
-          </h1>
+          <p className="eyebrow">Lesson {lesson.position}</p>
+          <h1 className="display">{lesson.title}</h1>
         </div>
+      </header>
+
+      <div className="container page-body">
 
         {active === "match" && <MatchStep words={lesson.words} onDone={finish("match")} />}
         {active === "shuffle" && <BuildStep sentences={lesson.sentences} learning={lesson.learning} onDone={finish("shuffle")} />}
@@ -112,12 +109,13 @@ export default function Lesson() {
         {active === null && (
           <>
             {allDone && (
-              <StepCard eyebrow="Lesson complete" title={percent >= PASS_RATE * 100 ? "🎉 Well done!" : "Good effort — try the trainings again!"}>
-                <p>
-                  You got <span>{correct} of {total}</span> answers right ({percent}%).
+              <StepCard eyebrow="Lesson complete" title={percent >= PASS_RATE * 100 ? "Well done!" : "Good effort — try the trainings again!"}>
+                <p className="lead">
+                  You got <strong>{correct} of {total}</strong> answers right ({percent}%).
                 </p>
-                {!user && <p>Sign in to save your progress.</p>}
-                <div>
+                <progress value={correct} max={Math.max(total, 1)} aria-label="Score" />
+                {!user && <p className="small muted">Sign in to save your progress.</p>}
+                <div className="row">
                   <PrimaryButton onClick={() => navigate(`/lessons/${lesson.id + 1}`)}>Next lesson →</PrimaryButton>
                   <SecondaryButton onClick={() => setResults({})}>Start again</SecondaryButton>
                 </div>
@@ -131,12 +129,12 @@ export default function Lesson() {
             <StepCard eyebrow={`${openTrainings.filter(t => results[t.id]).length} of ${openTrainings.length} done`} title="Choose a training">
               <TrainingMenu available={available} results={results} onOpen={setActive} />
               {!available.shuffle && (
-                <p>Shuffle needs sentences. Run: make build-lessons</p>
+                <p className="small muted">Shuffle needs sentences. Run: make build-lessons</p>
               )}
             </StepCard>
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

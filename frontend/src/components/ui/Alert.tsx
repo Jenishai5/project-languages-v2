@@ -4,10 +4,9 @@ interface AlertProps {
 }
 
 export default function Alert({ type, message }: AlertProps) {
-  const isError = type === "error";
   return (
-    <div>
-      {isError ? "⚠️" : "✅"} {message}
+    <div className="alert" data-type={type} role={type === "error" ? "alert" : "status"}>
+      {message}
     </div>
   );
 }

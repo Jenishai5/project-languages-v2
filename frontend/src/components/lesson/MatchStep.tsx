@@ -33,7 +33,7 @@ export default function MatchStep({ words, onDone }: { words: LessonWord[]; onDo
 
   return (
     <StepCard eyebrow="Match" title="Match each word with its translation">
-      <div>
+      <div className="match-grid">
         <div>
           {words.map(word => (
             <button
@@ -42,6 +42,7 @@ export default function MatchStep({ words, onDone }: { words: LessonWord[]; onDo
               onClick={() => setPicked(word.concept_id)}
               data-state={leftState(word.concept_id)}
               aria-pressed={picked === word.concept_id}
+              className="choice"
             >
               {word.word}
             </button>
@@ -54,6 +55,7 @@ export default function MatchStep({ words, onDone }: { words: LessonWord[]; onDo
               disabled={matched.has(word.concept_id)}
               onClick={() => chooseAnswer(word.concept_id)}
               data-state={rightState(word.concept_id)}
+              className="choice"
             >
               {word.translation}
             </button>

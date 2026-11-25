@@ -57,18 +57,17 @@ export default function AuthForm({ onPasswordFocus, onPasswordBlur, onPasswordTy
   const eyeBtn = (
     <button
       type="button"
-      tabIndex={-1}
       onClick={() => setShowPassword(p => !p)}
+      aria-label={showPassword ? "Hide password" : "Show password"}
     >
-      {showPassword ? "🙈" : "👁️"}
+      {showPassword ? "Hide" : "Show"}
     </button>
   );
 
   return (
-    <div>
+    <div className="stack stack--loose">
 
-      {/* Tabs */}
-      <div>
+      <div className="segmented">
         {(["Sign In", "Register"] as const).map((label, i) => {
           const active = isLogin ? i === 0 : i === 1;
           return (
@@ -83,8 +82,7 @@ export default function AuthForm({ onPasswordFocus, onPasswordBlur, onPasswordTy
         })}
       </div>
 
-      {/* Fields */}
-      <div>
+      <div className="stack">
         {!isLogin && (
           <Input label="Your name" placeholder="Jane Doe" value={name} onChange={v => { setName(v); onTyping?.(); }} onKeyDown={onKey} autoComplete="name" />
         )}
@@ -104,21 +102,16 @@ export default function AuthForm({ onPasswordFocus, onPasswordBlur, onPasswordTy
 
         {error && <Alert type="error" message={error} />}
 
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-        >
+        <button className="btn btn--primary btn--lg" onClick={handleSubmit} disabled={loading}>
           {loading ? "Please wait…" : isLogin ? "Sign In →" : "Create Account →"}
         </button>
       </div>
 
-      <p>
+      <p className="small muted">
         {isLogin ? "No account yet? " : "Already have one? "}
-        <span
-          onClick={switchMode}
-        >
+        <button type="button" className="link-btn" onClick={switchMode}>
           {isLogin ? "Register here" : "Sign in"}
-        </span>
+        </button>
       </p>
 
     </div>

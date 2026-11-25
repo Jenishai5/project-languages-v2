@@ -65,68 +65,60 @@ export default function AppNavbar({ onSignIn }: AppNavbarProps) {
 
   return (
     <>
-      <nav>
-
-        {!isLanding && (
-          <div>
-            <button
-              onClick={() => location.pathname === "/dashboard" ? navigate("/") : navigate("/dashboard")}
-              title={location.pathname === "/dashboard" ? "Back to home" : "Back to dashboard"}
-            >←</button>
+      <nav className={`site-nav${isLanding ? " site-nav--hero" : ""}`} aria-label="Main">
+        <div className="container site-nav__inner">
+          <div className="site-nav__left">
+            <Logo />
           </div>
-        )}
 
-        <div>
-          <Logo />
-        </div>
+          <div className="site-nav__right" ref={dropRef}>
+            {user ? (
+              <>
+                {!isLanding && location.pathname !== "/dashboard" && (
+                  <button className="btn btn--ghost btn--sm" onClick={() => navigate("/dashboard")}>Dashboard</button>
+                )}
+                {isLanding && (
+                  <button className="btn btn--light btn--sm" onClick={() => navigate("/dashboard")}>Dashboard</button>
+                )}
+                <button
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => setDropOpen(o => !o)}
+                  aria-expanded={dropOpen}
+                  aria-haspopup="menu"
+                >
+                  <span className="site-nav__name">{displayName}</span>
+                  <Avatar initial={initial} />
+                </button>
 
-        <div ref={dropRef}>
-          {user ? (
-            <>
-              <span>{displayName}</span>
-              <button
-                onClick={() => setDropOpen(o => !o)}
-              >
-                <Avatar initial={initial} />
-              </button>
-
-              {dropOpen && (
-                <div>
-                  <div>
-                    <p>{displayName || "User"}</p>
-                    <p>{displayEmail}</p>
-                  </div>
-                  <div>
-                    <button
-                      onClick={openPasswordModal}
-                    >
-                      🔑 Change password
+                {dropOpen && (
+                  <div className="menu" role="menu">
+                    <div className="menu__head">
+                      <p className="h3">{displayName || "User"}</p>
+                      <p className="small muted">{displayEmail}</p>
+                    </div>
+                    <button className="menu__item" role="menuitem" onClick={openPasswordModal}>
+                      Change password
                     </button>
-                    <button
-                      onClick={handleSignOut}
-                    >
-                      🚪 Sign out
+                    <button className="menu__item" role="menuitem" onClick={handleSignOut}>
+                      Sign out
                     </button>
                   </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <Button variant="dark" size="sm" onClick={onSignIn}>Sign In →</Button>
-          )}
+                )}
+              </>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={onSignIn}>Sign in</Button>
+            )}
+          </div>
         </div>
       </nav>
 
       {modalOpen && (
         <ModalBackdrop onClose={() => setModalOpen(false)}>
-          <div>
-
-            <div>
-              <div>
-                <h2>Change password</h2>
-                <p>Choose a new secure password</p>
-              </div>
-              <button onClick={() => setModalOpen(false)}>✕</button>
+          <div className="modal stack">
+            <button className="btn btn--ghost btn--sm modal__close" onClick={() => setModalOpen(false)} aria-label="Close">Close</button>
+            <div className="stack stack--tight">
+              <h2 className="h2">Change password</h2>
+              <p className="muted">Choose a new secure password</p>
             </div>
 
             <Input label="New password"     type="password" placeholder="Min. 6 characters"  value={newPw}     onChange={setNewPw}     />
@@ -135,16 +127,11 @@ export default function AppNavbar({ onSignIn }: AppNavbarProps) {
             {pwError && <Alert type="error"   message={pwError} />}
             {pwMsg   && <Alert type="success" message={pwMsg}   />}
 
-            <div>
-              <button
-                onClick={handleChangePassword}
-                disabled={pwLoading}
-              >
+            <div className="row">
+              <button className="btn btn--primary" onClick={handleChangePassword} disabled={pwLoading}>
                 {pwLoading ? "Saving…" : "Save password"}
               </button>
-              <button
-                onClick={() => setModalOpen(false)}
-              >
+              <button className="btn btn--secondary" onClick={() => setModalOpen(false)}>
                 Cancel
               </button>
             </div>

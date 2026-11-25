@@ -41,7 +41,7 @@ export default function PronounceStep({
   if (!Recognizer) {
     return (
       <StepCard eyebrow="Pronounce" title="Say the words">
-        <p>
+        <p className="muted">
           Your browser can't listen to speech. Open the app in Chrome or Safari to practise pronunciation.
         </p>
         <PrimaryButton onClick={() => onDone(0, 0)}>Skip this step →</PrimaryButton>
@@ -94,20 +94,19 @@ export default function PronounceStep({
 
   return (
     <StepCard eyebrow={`Pronounce · ${index + 1} of ${words.length}`} title="Say the word out loud">
-      <div>
-        {word.image_url ? (
-          <img src={word.image_url} alt="" />
-        ) : (
-          <span>{word.emoji ?? "🐢"}</span>
-        )}
-        <span>{word.word}</span>
-        <span>{word.translation}</span>
+      <progress value={index + 1} max={words.length} aria-label="Word progress" />
+      <div className="pronounce-word">
+        <span className="pronounce-word__pic" aria-hidden="true">
+          {word.image_url ? <img src={word.image_url} alt="" /> : word.emoji ?? "🐢"}
+        </span>
+        <span className="pronounce-word__word">{word.word}</span>
+        <span className="muted">{word.translation}</span>
       </div>
 
-      <div>
-        <SecondaryButton onClick={() => speak(word.word, voice)}>🔊 Hear it</SecondaryButton>
+      <div className="row row--center">
+        <SecondaryButton onClick={() => speak(word.word, voice)}>Hear it</SecondaryButton>
         <PrimaryButton onClick={listen} disabled={status === "listening"}>
-          {status === "listening" ? "🎙️ Listening…" : finished ? "🎤 Try again" : "🎤 Say it"}
+          {status === "listening" ? "Listening…" : finished ? "Try again" : "Say it"}
         </PrimaryButton>
       </div>
 
@@ -115,7 +114,7 @@ export default function PronounceStep({
       {status === "wrong" && <Feedback correct={false}>❌ I heard “{heard || "…"}”. Listen and try again.</Feedback>}
       {status === "error" && <Feedback correct={false}>{message}</Feedback>}
 
-      <div>
+      <div className="row row--center">
         {status === "correct" ? (
           <PrimaryButton onClick={next}>{index + 1 >= words.length ? "Finish →" : "Next word →"}</PrimaryButton>
         ) : (
