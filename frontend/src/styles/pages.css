@@ -6,6 +6,7 @@
 .spin { display: inline-flex; animation: spin 9s linear infinite; }
 .hero__lang:nth-child(2) .spin { animation-duration: 11s; animation-direction: reverse; }
 .hero__lang:nth-child(3) .spin { animation-duration: 13s; }
+.hero__lang:nth-child(4) .spin { animation-duration: 10s; animation-direction: reverse; }
 .hero__lang:hover .spin { animation-play-state: paused; }
 .hero__art { flex: 1 1 440px; min-width: 0; position: relative; height: 520px; }
 

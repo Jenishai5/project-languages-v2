@@ -26,6 +26,7 @@ export default function Landing() {
               <li className="hero__lang"><span className="spin"><Flag lang="eng" size={48} /></span>English</li>
               <li className="hero__lang"><span className="spin"><Flag lang="spa" size={48} /></span>Español</li>
               <li className="hero__lang"><span className="spin"><Flag lang="rus" size={48} /></span>Русский</li>
+              <li className="hero__lang"><span className="spin"><Flag lang="cat" size={48} /></span>Català</li>
             </ul>
             <h1 className="display">
               Ten words today.<br />A <em>conversation</em><br />tomorrow.
