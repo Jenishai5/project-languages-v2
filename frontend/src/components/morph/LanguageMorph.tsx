@@ -1,5 +1,5 @@
 import { useState } from "react";
-import TextMorph from "./TextMorph";
+import HourglassMorph from "./HourglassMorph";
 
 type Phrase = { code: string; name: string; text: string; color: string };
 
@@ -12,7 +12,7 @@ const PHRASES: Phrase[] = [
 
 type Props = { phrases?: Phrase[]; duration?: number; hold?: number };
 
-export default function LanguageMorph({ phrases = PHRASES, duration = 2.6, hold = 1.8 }: Props) {
+export default function LanguageMorph({ phrases = PHRASES, duration = 3.4, hold = 1.6 }: Props) {
   const [step, setStep] = useState(0);
   const current = phrases[step % phrases.length];
   const next = phrases[(step + 1) % phrases.length];
@@ -24,7 +24,7 @@ export default function LanguageMorph({ phrases = PHRASES, duration = 2.6, hold 
         <span className="morph-showcase__arrow" aria-hidden="true">→</span>
         {next.name}
       </figcaption>
-      <TextMorph
+      <HourglassMorph
         className="morph-showcase__text"
         from={current.text}
         to={next.text}

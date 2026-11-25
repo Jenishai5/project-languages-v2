@@ -181,3 +181,10 @@
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: none; }
 }
+
+.hourglass__outline {
+  position: absolute; top: 0; left: 50%; overflow: visible;
+  fill: rgba(254, 253, 251, 0.18);
+  stroke: rgba(46, 51, 32, 0.22); stroke-width: 1.5; stroke-dasharray: 6 6;
+  transform-origin: 50% 50%;
+}

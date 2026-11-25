@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
-import { planMorph, splitWords, type MorphStep } from "../../lib/morphPlan";
+import { planMorph } from "../../lib/morphPlan";
+import { Glyph, Measure } from "./morphParts";
 
 type Props = {
   from: string;
@@ -17,45 +18,6 @@ type Props = {
 };
 
 type Point = { x: number; y: number; w: number; h: number };
-
-function Measure({ text, layer, lang }: { text: string; layer: "from" | "to"; lang?: string }) {
-  const words = splitWords(text);
-  return (
-    <div className="morph__measure" data-layer={layer} lang={lang} aria-hidden="true">
-      {words.map((word, w) => (
-        <span key={w}>
-          <span className="morph__word">
-            {word.chars.map(c => (
-              <span key={c.index} className="morph__cell" data-i={c.index}>{c.char}</span>
-            ))}
-          </span>
-          {w < words.length - 1 ? " " : null}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function Glyph({ step }: { step: MorphStep }) {
-  if (step.kind === "morph") {
-    return (
-      <span className="morph__glyph" data-kind="morph" data-from={step.from} data-to={step.to}>
-        <span className="morph__old">{step.oldChar}</span>
-        <span className="morph__new">{step.newChar}</span>
-      </span>
-    );
-  }
-  return (
-    <span
-      className="morph__glyph"
-      data-kind={step.kind}
-      data-from={"from" in step ? step.from : undefined}
-      data-to={"to" in step ? step.to : undefined}
-    >
-      {step.char}
-    </span>
-  );
-}
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
