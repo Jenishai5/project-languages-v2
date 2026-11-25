@@ -1,8 +1,10 @@
+import { useRef } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthModal from "../components/organisms/AuthModal";
 import Flag from "../components/atoms/Flag";
 import SnakeTranslate from "../components/morph/SnakeTranslate";
+import { useScrollReveal } from "../lib/useScrollReveal";
 
 const TRAININGS = [
   { name: "Match", hint: "Word and translation" },
@@ -16,13 +18,16 @@ export default function Landing() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const page = useRef<HTMLDivElement>(null);
+  useScrollReveal(page);
+
   const go = (path: string) => (user ? navigate(path) : setShowAuth(true));
 
   return (
-    <div>
+    <div ref={page}>
       <section className="hero grid-bg">
         <div className="container hero__inner">
-          <div className="hero__copy">
+          <div className="hero__copy" data-reveal-group>
             <ul className="hero__langs" aria-label="Languages">
               <li className="hero__lang"><span className="spin"><Flag lang="eng" size={40} /></span><span className="visually-hidden">English</span></li>
               <li className="hero__lang"><span className="spin"><Flag lang="spa" size={40} /></span><span className="visually-hidden">Español</span></li>
@@ -40,7 +45,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="hero__art" aria-hidden="true">
+          <div className="hero__art" aria-hidden="true" data-reveal-group>
             <div className="float float--card">
               <div className="row row--between">
                 <span className="eyebrow">Translation</span>
@@ -75,17 +80,19 @@ export default function Landing() {
 
       <section className="ways-section grid-bg grid-bg--light">
         <div className="container">
-          <SnakeTranslate wave={0.14} />
-          <div className="section-head">
+          <div data-reveal>
+            <SnakeTranslate wave={0.14} />
+          </div>
+          <div className="section-head" data-reveal-group>
             <h2 className="h1">Learn your way.<br />Same words, two paths.</h2>
             <p className="lead">Follow the path lesson by lesson, or drop into free practice whenever you have five minutes.</p>
           </div>
-          <div className="ways">
+          <div className="ways" data-reveal-group>
             <article className="way way--path">
               <span className="eyebrow">Learning path</span>
               <h3 className="h2">36 lessons, 10 words each</h3>
               <p className="muted">Every lesson trains the same words four ways.</p>
-              <div className="choice-grid">
+              <div className="choice-grid" data-reveal-group>
                 {TRAININGS.map(t => (
                   <div key={t.name} className="training">
                     <span className="training__title">{t.name}</span>
@@ -112,8 +119,8 @@ export default function Landing() {
       </section>
 
       <section className="container quote-band">
-        <blockquote>“The same word, three ways: <em>doctor</em>, el médico, врач.”</blockquote>
-        <ul className="flag-list">
+        <blockquote data-reveal>“The same word, three ways: <em>doctor</em>, el médico, врач.”</blockquote>
+        <ul className="flag-list" data-reveal-group>
           <li className="flag-chip"><Flag lang="eng" size={56} /><span>English</span></li>
           <li className="flag-chip"><Flag lang="spa" size={56} /><span>Español</span></li>
           <li className="flag-chip"><Flag lang="rus" size={56} /><span>Русский</span></li>
