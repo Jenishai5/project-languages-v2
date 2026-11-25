@@ -113,26 +113,51 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
       });
     };
 
+    const glow = el.querySelector<HTMLElement>(".snake__glow")!;
+    const core = el.querySelector<HTMLElement>(".snake__core")!;
+    const flash = (kind: "in" | "out") => {
+      const burst = el.querySelector<HTMLElement>(`.snake__flash--${kind}`)!;
+      const ring = el.querySelector<HTMLElement>(`.snake__ring--${kind}`)!;
+      gsap.killTweensOf([burst, ring]);
+      gsap.fromTo(burst, { opacity: 0.95, scale: 0.35 }, { opacity: 0, scale: 1.25, duration: 0.75, ease: "power2.out" });
+      gsap.fromTo(ring, { opacity: 0.8, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.9, ease: "power3.out" });
+      gsap.fromTo(wall, { scaleX: 1.9, filter: "brightness(1.6)" }, { scaleX: 1, filter: "brightness(1)", duration: 0.6, ease: "elastic.out(1, 0.45)" });
+    };
+
     let travelled = reduced ? items[0].start + Math.max(items[0].src.width, items[0].tgt.width) + fontSize : 0;
-    const render = () => {
-      items.forEach(({ src, tgt, start }) => {
+    const previous = items.map(() => Number.NaN);
+    let energy = 0;
+    const render = (animate: boolean) => {
+      let active = false;
+      items.forEach(({ src, tgt, start }, i) => {
         const d = ((((travelled - start + approach) % period) + period) % period) - approach;
         place(src, leftWidth + d - src.width, 0, leftWidth);
         place(tgt, d - tgt.width, rightOrigin, rightWidth);
+        const through = Math.max(src.width, tgt.width);
+        if (d > 0 && d < through) active = true;
+        const before = previous[i];
+        if (animate && !Number.isNaN(before) && before < d) {
+          if (before < 0 && d >= 0) flash("in");
+          if (before < through && d >= through) flash("out");
+        }
+        previous[i] = d;
       });
+      energy += ((active ? 1 : 0) - energy) * 0.06;
+      glow.style.opacity = (0.25 + energy * 0.7).toFixed(3);
+      glow.style.transform = `scaleY(${(0.75 + energy * 0.3).toFixed(3)})`;
+      core.style.opacity = (energy * 0.9).toFixed(3);
     };
-    render();
+    render(false);
 
     if (reduced) return;
     const tick = (_time: number, deltaMs: number) => {
       travelled += (velocity * Math.min(deltaMs, 64)) / 1000;
-      render();
+      render(true);
     };
     gsap.ticker.add(tick);
-    const pulse = gsap.to(el.querySelector(".snake__glow"), { opacity: 0.9, scaleY: 1, duration: 1.6, ease: "sine.inOut", yoyo: true, repeat: -1 });
     return () => {
       gsap.ticker.remove(tick);
-      pulse.kill();
+      gsap.killTweensOf(el.querySelectorAll(".snake__flash, .snake__ring, .snake__wall"));
     };
   }, [layoutVersion, speed, wave, stream]);
 
@@ -149,6 +174,11 @@ export default function SnakeTranslate({ pairs = PAIRS, speed = 1.6, wave = 0.24
       </div>
       <span className="snake__wall" aria-hidden="true">
         <span className="snake__glow" />
+        <span className="snake__core" />
+        <span className="snake__flash snake__flash--in" />
+        <span className="snake__flash snake__flash--out" />
+        <span className="snake__ring snake__ring--in" />
+        <span className="snake__ring snake__ring--out" />
       </span>
     </figure>
   );
