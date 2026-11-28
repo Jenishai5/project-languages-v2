@@ -9,11 +9,15 @@ import { TRAININGS, type Training, type TrainingResult } from "../lib/trainings"
 import WordList from "../components/lesson/WordList";
 import MnemonicsPanel from "../components/mnemonics/MnemonicsPanel";
 import { PrimaryButton, SecondaryButton, StepCard } from "../components/lesson/shared";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { useLanguages } from "../hooks/useLanguages";
-import { fetchLesson, saveLessonResult, type LessonDetail } from "../lib/lessonsApi";
+import { fetchLesson, saveLessonResult, type LessonDetail, type LessonWord } from "../lib/lessonsApi";
+import { shuffle } from "../lib/lessonUtils";
+import { topicIcon, topicImage } from "../lib/topics";
+import FeltIcon from "../components/atoms/FeltIcon";
 
 const PASS_RATE = 0.7;
+const MATCH_WORDS = 5;
 
 type Results = Partial<Record<Training, TrainingResult>>;
 
@@ -25,6 +29,7 @@ export default function Lesson() {
 
   const [loaded, setLoaded]   = useState<{ key: string; lesson: LessonDetail | null; error: string | null }>({ key: "", lesson: null, error: null });
   const [visit, setVisit]     = useState<{ key: string; active: Training | null; results: Results }>({ key: "", active: null, results: {} });
+  const [matchWords, setMatchWords] = useState<LessonWord[]>([]);
 
   const key = `${lessonId}:${settings.learning_lang}:${settings.native_lang}`;
   const lesson = loaded.key === key ? loaded.lesson : null;
@@ -33,6 +38,10 @@ export default function Lesson() {
   const results = visit.key === key ? visit.results : {};
   const setActive  = (training: Training | null) => setVisit({ key, active: training, results });
   const setResults = (next: Results) => setVisit({ key, active: null, results: next });
+  const openTraining = (training: Training) => {
+    if (training === "match" && lesson) setMatchWords(shuffle(lesson.words).slice(0, MATCH_WORDS));
+    setActive(training);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +58,7 @@ export default function Lesson() {
     picture:   (lesson?.pictures.length ?? 0) > 0,
   };
   const openTrainings = TRAININGS.filter(t => available[t.id]);
+  const doneCount = openTrainings.filter(t => results[t.id]).length;
   const allDone = openTrainings.length > 0 && openTrainings.every(t => results[t.id]);
   const correct = Object.values(results).reduce((sum, r) => sum + (r?.correct ?? 0), 0);
   const total   = Object.values(results).reduce((sum, r) => sum + (r?.total ?? 0), 0);
@@ -69,70 +79,96 @@ export default function Lesson() {
       <div className="center-state">
         <div className="center-state__icon" aria-hidden="true">😕</div>
         <p>{error}</p>
-        <SecondaryButton onClick={() => navigate("/lessons")}>Back to lessons</SecondaryButton>
+        <SecondaryButton onClick={() => navigate("/lessons")}>Back to topics</SecondaryButton>
       </div>
     );
   }
 
   if (!lesson) {
-    return <div className="spinner" role="status" aria-label="Loading lesson" />;
+    return <div className="spinner" role="status" aria-label="Loading topic" />;
   }
 
   if (lesson.words.length === 0) {
     return (
       <div className="center-state">
         <div className="center-state__icon" aria-hidden="true">🐢</div>
-        <p>This lesson has no words in your languages yet.</p>
-        <SecondaryButton onClick={() => navigate("/lessons")}>Back to lessons</SecondaryButton>
+        <p>This topic has no words in your languages yet.</p>
+        <SecondaryButton onClick={() => navigate("/lessons")}>Back to topics</SecondaryButton>
       </div>
     );
   }
 
   return (
     <>
-      <header className="page-header grid-bg">
+      <header className="page-header page-header--topic grid-bg">
         <div className="container page-header__inner">
           <button className="back-link" onClick={() => (active ? setActive(null) : navigate("/lessons"))}>
-            {active ? "← Back to lesson" : "← All lessons"}
+            {active ? "← Back to topic" : "← All topics"}
           </button>
-          <p className="eyebrow">Lesson {lesson.position}</p>
-          <h1 className="display">{lesson.title}</h1>
+          <div className="topic-hero">
+            <span className="topic-hero__icon" aria-hidden="true"><FeltIcon image={topicImage(lesson.slug)} fallback={topicIcon(lesson.slug)} /></span>
+            <div className="topic-hero__text">
+              <p className="eyebrow">Topic · {lesson.words.length} words</p>
+              <h1 className="display topic-hero__title">{lesson.title}</h1>
+            </div>
+          </div>
+          {openTrainings.length > 0 && (
+            <div className="topic-progress">
+              <span className="topic-progress__label">{doneCount} of {openTrainings.length} trainings done</span>
+              <progress className="topic-progress__bar" value={doneCount} max={openTrainings.length} aria-label="Trainings done" />
+            </div>
+          )}
         </div>
       </header>
 
       <div className="container page-body">
 
-        {active === "match" && <MatchStep words={lesson.words} learning={lesson.learning} native={lesson.native} lessonId={lesson.id} onDone={finish("match")} />}
-        {active === "shuffle" && <BuildStep sentences={lesson.sentences} learning={lesson.learning} native={lesson.native} onDone={finish("shuffle")} />}
-        {active === "pronounce" && <PronounceStep words={lesson.words} learning={lesson.learning} onDone={finish("pronounce")} />}
-        {active === "picture" && <PictureStep rounds={lesson.pictures} onDone={finish("picture")} />}
+        {active !== null && (
+          <div className="training-stage">
+          {active === "match" && <MatchStep words={matchWords} learning={lesson.learning} native={lesson.native} lessonId={lesson.id} onDone={finish("match")} />}
+          {active === "shuffle" && <BuildStep sentences={lesson.sentences} learning={lesson.learning} native={lesson.native} onDone={finish("shuffle")} />}
+          {active === "pronounce" && <PronounceStep words={lesson.words} learning={lesson.learning} onDone={finish("pronounce")} />}
+          {active === "picture" && <PictureStep rounds={lesson.pictures} onDone={finish("picture")} />}
+          </div>
+        )}
 
         {active === null && (
           <>
             {allDone && (
-              <StepCard eyebrow="Lesson complete" title={percent >= PASS_RATE * 100 ? "Well done!" : "Good effort — try the trainings again!"}>
+              <StepCard eyebrow="Topic complete" title={percent >= PASS_RATE * 100 ? "Well done!" : "Good effort — try the trainings again!"}>
                 <p className="lead">
                   You got <strong>{correct} of {total}</strong> answers right ({percent}%).
                 </p>
                 <progress value={correct} max={Math.max(total, 1)} aria-label="Score" />
                 {!user && <p className="small muted">Sign in to save your progress.</p>}
                 <div className="row">
-                  <PrimaryButton onClick={() => navigate(`/lessons/${lesson.id + 1}`)}>Next lesson →</PrimaryButton>
+                  <PrimaryButton onClick={() => navigate(`/lessons/${lesson.id + 1}`)}>Next topic →</PrimaryButton>
                   <SecondaryButton onClick={() => setResults({})}>Start again</SecondaryButton>
                 </div>
               </StepCard>
             )}
 
-            <StepCard eyebrow={`${lesson.words.length} words`} title="Your words · tap to hear">
-              <WordList words={lesson.words} learning={lesson.learning} native={lesson.native} />
-            </StepCard>
-
-            <StepCard eyebrow={`${openTrainings.filter(t => results[t.id]).length} of ${openTrainings.length} done`} title="Choose a training">
-              <TrainingMenu available={available} results={results} onOpen={setActive} />
+            <StepCard eyebrow="Practise" title="Train your words four ways">
+              <TrainingMenu available={available} results={results} onOpen={openTraining} />
               {!available.shuffle && (
-                <p className="small muted">Shuffle needs sentences. Run: make build-lessons</p>
+                <p className="small muted">Shuffle opens when sentences for this topic are ready.</p>
               )}
             </StepCard>
+
+            <details className="card word-drawer">
+              <summary className="word-drawer__summary">
+                <span>
+                  <span className="eyebrow">{lesson.words.length} words</span>
+                  <span className="h3 word-drawer__title">Word list</span>
+                </span>
+                <span className="word-drawer__hint">
+                  <span className="word-drawer__show">Show words</span>
+                  <span className="word-drawer__hide">Hide words</span>
+                  <span className="word-drawer__chevron" aria-hidden="true">⌄</span>
+                </span>
+              </summary>
+              <WordList words={lesson.words} learning={lesson.learning} native={lesson.native} />
+            </details>
 
             <MnemonicsPanel words={lesson.words} learning={lesson.learning} native={lesson.native} />
           </>

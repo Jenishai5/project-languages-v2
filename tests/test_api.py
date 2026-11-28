@@ -6,6 +6,7 @@ from langapp.api.main import app
 from langapp.ingestion.parser import parse_page
 from langapp.repositories.sentences import SentenceRepository
 from tests.conftest import load_fixture
+from tests.test_usage_summary import contract_validator
 
 
 @pytest.fixture
@@ -65,3 +66,19 @@ def test_home_page_is_served():
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/html")
     assert "TurtleTalk" in response.text
+
+
+def test_sentence_answers_match_the_contract(api):
+    page = api.get("/sentences", params={"lang": "spa", "translation_lang": "eng", "limit": 2, "offset": 1})
+    one = api.get("/sentences/14132239")
+    missing = api.get("/sentences/1")
+    invalid = api.get("/sentences", params={"q": "a"})
+
+    assert page.status_code == 200
+    assert contract_validator("SentencePage").is_valid(page.json())
+    assert page.json()["offset"] == 1
+    assert contract_validator("Sentence").is_valid(one.json())
+    assert missing.status_code == 404
+    assert contract_validator("Error").is_valid(missing.json())
+    assert invalid.status_code == 422
+    assert contract_validator("ValidationError").is_valid(invalid.json())

@@ -1,4 +1,5 @@
 import { authHeaders } from './progressService';
+import { errorMessage } from './apiError';
 
 export type LangCode = string;
 
@@ -77,7 +78,7 @@ export interface LanguageSettings {
 export async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res  = await fetch(url, init);
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.detail ?? data.error ?? `Request failed (${res.status})`);
+  if (!res.ok) throw new Error(errorMessage(data, res.status));
   return data as T;
 }
 

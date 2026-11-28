@@ -47,12 +47,12 @@ SUFFIX_RULES = (
 WORD_CHARS = re.compile(r"[^\w']+")
 
 
-def _bare(word: str) -> str:
+def bare_word(word: str) -> str:
     return WORD_CHARS.sub("", word).lower().replace("'s", "")
 
 
 def tag_word(word: str) -> str:
-    bare = _bare(word)
+    bare = bare_word(word)
     if not bare:
         return ""
     if "'" in bare:

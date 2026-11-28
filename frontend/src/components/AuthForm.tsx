@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { Alert, Input } from "./ui";
 
 interface AuthFormProps {
@@ -36,8 +36,8 @@ export default function AuthForm({ onPasswordFocus, onPasswordBlur, onPasswordTy
       else         await register(name, email, password);
       onSuccess?.();
       setTimeout(() => navigate("/dashboard"), 900);
-    } catch (err: any) {
-      const msg = err?.message || "";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
       if (msg.includes("Invalid credentials") || msg.includes("Invalid email or password")) {
         setError("Invalid email or password.");
       } else if (msg.includes("already")) {

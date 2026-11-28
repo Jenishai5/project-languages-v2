@@ -7,6 +7,7 @@ const SHORT_LABELS: Record<string, string> = {
   preposition:  "prep",
   conjunction:  "conj",
   interjection: "interj",
+  article:      "art",
 };
 
 export function wordTypeLabel(type: string): string {
@@ -20,4 +21,6 @@ export const WORD_TYPE_LEGEND = [
   { type: "adverb",      label: "Adverb"      },
   { type: "pronoun",     label: "Pronoun"     },
   { type: "preposition", label: "Preposition" },
+  { type: "article",     label: "Article"     },
+  { type: "conjunction", label: "Conjunction" },
 ];

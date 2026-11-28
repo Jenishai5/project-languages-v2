@@ -14,9 +14,181 @@ servers:
 security:
   - bearerAuth: []
 tags:
+  - name: sentences
+    description: Sentences and translations imported from Tatoeba
+  - name: mnemonics
+    description: The learner's own picture cards
   - name: agents
     description: AI agents and their usage
 paths:
+  /sentences:
+    get:
+      operationId: listSentences
+      tags: [sentences]
+      summary: Browse and search sentences
+      description: |
+        Sentences imported from Tatoeba, ordered by id. Filter by language, by the language of the
+        translations, and by a whole word in the text. Paging uses `limit` and `offset`; `total` is the number of matches
+        before paging, so the client can show "page 2 of 7".
+      security: []
+      parameters:
+        - name: lang
+          in: query
+          description: Language of the sentence (ISO 639-3).
+          schema:
+            $ref: "#/components/schemas/LangCode"
+          example: spa
+        - name: translation_lang
+          in: query
+          description: Only sentences that have a translation in this language; only those translations are returned.
+          schema:
+            $ref: "#/components/schemas/LangCode"
+          example: eng
+        - name: q
+          in: query
+          description: A whole word the sentence must contain (case-insensitive).
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 100
+          example: casa
+        - name: limit
+          in: query
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: How many matches to skip.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: One page of matching sentences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SentencePage"
+              example:
+                items:
+                  - id: 14132239
+                    lang: spa
+                    text: Tom debería estar ahora en su oficina.
+                    license: CC BY 2.0 FR
+                    owner: null
+                    translations:
+                      - id: 14132240
+                        lang: eng
+                        text: Tom is supposed to be in his office now.
+                        is_direct: true
+                total: 3
+                limit: 20
+                offset: 0
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /sentences/{sentence_id}:
+    get:
+      operationId: getSentence
+      tags: [sentences]
+      summary: One sentence with all its translations
+      security: []
+      parameters:
+        - name: sentence_id
+          in: path
+          required: true
+          description: Tatoeba id of the sentence.
+          schema:
+            type: integer
+          example: 14132239
+      responses:
+        "200":
+          description: The sentence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sentence"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /mnemonics:
+    get:
+      operationId: listMnemonics
+      tags: [mnemonics]
+      summary: The learner's picture cards for one language pair
+      parameters:
+        - name: learning
+          in: query
+          schema:
+            $ref: "#/components/schemas/LangCode"
+            default: eng
+        - name: native
+          in: query
+          schema:
+            $ref: "#/components/schemas/LangCode"
+            default: spa
+      responses:
+        "200":
+          description: All picture cards of the learner and how many pictures are left
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MnemonicList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+    post:
+      operationId: saveMnemonic
+      tags: [mnemonics]
+      summary: Write a sentence for a word and get a picture card
+      description: |
+        Saves the learner's own sentence for a word and draws a picture for it.
+        There is one card per learner, word and language pair: saving again replaces the sentence and
+        the picture, so the answer is `200` both times (see docs/decisions/0004-sentences-and-picture-cards-in-the-contract.md).
+        Each picture counts towards a limit of `daily_limit` pictures per 24 hours.
+        If no picture can be made, the card is still saved and `image_url` is `null`; the UI shows the emoji.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MnemonicInput"
+            example:
+              concept_id: 12
+              learning: eng
+              native: spa
+              sentence: The woman reads a book.
+      responses:
+        "200":
+          description: The saved card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mnemonic"
+        "400":
+          description: The sentence breaks a rule, for example it does not use the word.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                detail: Use the word “woman” in your sentence.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
   /agents/usage:
     get:
       operationId: getMyAiUsageToday
@@ -100,6 +272,25 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /agents/live:
+    get:
+      operationId: getAgentsLive
+      tags: [agents]
+      summary: What every agent is doing right now
+      description: |
+        Live state of each agent, measured by the running server (see docs/decisions/0003-live-agent-states.md),
+        today's counts, and the newest finished calls. Admins only. All five agents are always listed.
+      responses:
+        "200":
+          description: Live state per agent and the newest calls
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentsLive"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 components:
   securitySchemes:
     bearerAuth:
@@ -130,7 +321,153 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ValidationError"
+    BadRequest:
+      description: The request is well formed but breaks a rule of the app.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: Native and learning language must be different.
+    NotFound:
+      description: The thing does not exist (or is not yours).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: Sentence 1 not found
+    TooManyRequests:
+      description: A daily limit is used up.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: You can create 5 pictures a day. Come back tomorrow!
   schemas:
+    LangCode:
+      type: string
+      pattern: "^[a-z]{3,4}$"
+      description: ISO 639-3 language code, for example `spa`, `eng`, `rus`, `cat`.
+    Translation:
+      type: object
+      required: [id, lang, text, is_direct]
+      properties:
+        id:
+          type: integer
+        lang:
+          $ref: "#/components/schemas/LangCode"
+        text:
+          type: string
+        is_direct:
+          type: boolean
+          description: false when Tatoeba links the translation through another sentence.
+    Sentence:
+      type: object
+      required: [id, lang, text, license, owner, translations]
+      properties:
+        id:
+          type: integer
+        lang:
+          $ref: "#/components/schemas/LangCode"
+        text:
+          type: string
+        license:
+          type: [string, "null"]
+          description: Licence of the sentence, `null` when Tatoeba gives none.
+        owner:
+          type: [string, "null"]
+          description: Tatoeba user who added it, `null` when unknown.
+        translations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Translation"
+    SentencePage:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Sentence"
+        total:
+          type: integer
+          minimum: 0
+          description: Matches before paging.
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          type: integer
+          minimum: 0
+    MnemonicInput:
+      type: object
+      required: [concept_id, learning, native, sentence]
+      properties:
+        concept_id:
+          type: integer
+          minimum: 1
+        learning:
+          $ref: "#/components/schemas/LangCode"
+        native:
+          $ref: "#/components/schemas/LangCode"
+        sentence:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: |
+            Must use the word. After trimming it must be 3–200 characters; otherwise the answer is `400`
+            with a sentence that explains the rule.
+    Mnemonic:
+      type: object
+      required: [id, concept_id, slug, word, translation, emoji, sentence, masked_sentence, image_url, created_at]
+      properties:
+        id:
+          type: integer
+        concept_id:
+          type: integer
+        slug:
+          type: string
+        word:
+          type: string
+          description: The word in the learning language.
+        translation:
+          type: string
+          description: The word in the native language.
+        emoji:
+          type: [string, "null"]
+          description: Shown when there is no picture; `null` for words without an emoji.
+        sentence:
+          type: string
+        masked_sentence:
+          type: string
+          description: The sentence with the word replaced by `___`, for flashcards.
+        image_url:
+          type: [string, "null"]
+          format: uri
+          description: Signed link to the picture, valid for one hour; `null` when there is no picture.
+        created_at:
+          type: string
+          format: date-time
+    MnemonicList:
+      type: object
+      required: [mnemonics, daily_limit, remaining_today, pictures_enabled]
+      properties:
+        mnemonics:
+          type: array
+          items:
+            $ref: "#/components/schemas/Mnemonic"
+        daily_limit:
+          type: integer
+          minimum: 0
+        remaining_today:
+          type: integer
+          minimum: 0
+        pictures_enabled:
+          type: boolean
+          description: false when the server has no image model or storage configured.
     Error:
       type: object
       required: [detail]
@@ -254,3 +591,82 @@ components:
         tokens:
           type: integer
           minimum: 0
+    AgentState:
+      type: string
+      enum: [idle, waiting, thinking, working, success, error, blocked]
+    AgentsLive:
+      type: object
+      required: [generated_at, tracking_since, agents, recent]
+      properties:
+        generated_at:
+          type: string
+          format: date-time
+        tracking_since:
+          type: string
+          format: date-time
+          description: When this server process started tracking live states.
+        agents:
+          type: array
+          description: Always the five agents, in a fixed order.
+          items:
+            $ref: "#/components/schemas/AgentLive"
+        recent:
+          type: array
+          description: Newest finished calls of the last 7 days, newest first, at most 30.
+          items:
+            $ref: "#/components/schemas/AgentEvent"
+    AgentLive:
+      type: object
+      required: [agent, state, detail, queued, running, running_ms, average_ms, last_finished_at, last_succeeded,
+        calls_today, failures_today, last_call_at]
+      properties:
+        agent:
+          $ref: "#/components/schemas/AgentName"
+        state:
+          $ref: "#/components/schemas/AgentState"
+        detail:
+          type: string
+          description: A short sentence about the state, for example why the agent is blocked.
+        queued:
+          type: integer
+          minimum: 0
+        running:
+          type: integer
+          minimum: 0
+        running_ms:
+          type: [integer, "null"]
+          description: How long the oldest running call has been going.
+        average_ms:
+          type: [integer, "null"]
+          description: Average time of successful calls since the server started.
+        last_finished_at:
+          type: [string, "null"]
+          format: date-time
+        last_succeeded:
+          type: [boolean, "null"]
+        calls_today:
+          type: integer
+          minimum: 0
+        failures_today:
+          type: integer
+          minimum: 0
+        last_call_at:
+          type: [string, "null"]
+          format: date-time
+    AgentEvent:
+      type: object
+      required: [id, agent, model, succeeded, tokens, created_at]
+      properties:
+        id:
+          type: integer
+        agent:
+          $ref: "#/components/schemas/AgentName"
+        model:
+          type: string
+        succeeded:
+          type: boolean
+        tokens:
+          type: [integer, "null"]
+        created_at:
+          type: string
+          format: date-time

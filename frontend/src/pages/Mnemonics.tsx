@@ -44,8 +44,8 @@ export default function Mnemonics() {
         {list && cards.length === 0 && (
           <div className="center-state">
             <p className="h3">No picture cards yet.</p>
-            <p className="muted">Open a lesson and write a sentence with any word.</p>
-            <Link className="btn btn--primary" to="/lessons">Go to lessons</Link>
+            <p className="muted">Open a topic and write a sentence with any word.</p>
+            <Link className="btn btn--primary" to="/lessons">Go to topics</Link>
           </div>
         )}
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import Logo   from "../atoms/Logo";
 import Avatar from "../atoms/Avatar";
 import Button from "../atoms/Button";
@@ -50,8 +50,8 @@ export default function AppNavbar({ onSignIn }: AppNavbarProps) {
       await changePassword(newPw);
       setPwMsg("Password updated!");
       setTimeout(() => { setModalOpen(false); setPwMsg(""); }, 1800);
-    } catch (err: any) {
-      setPwError(err?.message || "Something went wrong.");
+    } catch (err: unknown) {
+      setPwError(err instanceof Error && err.message ? err.message : "Something went wrong.");
     } finally {
       setPwLoading(false);
     }

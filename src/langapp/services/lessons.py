@@ -2,26 +2,33 @@ import random
 
 from langapp.db.models import Concept, Lesson, Sentence
 from langapp.errors import NotFound
+from langapp.ingestion.concepts import core_word
 from langapp.repositories.lessons import LessonRepository
 from langapp.repositories.sentences import SentenceRepository
 from langapp.services.games import estimate_level, recording_view, tiles_view, tokenize
 from langapp.services.languages import LanguageCatalog
+from langapp.services.word_tagger import bare_word
 
-SENTENCES_PER_LESSON = 5
+SENTENCES_PER_LESSON = 10
 PICTURE_OPTIONS = 4
 
 def _term(concept: Concept, lang: str) -> str | None:
     return next((t.text for t in concept.terms if t.lang == lang), None)
 
 
-def pick_sentences(exercises: list[dict], limit: int) -> list[dict]:
+def pick_sentences(exercises: list[dict], limit: int, rng: random.Random | None = None) -> list[dict]:
     by_word: dict[str, list[dict]] = {}
     for exercise in exercises:
         by_word.setdefault(exercise["concept_slug"], []).append(exercise)
+    queues = list(by_word.values())
+    if rng is not None:
+        rng.shuffle(queues)
+        for queue in queues:
+            rng.shuffle(queue)
     picked: list[dict] = []
     seen_texts: set[str] = set()
-    while len(picked) < limit and any(by_word.values()):
-        for queue in by_word.values():
+    while len(picked) < limit and any(queues):
+        for queue in queues:
             while queue and queue[0]["full_text"] in seen_texts:
                 queue.pop(0)
             if queue and len(picked) < limit:
@@ -72,11 +79,23 @@ def word_cards(concepts: list[Concept], learning: str, native: str) -> list[dict
     return cards
 
 
+def lesson_nouns(words: list[dict], learning: str) -> set[str]:
+    return {bare_word(core_word(part, learning)) for word in words for part in word["word"].split("/")}
+
+
+def tag_lesson_nouns(tiles: list[dict], nouns: set[str]) -> list[dict]:
+    return [
+        {**tile, "word_type": "noun"} if not tile["word_type"] and bare_word(tile["form"]) in nouns else tile
+        for tile in tiles
+    ]
+
+
 def shuffle_exercises(
     sentences: list[tuple[Sentence, int]],
     translations: dict[int, dict[str, list[str]]],
     slug_by_concept: dict[int, str],
     native: str,
+    nouns: set[str] | None = None,
 ) -> list[dict]:
     exercises = []
     for sentence, concept_id in sentences:
@@ -90,7 +109,7 @@ def shuffle_exercises(
                 "concept_slug": slug_by_concept[concept_id],
                 "full_text": sentence.text,
                 "prompt": prompts[0],
-                "words": tiles_view(tokens),
+                "words": tag_lesson_nouns(tiles_view(tokens), nouns or set()),
                 "level": estimate_level(len(tokens)),
                 "audio": recording_view(sentence),
             }
@@ -107,9 +126,10 @@ def lesson_view(
     native: str,
     rng: random.Random | None = None,
 ) -> dict:
+    rng = rng or random.Random()
     words = word_cards(concepts, learning, native)
     slug_by_concept = {word["concept_id"]: word["slug"] for word in words}
-    exercises = shuffle_exercises(sentences, translations, slug_by_concept, native)
+    exercises = shuffle_exercises(sentences, translations, slug_by_concept, native, lesson_nouns(words, learning))
     return {
         "id": lesson.id,
         "slug": lesson.slug,
@@ -118,8 +138,8 @@ def lesson_view(
         "learning": learning,
         "native": native,
         "words": words,
-        "sentences": pick_sentences(exercises, SENTENCES_PER_LESSON),
-        "pictures": picture_rounds(words, rng or random.Random()),
+        "sentences": pick_sentences(exercises, SENTENCES_PER_LESSON, rng),
+        "pictures": picture_rounds(words, rng),
     }
 
 

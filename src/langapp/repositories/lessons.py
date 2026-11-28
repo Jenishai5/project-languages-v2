@@ -27,7 +27,6 @@ class LessonRepository:
         if not lessons:
             return 0
         slugs = [lesson.slug for lesson in lessons]
-        self.session.execute(delete(Lesson).where(Lesson.slug.not_in(slugs)))
         self.session.execute(update(Lesson).values(position=-Lesson.position))
         stmt = insert(Lesson).values(
             [{"slug": lesson.slug, "title": lesson.title, "position": lesson.position} for lesson in lessons]
@@ -47,10 +46,22 @@ class LessonRepository:
         self.session.execute(delete(LessonConcept))
         if link_rows:
             self.session.execute(insert(LessonConcept).values(link_rows))
+
+        moved = (
+            select(LessonConcept.lesson_id, LessonSentence.sentence_id, LessonSentence.concept_id)
+            .join(LessonConcept, LessonConcept.concept_id == LessonSentence.concept_id)
+            .where(LessonConcept.lesson_id != LessonSentence.lesson_id)
+        )
+        self.session.execute(
+            insert(LessonSentence)
+            .from_select(["lesson_id", "sentence_id", "concept_id"], moved)
+            .on_conflict_do_nothing()
+        )
         linked = select(LessonConcept.lesson_id, LessonConcept.concept_id)
         self.session.execute(
             delete(LessonSentence).where(tuple_(LessonSentence.lesson_id, LessonSentence.concept_id).not_in(linked))
         )
+        self.session.execute(delete(Lesson).where(Lesson.slug.not_in(slugs)))
         return len(lesson_ids)
 
     def words_to_fill(self, learning_lang: str, first_lessons: int | None) -> list[LessonWord]:

@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSpeechSynthesis } from "../hooks/useSpeechSynthesis";
 import { getSpeechLang } from "../utils/getSpeechLang";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { saveWordResult } from "../lib/progressService";
+import { errorMessage } from "../lib/apiError";
 
 type Pair      = { question: string; answer: string };
 type ImageMode = "question" | "answer" | null;
@@ -29,8 +30,8 @@ function shuffle<T>(arr: T[]): T[] {
 
 async function fetchPairs(language: Language): Promise<{ pairs: Pair[]; imageMode: ImageMode }> {
   const res  = await fetch(`/api/game/wordmatch?language=${language}&limit=${TOTAL_PAIRS}`);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail ?? data.error ?? "Failed to load words");
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(errorMessage(data, res.status));
   return { pairs: data.pairs as Pair[], imageMode: data.imageMode as ImageMode };
 }
 

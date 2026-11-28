@@ -46,7 +46,7 @@ export default function MatchStep({
       remember(picked, false);
       setMistakes(m => m + 1);
       setWrong({ left: picked, right: conceptId });
-      setTimeout(() => setWrong(null), 500);
+      setTimeout(() => setWrong(null), 600);
     }
     setPicked(null);
   };
@@ -58,6 +58,7 @@ export default function MatchStep({
 
   return (
     <StepCard eyebrow="Match" title="Match each word with its translation">
+      <p className="visually-hidden" aria-live="assertive">{wrong ? "Not a match. Try again." : ""}</p>
       <div className="match-grid">
         <div>
           {words.map(word => (

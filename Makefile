@@ -39,6 +39,7 @@ test:
 
 lint:
 	.venv/bin/ruff check src tests
+	npx --yes @redocly/cli@latest lint openapi.yaml
 
 ai-usage:
 	.venv/bin/python -m langapp.cli ai-usage --days $(or $(DAYS),7)

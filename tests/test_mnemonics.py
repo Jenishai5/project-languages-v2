@@ -13,6 +13,7 @@ from langapp.repositories.mnemonics import MnemonicRepository
 from langapp.services.languages import LanguageCatalog
 from langapp.services.mnemonics import MnemonicService, MnemonicSettings, image_path_for, mask_sentence, word_forms
 from tests.test_lessons import USER, FakeVerifier
+from tests.test_usage_summary import contract_validator
 
 AUTH = {"Authorization": "Bearer good-token"}
 SETTINGS = MnemonicSettings(image_model="img:free", daily_limit=2, signed_url_seconds=60)
@@ -236,3 +237,23 @@ def test_api_errors(api, session_factory):
     assert wrong.json() == {"detail": "Use the word “woman” in your sentence."}
     unknown = api.post("/mnemonics", json={**base, "concept_id": max(ids.values()) + 99, "sentence": "x y z"}, headers=AUTH)
     assert unknown.status_code == 404
+
+
+def test_api_answers_match_the_contract(api, session_factory):
+    ids = seed_concepts(session_factory)
+    base = {"learning": "eng", "native": "spa", "concept_id": ids["woman"]}
+
+    created = api.post("/mnemonics", json={**base, "sentence": "The woman reads."}, headers=AUTH)
+    listing = api.get("/mnemonics", params={"learning": "eng", "native": "spa"}, headers=AUTH)
+    rule = api.post("/mnemonics", json={**base, "sentence": "No word here."}, headers=AUTH)
+    shape = api.post("/mnemonics", json={**base, "sentence": ""}, headers=AUTH)
+    same_language = api.get("/mnemonics", params={"learning": "eng", "native": "eng"}, headers=AUTH)
+
+    assert contract_validator("Mnemonic").is_valid(created.json())
+    assert contract_validator("MnemonicList").is_valid(listing.json())
+    assert rule.status_code == 400
+    assert contract_validator("Error").is_valid(rule.json())
+    assert shape.status_code == 422
+    assert contract_validator("ValidationError").is_valid(shape.json())
+    assert same_language.status_code == 400
+    assert contract_validator("Error").is_valid(same_language.json())

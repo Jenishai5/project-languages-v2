@@ -1,17 +1,7 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { type AuthUser, apiRegister, apiLogin, apiLogout, apiChangePassword } from '../lib/authApi';
-
-interface AuthContextValue {
-  user:           AuthUser | null;
-  loading:        boolean;
-  login:          (email: string, password: string) => Promise<void>;
-  register:       (name: string, email: string, password: string) => Promise<void>;
-  logout:         () => Promise<void>;
-  changePassword: (newPassword: string) => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext } from './authContextValue';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]       = useState<AuthUser | null>(null);
@@ -67,10 +57,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within <AuthProvider>');
-  return ctx;
 }

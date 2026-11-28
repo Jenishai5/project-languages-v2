@@ -1,5 +1,6 @@
 import { getJson, type LangCode } from "./lessonsApi";
 import { authHeaders } from "./progressService";
+import { errorMessage } from "./apiError";
 
 export interface GrammarMistake {
   wrong: string;
@@ -226,8 +227,50 @@ export async function fetchAiUsageSummary(days: number): Promise<AiUsageSummary>
   const res  = await fetch(`/api/agents/usage/summary?days=${days}`, { headers: await authHeaders() });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const detail = typeof data.detail === "string" ? data.detail : `Request failed (${res.status})`;
-    throw new ApiError(detail, res.status);
+    throw new ApiError(errorMessage(data, res.status), res.status);
   }
   return data as AiUsageSummary;
+}
+
+export type AgentState = "idle" | "waiting" | "thinking" | "working" | "success" | "error" | "blocked";
+
+export interface AgentLive {
+  agent:            AgentName;
+  state:            AgentState;
+  detail:           string;
+  queued:           number;
+  running:          number;
+  running_ms:       number | null;
+  average_ms:       number | null;
+  last_finished_at: string | null;
+  last_succeeded:   boolean | null;
+  calls_today:      number;
+  failures_today:   number;
+  last_call_at:     string | null;
+}
+
+export interface AgentEvent {
+  id:         number;
+  agent:      AgentName;
+  model:      string;
+  succeeded:  boolean;
+  tokens:     number | null;
+  created_at: string;
+}
+
+export interface AgentsLive {
+  generated_at:   string;
+  tracking_since: string;
+  agents:         AgentLive[];
+  recent:         AgentEvent[];
+}
+
+export async function fetchAgentsLive(): Promise<AgentsLive> {
+  const res  = await fetch("/api/agents/live", { headers: await authHeaders() });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(errorMessage(data, res.status), res.status);
+  }
+  if (!Array.isArray(data.agents) || !Array.isArray(data.recent)) throw new ApiError("Unexpected live data.", res.status);
+  return data as AgentsLive;
 }

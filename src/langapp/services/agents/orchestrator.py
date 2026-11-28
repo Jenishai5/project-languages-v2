@@ -15,6 +15,7 @@ from langapp.repositories.concepts import ConceptRepository
 from langapp.repositories.outcomes import LearningOutcomeRepository
 from langapp.repositories.sentences import SentenceRepository
 from langapp.repositories.user_settings import UserSettingsRepository
+from langapp.services.agent_activity import AgentActivity
 from langapp.services.agents.base import DEFAULT_LEVEL, LearnerContext
 from langapp.services.agents.cultural import AGENT as CULTURAL
 from langapp.services.agents.cultural import CulturalAgent, CultureNote
@@ -93,6 +94,7 @@ class AgentOrchestrator:
         limits: AgentLimits | None = None,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
         cultural: CulturalAgent | None = None,
+        activity: AgentActivity | None = None,
     ) -> None:
         self._sentences = sentences
         self._concepts = concepts
@@ -106,6 +108,7 @@ class AgentOrchestrator:
         self._gate = gate
         self._limits = limits or AgentLimits()
         self._clock = clock
+        self._activity = activity or AgentActivity()
 
     def learner(self, user_id: uuid.UUID, learning: str, native: str) -> LearnerContext:
         row = self._user_settings.get_settings(user_id)
@@ -238,23 +241,32 @@ class AgentOrchestrator:
             return Answer(message="AI help is not set up on this server yet.")
         if self.remaining_today(context.user_id) <= 0:
             raise RateLimited(f"You have used today's {self._limits.daily_limit} AI answers. Come back tomorrow.")
+        ticket = self._activity.queued(name)
         if not self._gate.acquire(timeout=self._limits.wait_seconds):
+            self._activity.cancelled(ticket)
             raise ServiceUnavailable("Many learners are asking right now. Try again in a moment.")
+        self._activity.started(ticket)
         started = time.perf_counter()
         try:
             value = call(agent)
         except UpstreamRateLimited:
             logger.info("agent=%s model=%s ok=rate_limited ms=%d", name, agent.primary_model, _ms(started))
+            self._activity.finished(ticket, False, agent.primary_model, reason="The AI provider is rate limiting")
             raise
         except ExternalSourceError as exc:
             logger.warning("agent=%s model=%s ok=false ms=%d reason=%s", name, agent.primary_model, _ms(started), exc)
+            self._activity.finished(ticket, False, agent.primary_model, reason="The AI model gave no usable answer")
             self._usage.log(context.user_id, name, agent.primary_model, succeeded=False)
             return Answer(message=f"The AI teacher could not answer this time ({exc}). Try again later.")
+        except BaseException:
+            self._activity.finished(ticket, False, agent.primary_model, reason="Unexpected error")
+            raise
         finally:
             self._gate.release()
 
         model = value.model or agent.primary_model
         logger.info("agent=%s model=%s ok=true ms=%d tokens=%s", name, model, _ms(started), value.tokens)
+        self._activity.finished(ticket, True, model, value.tokens)
         self._usage.log(context.user_id, name, model, True, value.tokens)
         if not usable(value):
             return Answer(message="The AI teacher sent an empty answer. Try again later.")

@@ -49,8 +49,8 @@ export default function Dashboard() {
   const pathSub = !path
     ? "Loading your path…"
     : path.total === 0
-      ? "No lessons yet"
-      : `${path.done} of ${path.total} lessons done · 10 words each, trained four ways`;
+      ? "No topics yet"
+      : `${path.done} of ${path.total} topics done · every word trained four ways`;
 
   return (
     <>
@@ -70,27 +70,27 @@ export default function Dashboard() {
       <div className="container ways">
         <section className="way way--path" aria-labelledby="path-title">
           <div className="path-card__meta">
-            <span className="eyebrow">Learning path</span>
-            <span className="small">{path ? `${path.done} of ${path.total} lessons done` : "Loading…"}</span>
+            <span className="eyebrow">Vocabulary topics</span>
+            <span className="small">{path ? `${path.done} of ${path.total} topics done` : "Loading…"}</span>
           </div>
-          <p className="eyebrow">{next ? `Next · Lesson ${next.position}` : "Lessons"}</p>
+          <p className="eyebrow">{next ? "Next topic" : "Topics"}</p>
           <h2 id="path-title" className="h1">
-            {next ? next.title : path && path.total > 0 && path.done === path.total ? "Path complete" : "Lessons"}
+            {next ? next.title : path && path.total > 0 && path.done === path.total ? "All topics done" : "Topics"}
           </h2>
           <p className="muted">{pathSub}</p>
-          {path && path.total > 0 && <progress value={path.done} max={path.total} aria-label="Lessons done" />}
+          {path && path.total > 0 && <progress value={path.done} max={path.total} aria-label="Topics done" />}
           <div className="row">
             <button className="btn btn--primary" onClick={() => navigate(next ? `/lessons/${next.id}` : "/lessons")}>
-              {next ? "Continue" : "Open lessons"}
+              {next ? "Continue" : "Open topics"}
             </button>
-            <button className="btn btn--secondary" onClick={() => navigate("/lessons")}>See all lessons</button>
+            <button className="btn btn--secondary" onClick={() => navigate("/lessons")}>See all topics</button>
           </div>
         </section>
 
         <section className="way way--practice" aria-labelledby="practice-title">
           <span className="eyebrow">Free practice</span>
           <h2 id="practice-title" className="h2">Train any time, in any order.</h2>
-          <p className="muted">Uses all words and sentences, not one lesson.</p>
+          <p className="muted">Uses all words and sentences, not one topic.</p>
           <PracticeLink heading="Match" sub="5 random pairs a round →" tone="pink" onClick={() => navigate("/game")} />
           <PracticeLink heading="Sentence shuffle" sub="Real Tatoeba sentences →" tone="mint" onClick={() => navigate("/sentence-builder")} />
           <PracticeLink heading="Picture cards" sub="Your sentences as flashcards →" tone="lime" onClick={() => navigate("/mnemonics")} />

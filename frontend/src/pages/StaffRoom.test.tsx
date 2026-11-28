@@ -66,3 +66,63 @@ test("offers a retry when loading fails", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent("Request failed (500)");
   expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
 });
+
+const liveAgent = (name: string, state: string, detail: string, extra = {}) => ({
+  agent: name, state, detail, queued: 0, running: 0, running_ms: null, average_ms: 1800,
+  last_finished_at: null, last_succeeded: null, calls_today: 4, failures_today: 1, last_call_at: null, ...extra,
+});
+
+function mockRoutes(live: unknown) {
+  const summary = {
+    days: 7, generated_at: new Date().toISOString(),
+    agents: [agent("grammar", 12, 4), agent("vocabulary", 3), agent("conversation", 5), agent("pronunciation", 0), agent("cultural", 0)],
+  };
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    const body = String(url).includes("/agents/live") ? live : summary;
+    return { url, ok: true, status: 200, json: async () => body };
+  }));
+}
+
+const LIVE = {
+  generated_at: new Date().toISOString(),
+  tracking_since: new Date().toISOString(),
+  agents: [
+    liveAgent("grammar", "working", "Answering a learner", { running: 1, running_ms: 2300 }),
+    liveAgent("vocabulary", "idle", "Ready for the next learner"),
+    liveAgent("conversation", "success", "Just sent an answer"),
+    liveAgent("pronunciation", "blocked", "Needs an Azure Speech key and region"),
+    liveAgent("cultural", "idle", "Ready for the next learner"),
+  ],
+  recent: [
+    { id: 2, agent: "conversation", model: "openrouter/free", succeeded: true, tokens: 320, created_at: new Date().toISOString() },
+    { id: 1, agent: "grammar", model: "openrouter/free", succeeded: false, tokens: null, created_at: new Date().toISOString() },
+  ],
+};
+
+test("shows live agent states, what needs attention and the latest answers", async () => {
+  mockRoutes(LIVE);
+  renderPage();
+
+  expect(await screen.findByText("1 agent needs attention")).toBeInTheDocument();
+  const attention = screen.getByRole("list", { name: "Needs attention" });
+  expect(within(attention).getByText("Needs an Azure Speech key and region")).toBeInTheDocument();
+  expect(screen.getByText("Answering a learner")).toBeInTheDocument();
+  expect(screen.getByText("2.3 s")).toBeInTheDocument();
+  expect(screen.getAllByText(/answered|failed/).length).toBeGreaterThan(0);
+});
+
+test("filters agents by status and opens the live inspector", async () => {
+  mockRoutes(LIVE);
+  renderPage();
+
+  await screen.findByText("1 agent needs attention");
+  fireEvent.click(screen.getByRole("button", { name: /Needs attention/ }));
+  const now = screen.getByRole("heading", { name: "Right now" }).nextElementSibling as HTMLElement;
+  expect(within(now).getAllByRole("button")).toHaveLength(1);
+  expect(within(now).getByText("Paco")).toBeInTheDocument();
+
+  fireEvent.click(within(now).getByRole("button"));
+  const panel = screen.getByRole("complementary");
+  expect(within(panel).getByText("Blocked")).toBeInTheDocument();
+  expect(within(panel).getByText(/Needs an Azure Speech key/)).toBeInTheDocument();
+});

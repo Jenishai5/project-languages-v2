@@ -59,3 +59,12 @@ class AiUsageRepository:
             .order_by(day.desc(), AiUsage.agent, AiUsage.model)
         )
         return [dict(row._mapping) for row in self.session.execute(stmt)]
+
+    def recent_since(self, since: datetime, limit: int) -> list[dict]:
+        stmt = (
+            select(AiUsage.id, AiUsage.agent, AiUsage.model, AiUsage.succeeded, AiUsage.tokens, AiUsage.created_at)
+            .where(AiUsage.created_at >= since)
+            .order_by(AiUsage.created_at.desc(), AiUsage.id.desc())
+            .limit(limit)
+        )
+        return [dict(row._mapping) for row in self.session.execute(stmt)]

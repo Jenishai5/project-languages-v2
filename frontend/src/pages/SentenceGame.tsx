@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { saveSentenceResult } from "../lib/progressService";
 import { useSpeechSynthesis } from "../hooks/useSpeechSynthesis";
 import { WORD_TYPE_LEGEND, wordTypeLabel } from "../lib/wordTypes";
@@ -51,6 +51,17 @@ export default function SentenceGame() {
   const [transLang,   setTransLang]   = useState<TransLang>("es");
   const dragOver = useRef<"bank" | number | null>(null);
 
+  function loadSentence(list: Sentence[], i: number) {
+    const s = list[i];
+    if (!s) return;
+    const words: Word[] = s.words.map((w, idx) => ({ ...w, uid: `${w.form}-${idx}` }));
+    setBank(shuffle(words));
+    setSlots(Array(words.length).fill(null));
+    setResult(null);
+    setShowHint(false);
+    setIndex(i);
+  }
+
   useEffect(() => {
     fetch("/api/game/sentences")
       .then(r => r.json())
@@ -64,17 +75,6 @@ export default function SentenceGame() {
       .catch(() => setError("Cannot reach the server. Is it running?"))
       .finally(() => setLoading(false));
   }, []);
-
-  function loadSentence(list: Sentence[], i: number) {
-    const s = list[i];
-    if (!s) return;
-    const words: Word[] = s.words.map((w, idx) => ({ ...w, uid: `${w.form}-${idx}` }));
-    setBank(shuffle(words));
-    setSlots(Array(words.length).fill(null));
-    setResult(null);
-    setShowHint(false);
-    setIndex(i);
-  }
 
   function onDragStartBank(word: Word) { setDragItem({ word, from: "bank" }); }
   function onDragStartSlot(word: Word, slotIdx: number) { setDragItem({ word, from: slotIdx }); }

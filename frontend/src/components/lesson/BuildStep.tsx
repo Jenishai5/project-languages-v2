@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSpeechSynthesis } from "../../hooks/useSpeechSynthesis";
 import { SPEECH_LANG, type LessonSentence, type Tile } from "../../lib/lessonsApi";
-import { wordTypeLabel } from "../../lib/wordTypes";
+import { WORD_TYPE_LEGEND, wordTypeLabel } from "../../lib/wordTypes";
 import { Attribution, Feedback, PrimaryButton, SecondaryButton, StepCard } from "./shared";
 import { playRecording, shuffle } from "../../lib/lessonUtils";
 import GrammarTip from "./GrammarTip";
@@ -63,6 +63,7 @@ export default function BuildStep({
     setResult(null);
   };
 
+  const usedTypes = WORD_TYPE_LEGEND.filter(l => sentence.words.some(tile => tile.word_type === l.type));
   const listen = () => playRecording(sentence.audio, () => speak(sentence.full_text, voice));
 
   return (
@@ -87,6 +88,12 @@ export default function BuildStep({
           <TileChip key={tile.uid} tile={tile} onClick={() => result === null && setPlaced(p => [...p, tile])} />
         ))}
       </div>
+
+      {usedTypes.length > 0 && (
+        <ul className="legend" aria-label="Word colours">
+          {usedTypes.map(l => <li key={l.type} data-word-type={l.type}>{l.label}</li>)}
+        </ul>
+      )}
 
       {result && (
         <Feedback correct={result === "correct"}>

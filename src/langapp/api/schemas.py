@@ -455,6 +455,40 @@ class AiUsageSummaryOut(BaseModel):
     agents: list[AgentUsageOut]
 
 
+AgentNameLiteral = Literal["grammar", "vocabulary", "conversation", "pronunciation", "cultural"]
+
+
+class AgentLiveOut(BaseModel):
+    agent: AgentNameLiteral
+    state: Literal["idle", "waiting", "thinking", "working", "success", "error", "blocked"]
+    detail: str
+    queued: int
+    running: int
+    running_ms: int | None
+    average_ms: int | None
+    last_finished_at: datetime | None
+    last_succeeded: bool | None
+    calls_today: int
+    failures_today: int
+    last_call_at: datetime | None
+
+
+class AgentEventOut(BaseModel):
+    id: int
+    agent: AgentNameLiteral
+    model: str
+    succeeded: bool
+    tokens: int | None
+    created_at: datetime
+
+
+class AgentsLiveOut(BaseModel):
+    generated_at: datetime
+    tracking_since: datetime
+    agents: list[AgentLiveOut]
+    recent: list[AgentEventOut]
+
+
 class AiUsageTodayOut(BaseModel):
     daily_limit: int
     used_today: int

@@ -178,8 +178,8 @@ A lesson has about **10 words**. Opening a lesson shows its words (tap to hear) 
 
 | Training | What the learner does |
 |---|---|
-| 🧩 Match | Matches each word with its translation |
-| 🔀 Shuffle | Puts the tiles of 5 sentences in order; the sentences are spread over the lesson words |
+| 🧩 Match | Matches 5 random words of the lesson with their translations; a new set each time |
+| 🔀 Shuffle | Puts the tiles of 10 sentences in order; each sentence is for a different random lesson word |
 | 🎤 Pronounce | Says each word into the microphone; the browser's free speech recognition (Chrome, Safari) checks it. Case, accents, punctuation and articles are ignored. Other browsers can skip it |
 | 🖼️ Picture | Sees the emoji or approved image and picks the right word out of 4 |
 
@@ -187,7 +187,7 @@ A finished training shows its score on its button (✓ 8 of 10). When all are do
 
 ### How lessons are made
 
-1. **Concepts.** `make import-concepts` turns the dictionary files into *concepts*: one row per meaning, with its words in every language (`concepts` + `concept_terms`). So any native language works with any learning language, instead of needing one file per language pair. Then it groups the concepts into lessons of 10 words by category (`lessons` + `lesson_concepts`): 353 concepts, 36 lessons. A short leftover (under 5 words) joins the previous lesson. Running it again with a different size replaces the old plan.
+1. **Concepts.** `make import-concepts` turns the dictionary files into *concepts*: one row per meaning, with its words in every language (`concepts` + `concept_terms`). So any native language works with any learning language, instead of needing one file per language pair. Then it makes **one lesson per subject** (`lessons` + `lesson_concepts`): 353 concepts, 7 lessons (People, Family and relationships, Places, Food and drinks, Clothing and accessories, Animals, Objects and tools). Running it again replaces the old plan and moves the sentences already found to the new lessons, so `build-lessons` doesn't have to run again.
 2. **Sentences.** `make build-lessons` searches Tatoeba for short sentences (3–7 words) that contain each lesson word (`q==doctor`) and have a translation in the learner's language. It picks the best ones and links them to the lesson (`lesson_sentences`). It is run once, not while people play.
 3. **Choosing good sentences** (`services/lesson_builder.py`):
    - the exact word must appear (*doctor*, not *doctors*);
@@ -202,7 +202,7 @@ make import-concepts
 make build-lessons
 ```
 
-`make build-lessons` fills the first 10 lessons (about 100 Tatoeba requests at 1 per second, under 2 minutes). `make build-lessons LESSONS=0` fills all 36 (about 6 minutes). Running it again adds nothing new.
+`make build-lessons` fills all 7 lessons (353 words, about 6 minutes at 1 Tatoeba request per second). Running it again adds nothing new.
 
 ### Images
 
@@ -223,7 +223,7 @@ AI image generation is **not connected yet**: choose a provider first (account, 
 |---|---|---|
 | GET | `/languages` | Languages with words available |
 | GET | `/lessons?learning=eng&native=spa` | Lesson list with word and sentence counts |
-| GET | `/lessons/{id}?learning=eng&native=spa` | Words, 5 shuffle sentences and picture rounds |
+| GET | `/lessons/{id}?learning=eng&native=spa` | Words, 10 random shuffle sentences (one per word) and picture rounds |
 | GET / PUT | `/settings` | The learner's languages (login required) |
 | POST | `/progress/lesson` · GET `/progress/lessons` | Lesson results (login required) |
 
@@ -336,9 +336,23 @@ make ai-usage DAYS=30
 
 The table shows calls, failures, tokens and learners per day, agent and model, with a total failure rate at the end. On the dashboard, each learner sees "AI answers today: X of 30" (`GET /api/agents/usage`).
 
-**Staff room (admin dashboard).** `/staff-room` shows the five agents as teachers walking around a staff room. Busy teachers walk faster, teachers with many failed answers look tired, and teachers with no calls read at their desks. Click a teacher (or use the Table view) to see calls, failures, tokens, learners, models and calls per day. It reads `GET /api/agents/usage/summary?days=7`, which only admins can call: put your e-mail in `ADMIN_EMAILS` in `.env`.
+**Control room (admin dashboard).** `/staff-room` is a 3D room (Three.js with React Three Fiber, loaded only on this page) where the five agents work at their own desks. Each animation comes from a real state measured by the backend (see `docs/decisions/0003-live-agent-states.md`):
 
-**Contract first.** `openapi.yaml` is the API contract and is checked with `npx @redocly/cli lint openapi.yaml`. Tests compare real responses with its schemas. Decisions are written in `docs/decisions/`.
+| State | When | What the character does |
+|---|---|---|
+| idle | nothing to do | breathes, blinks, shifts weight, looks around, sometimes stretches |
+| waiting | a request is queued for a free slot | hands on hips, taps a foot, checks the time |
+| thinking | first 1.5 s of an AI call | looks up, hand on chin or scratches the head |
+| working | the AI call takes longer | turns to the desk and types; the screen lights the face |
+| success | 6 s after a good answer | crouches, jumps, cheers; confetti |
+| error | 20 s after a failed answer | flinches, looks at the screen, scratches the head |
+| blocked | the agent's API key is missing | waves for attention next to a barrier |
+
+The page polls `GET /api/agents/live` every 4 seconds (paused while the tab is hidden) and also shows the latest answers, what needs attention, a task monitor (in progress, answered, failed, response time per agent), status filters and an inspector with each agent's history. Period totals still come from `GET /api/agents/usage/summary`. Both are admins only: put your e-mail in `ADMIN_EMAILS` in `.env`. With "reduce motion" switched on the characters hold still poses; browsers without WebGL get the old 2D staff room.
+
+Code: `frontend/src/components/controlroom/` — `animation/` (pose per state, the `Animator` state machine with blending, blinks and hair springs; unit tested), `three/` (characters, desks, scene) and the panels. Backend: `services/agent_activity.py` (in-memory tracker updated by `AgentOrchestrator.ask()`) and `services/live_status.py`.
+
+**Contract first.** `openapi.yaml` is the API contract and is checked with `npx @redocly/cli lint openapi.yaml`. It covers the sentence list (filters + `limit`/`offset` paging), one sentence, the picture cards (list + one write with validation) and the admin/agent endpoints. `tests/test_contract.py` checks that the code has the same parameters, request bodies and response fields as the contract, and API tests compare real responses with its schemas. Decisions are written in `docs/decisions/`.
 
 **Timing logs.** Each agent call writes one log line, for example `agent=grammar model=... ok=true tokens=210 ms=1840`. The line has no user id, no words and no sentences, so logs are safe to share.
 

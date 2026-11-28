@@ -10,28 +10,26 @@ export default function WordList({ words, learning, native }: { words: LessonWor
 
   return (
     <div className="stack">
-      <div className="word-grid">
+      <ul className="word-list">
         {words.map(word => (
-          <div key={word.concept_id} className="word-tile">
-            <button onClick={() => speak(word.word, voice)} title="Tap to hear" className="word-card">
-              <span className="word-card__pic" aria-hidden="true">
-                {word.image_url ? <img src={word.image_url} alt="" /> : word.emoji ?? "🐢"}
-              </span>
-              <span className="word-card__word">{word.word}</span>
-              <span className="word-card__tr">{word.translation}</span>
+          <li key={word.concept_id} className="word-row">
+            <button onClick={() => speak(word.word, voice)} className="word-row__main" aria-label={`Hear ${word.word}`}>
+              <span className="word-row__sound" aria-hidden="true">🔊</span>
+              <span className="word-row__word">{word.word}</span>
+              <span className="word-row__tr">{word.translation}</span>
             </button>
             {native && (
               <button
-                className="link-btn word-tile__culture"
+                className="link-btn word-row__culture"
                 onClick={() => setCulture(current => (current === word.concept_id ? null : word.concept_id))}
                 aria-pressed={culture === word.concept_id}
               >
                 🌍 Culture
               </button>
             )}
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
       {native && culture !== null && (
         <CulturePanel key={culture} conceptId={culture} learning={learning} native={native} onClose={() => setCulture(null)} />
       )}

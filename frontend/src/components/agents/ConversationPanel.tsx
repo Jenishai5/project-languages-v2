@@ -168,7 +168,7 @@ export default function ConversationPanel({
         <p>
           {summary.words_used.length > 0
             ? <>You used <b>{summary.words_used.join(", ")}</b>.</>
-            : "Next time, try to use the lesson words."}
+            : "Next time, try to use the topic words."}
         </p>
         <p className="muted">
           {summary.mistakes_saved === 0

@@ -29,8 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     words = commands.add_parser("import-words", help="Import word pairs from dictionary JSON files")
     words.add_argument("files", nargs="*", type=Path, help="files like dictionary-en-es.json")
 
-    concepts = commands.add_parser("import-concepts", help="Build concepts and lessons from the dictionary files")
-    concepts.add_argument("--words-per-lesson", type=int, default=10)
+    commands.add_parser("import-concepts", help="Build concepts and one lesson per subject from the dictionary files")
 
     lessons = commands.add_parser("build-lessons", help="Find Tatoeba sentences for the lesson words")
     lessons.add_argument("--learning", default="eng", help="language being learned (ISO 639-3)")
@@ -98,12 +97,12 @@ def run_import_words(files: list[Path]) -> int:
     return 1 if failed else 0
 
 
-def run_import_concepts(words_per_lesson: int) -> int:
+def run_import_concepts() -> int:
     paths = dictionary_files()
     if not paths:
         print(f"No dictionary files found in {DEFAULT_DICTIONARY_DIR}")
         return 1
-    summary = import_concepts(paths, get_session_factory(), words_per_lesson)
+    summary = import_concepts(paths, get_session_factory())
     print(f"{summary.concepts} concepts, {summary.lessons} lessons")
     return 0
 
@@ -162,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
     commands = {
         "import": lambda: run_import(args.source, args.targets, args.pages, args.max_words, args.with_audio),
         "import-words": lambda: run_import_words(args.files),
-        "import-concepts": lambda: run_import_concepts(args.words_per_lesson),
+        "import-concepts": run_import_concepts,
         "build-lessons": lambda: run_build_lessons(args.learning, args.natives, args.lessons, args.per_word),
         "set-image": lambda: run_set_image(args.slug, args.url, args.approve),
         "ai-usage": lambda: run_ai_usage(args.days),

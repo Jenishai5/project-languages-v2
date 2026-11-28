@@ -1,17 +1,13 @@
 import { useRef } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import AuthModal from "../components/organisms/AuthModal";
 import Flag from "../components/atoms/Flag";
 import SnakeTranslate from "../components/morph/SnakeTranslate";
 import { useScrollReveal } from "../lib/useScrollReveal";
+import { TRAININGS } from "../lib/trainings";
+import FeltIcon from "../components/atoms/FeltIcon";
 
-const TRAININGS = [
-  { name: "Match", hint: "Word and translation" },
-  { name: "Shuffle", hint: "Build 5 sentences" },
-  { name: "Pronounce", hint: "Say each word" },
-  { name: "Picture", hint: "Picture to word" },
-];
 
 export default function Landing() {
   const { showAuth, setShowAuth } = useOutletContext<{ showAuth: boolean; setShowAuth: (v: boolean) => void }>();
@@ -39,7 +35,7 @@ export default function Landing() {
             </h1>
             <div className="row">
               <button className="btn btn--primary btn--lg" onClick={() => go("/lessons")}>
-                {user ? "Continue learning" : "Start lesson one"}
+                {user ? "Continue learning" : "Start learning"}
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9h12M10 4l5 5-5 5" /></svg>
               </button>
             </div>
@@ -49,7 +45,7 @@ export default function Landing() {
             <div className="float float--card">
               <div className="row row--between">
                 <span className="eyebrow">Translation</span>
-                <span className="badge">Lesson 3</span>
+                <span className="badge">People</span>
               </div>
               <p className="serif float__word">doctor</p>
               <div className="stack stack--tight">
@@ -85,22 +81,25 @@ export default function Landing() {
           </div>
           <div className="section-head" data-reveal-group>
             <h2 className="h1">Learn your way.<br />Same words, two paths.</h2>
-            <p className="lead">Follow the path lesson by lesson, or drop into free practice whenever you have five minutes.</p>
+            <p className="lead">Pick a topic, or drop into free practice whenever you have five minutes.</p>
           </div>
           <div className="ways" data-reveal-group>
             <article className="way way--path">
-              <span className="eyebrow">Learning path</span>
-              <h3 className="h2">36 lessons, 10 words each</h3>
-              <p className="muted">Every lesson trains the same words four ways.</p>
-              <div className="choice-grid" data-reveal-group>
+              <span className="eyebrow">Vocabulary topics</span>
+              <h3 className="h2">7 topics of everyday words</h3>
+              <p className="muted">Every topic trains its words four ways.</p>
+              <ul className="way-trainings" data-reveal-group>
                 {TRAININGS.map(t => (
-                  <div key={t.name} className="training">
-                    <span className="training__title">{t.name}</span>
-                    <span className="training__hint">{t.hint}</span>
-                  </div>
+                  <li key={t.id} className="way-training">
+                    <span className="way-training__icon" aria-hidden="true"><FeltIcon image={t.image} fallback={t.icon} /></span>
+                    <span className="way-training__text">
+                      <span className="way-training__title">{t.title}</span>
+                      <span className="way-training__hint">{t.hint}</span>
+                    </span>
+                  </li>
                 ))}
-              </div>
-              <button className="btn btn--primary self-start" onClick={() => go("/lessons")}>Open the lessons</button>
+              </ul>
+              <button className="btn btn--primary self-start" onClick={() => go("/lessons")}>Open the topics</button>
             </article>
 
             <article className="way way--practice">

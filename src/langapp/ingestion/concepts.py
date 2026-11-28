@@ -9,8 +9,6 @@ ARTICLES = {
     "spa": ("el ", "la ", "los ", "las ", "un ", "una ", "unos ", "unas ", "l'"),
 }
 LANG_OF = {"en": "eng", "es": "spa", "ru": "rus"}
-MIN_LAST_LESSON = 5
-WORDS_PER_LESSON = 10
 
 
 def slugify(text: str) -> str:
@@ -85,27 +83,23 @@ def build_concepts(pairs_by_file: Mapping[str, list[ParsedWordPair]]) -> list[Pa
     return concepts
 
 
-def plan_lessons(concepts: list[ParsedConcept], words_per_lesson: int = WORDS_PER_LESSON) -> list[PlannedLesson]:
+def lesson_title(category: str) -> str:
+    return category.replace("_", " ").capitalize()
+
+
+def plan_lessons(concepts: list[ParsedConcept]) -> list[PlannedLesson]:
     by_category: dict[str, list[str]] = {}
     for concept in concepts:
         by_category.setdefault(concept.category, []).append(concept.slug)
-
-    lessons: list[PlannedLesson] = []
-    for category, slugs in by_category.items():
-        title = category.replace("_", " ").capitalize()
-        chunks = [slugs[start:start + words_per_lesson] for start in range(0, len(slugs), words_per_lesson)]
-        if len(chunks) > 1 and len(chunks[-1]) < MIN_LAST_LESSON:
-            chunks[-2].extend(chunks.pop())
-        for number, chunk in enumerate(chunks, start=1):
-            lessons.append(
-                PlannedLesson(
-                    slug=f"{category.replace('_', '-')}-{number}",
-                    title=f"{title} {number}",
-                    position=len(lessons) + 1,
-                    concept_slugs=tuple(chunk),
-                )
-            )
-    return lessons
+    return [
+        PlannedLesson(
+            slug=category.replace("_", "-"),
+            title=lesson_title(category),
+            position=position,
+            concept_slugs=tuple(slugs),
+        )
+        for position, (category, slugs) in enumerate(by_category.items(), start=1)
+    ]
 
 
 def language_of_pair(pair: str) -> tuple[str, str]:

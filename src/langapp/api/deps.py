@@ -23,6 +23,7 @@ from langapp.repositories.sentences import SentenceRepository
 from langapp.repositories.system import DatabaseCheck
 from langapp.repositories.user_settings import UserSettingsRepository
 from langapp.repositories.word_pairs import WordPairRepository
+from langapp.services.agent_activity import AgentActivity
 from langapp.services.agents.base import model_list
 from langapp.services.agents.conversation import ConversationAgent
 from langapp.services.agents.conversation_service import ConversationService
@@ -35,6 +36,7 @@ from langapp.services.games import GameService
 from langapp.services.languages import LanguageCatalog
 from langapp.services.learner import LearnerService
 from langapp.services.lessons import LessonService
+from langapp.services.live_status import LiveStatus, blocked_reasons
 from langapp.services.mnemonics import MnemonicService, MnemonicSettings
 from langapp.services.progress import ProgressService
 from langapp.services.sentences import SentenceService
@@ -148,6 +150,11 @@ def get_reply_cache() -> ReplyCache:
 
 
 @lru_cache
+def get_agent_activity() -> AgentActivity:
+    return AgentActivity()
+
+
+@lru_cache
 def get_agent_gate() -> threading.BoundedSemaphore:
     return threading.BoundedSemaphore(max(1, get_settings().agent_max_concurrent))
 
@@ -192,6 +199,7 @@ def get_agent_orchestrator(
     cultural: Annotated[CulturalAgent | None, Depends(get_cultural_agent)],
     cache: Annotated[ReplyCache, Depends(get_reply_cache)],
     gate: Annotated[threading.BoundedSemaphore, Depends(get_agent_gate)],
+    activity: Annotated[AgentActivity, Depends(get_agent_activity)],
 ) -> AgentOrchestrator:
     settings = get_settings()
     return AgentOrchestrator(
@@ -206,6 +214,7 @@ def get_agent_orchestrator(
         gate=gate,
         limits=AgentLimits(daily_limit=settings.agent_daily_limit, wait_seconds=settings.agent_wait_seconds),
         cultural=cultural,
+        activity=activity,
     )
 
 
@@ -315,3 +324,15 @@ def get_usage_report(session: SessionDep) -> UsageReport:
 
 
 UsageReportDep = Annotated[UsageReport, Depends(get_usage_report)]
+
+
+def get_live_status(session: SessionDep, activity: Annotated[AgentActivity, Depends(get_agent_activity)]) -> LiveStatus:
+    settings = get_settings()
+    blocked = blocked_reasons(
+        openrouter_ready=bool(settings.openrouter_api_key),
+        azure_ready=bool(settings.azure_speech_key and settings.azure_speech_region),
+    )
+    return LiveStatus(activity, AiUsageRepository(session), blocked)
+
+
+LiveStatusDep = Annotated[LiveStatus, Depends(get_live_status)]

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { loadSettings, saveSettings, type LanguageSettings } from '../lib/lessonsApi';
 
 const STORAGE_KEY = 'turtletalk.languages';

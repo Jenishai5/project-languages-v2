@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from langapp.api.deps import get_session, get_token_verifier
 from langapp.api.main import app
 from langapp.auth import AuthError, AuthUser
+from langapp.db.models import Sentence
 from langapp.domain import ParsedConcept, PlannedLesson
 from langapp.ingestion.concepts import build_concepts, core_word, normalize_category, plan_lessons
 from langapp.ingestion.dictionary_parser import load_dictionary_file, pair_from_file_name
@@ -25,7 +26,7 @@ from langapp.services.lesson_builder import (
     rank_candidates,
     search_query,
 )
-from langapp.services.lessons import pick_sentences, picture_rounds
+from langapp.services.lessons import lesson_nouns, pick_sentences, picture_rounds, tag_lesson_nouns
 from tests.conftest import load_fixture
 
 DICTIONARIES = Path(__file__).resolve().parent.parent / "data" / "dictionaries"
@@ -57,13 +58,21 @@ def test_concepts_from_real_dictionaries():
     assert concepts["doctor"].category == "people"
 
 
-def test_lessons_are_ten_words_per_category():
+def test_one_lesson_per_subject():
     lessons = plan_lessons(real_concepts())
 
-    assert lessons[0].title == "People 1"
+    assert [lesson.slug for lesson in lessons] == [
+        "people",
+        "family-and-relationships",
+        "places",
+        "food-and-drinks",
+        "clothing-and-accessories",
+        "animals",
+        "objects-and-tools",
+    ]
+    assert lessons[0].title == "People"
     assert lessons[0].concept_slugs[:5] == ("man", "woman", "boy", "girl", "friend")
-    assert len(lessons[0].concept_slugs) == 10
-    assert all(5 <= len(lesson.concept_slugs) <= 14 for lesson in lessons)
+    assert sum(len(lesson.concept_slugs) for lesson in lessons) == 353
     assert [lesson.position for lesson in lessons] == list(range(1, len(lessons) + 1))
 
 
@@ -202,7 +211,7 @@ def test_lesson_detail_in_the_users_native_language(api, built_lesson):
     consult = next(s for s in lesson["sentences"] if s["full_text"] == "Consult your doctor.")
     assert consult["prompt"] == "Consulta a tu doctor."
     assert [w["form"] for w in consult["words"]] == ["Consult", "your", "doctor"]
-    assert len(lesson["sentences"]) <= 5
+    assert len(lesson["sentences"]) <= 10
     assert {s["concept_slug"] for s in lesson["sentences"]} == {"doctor", "paper"}
     assert lesson["pictures"] == [
         {"slug": "paper", "emoji": "📄", "image_url": None, "options": lesson["pictures"][0]["options"], "answer": "paper"}
@@ -261,6 +270,16 @@ def test_pick_sentences_spreads_over_words():
     assert [e["full_text"] for e in picked] == ["a 0", "b 0", "c 0", "a 1", "b 1"]
 
 
+def test_random_pick_uses_a_different_word_for_each_sentence():
+    exercises = [{"concept_slug": f"w{w}", "full_text": f"w{w} {n}"} for w in range(30) for n in range(2)]
+
+    picked = pick_sentences(exercises, 10, random.Random(3))
+
+    assert len(picked) == 10
+    assert len({e["concept_slug"] for e in picked}) == 10
+    assert picked != pick_sentences(exercises, 10)
+
+
 def test_picture_rounds_offer_four_words_and_skip_words_without_pictures():
     words = [
         {"slug": f"w{n}", "word": f"word{n}", "emoji": "🙂" if n % 2 == 0 else None, "image_url": None}
@@ -274,18 +293,42 @@ def test_picture_rounds_offer_four_words_and_skip_words_without_pictures():
     assert all(len(set(r["options"])) == 4 for r in rounds)
 
 
-def test_reimporting_with_a_new_plan_replaces_old_lessons(session_factory):
-    concepts = real_concepts()
+def test_reimporting_with_a_new_plan_replaces_old_lessons_and_keeps_sentences(session_factory):
+    concepts = [
+        ParsedConcept(slug="doctor", category="people", terms={"eng": "doctor", "spa": "el médico"}),
+        ParsedConcept(slug="paper", category="objects", terms={"eng": "paper", "spa": "el papel"}),
+    ]
+    sentence = Sentence(id=1, lang="eng", text="Call a doctor.")
     with session_factory.begin() as session:
+        session.add(sentence)
+        session.flush()
         repo = LessonRepository(session)
         ids = ConceptRepository(session).upsert_concepts(concepts)
-        repo.upsert_lessons(plan_lessons(concepts, 5), ids)
+        repo.upsert_lessons([PlannedLesson(slug="work-1", title="Work 1", position=1, concept_slugs=("doctor", "paper"))], ids)
+        old_id = repo.list_lessons("eng", "spa")[0]["id"]
+        repo.add_lesson_sentences([(old_id, 1, ids["doctor"])])
     with session_factory.begin() as session:
-        repo = LessonRepository(session)
-        count = repo.upsert_lessons(plan_lessons(concepts, 10), ids)
+        count = LessonRepository(session).upsert_lessons(plan_lessons(concepts), ids)
     with session_factory() as session:
         lessons = LessonRepository(session).list_lessons("eng", "spa")
 
-    assert count == len(lessons)
-    assert lessons[0]["word_count"] == 10
-    assert [lesson["position"] for lesson in lessons] == list(range(1, len(lessons) + 1))
+    assert count == 2
+    assert [(lesson["slug"], lesson["word_count"], lesson["sentence_count"]) for lesson in lessons] == [
+        ("people", 1, 1),
+        ("objects", 1, 0),
+    ]
+
+
+def test_lesson_words_are_tagged_as_nouns_in_shuffle_tiles():
+    nouns = lesson_nouns([{"word": "grandmother"}, {"word": "the doctor"}, {"word": "el médico / la médica"}], "eng")
+    tiles = [
+        {"form": "Where's", "position": 0, "word_type": "adverb"},
+        {"form": "your", "position": 1, "word_type": "pronoun"},
+        {"form": "grandmother", "position": 2, "word_type": ""},
+        {"form": "Doctor", "position": 3, "word_type": ""},
+        {"form": "tomato", "position": 4, "word_type": ""},
+    ]
+
+    tagged = tag_lesson_nouns(tiles, nouns)
+
+    assert [t["word_type"] for t in tagged] == ["adverb", "pronoun", "noun", "noun", ""]

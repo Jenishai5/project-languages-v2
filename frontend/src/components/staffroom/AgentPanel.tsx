@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type { AgentDay, AgentUsage } from "../../lib/agentsApi";
+import type { AgentDay, AgentEvent, AgentLive, AgentUsage } from "../../lib/agentsApi";
+import { STATE_META, ago, seconds } from "../controlroom/liveStates";
 import { AGENT_LOOKS, moodOf } from "./agents";
 
 const CHART = { width: 340, height: 150, top: 14, bottom: 22, left: 4, right: 4 };
@@ -88,9 +89,39 @@ interface AgentPanelProps {
   days:        number;
   generatedAt: string;
   onClose:     () => void;
+  live?:       AgentLive;
+  recent?:     AgentEvent[];
 }
 
-export default function AgentPanel({ agent, days, generatedAt, onClose }: AgentPanelProps) {
+function LiveSection({ live, recent }: { live: AgentLive; recent: AgentEvent[] }) {
+  const meta = STATE_META[live.state];
+  return (
+    <section className="agent-live" aria-label="Live">
+      <p className="agent-live__state" style={{ "--state": meta.color } as React.CSSProperties}>
+        <span className="agent-live__dot" aria-hidden="true" />
+        <strong>{meta.label}</strong> · {live.detail}
+      </p>
+      <dl className="agent-facts">
+        <div><dt>Running now</dt><dd>{live.running ? `${live.running} · ${seconds(live.running_ms)}` : "nothing"}{live.queued ? ` (+${live.queued} queued)` : ""}</dd></div>
+        <div><dt>Usual response</dt><dd>{seconds(live.average_ms)}</dd></div>
+        <div><dt>Today</dt><dd>{live.calls_today - live.failures_today} answered · {live.failures_today} failed</dd></div>
+      </dl>
+      {recent.length > 0 && (
+        <ol className="agent-live__history" aria-label="Execution history">
+          {recent.slice(0, 8).map(e => (
+            <li key={e.id} data-ok={e.succeeded}>
+              <span>{e.succeeded ? "Answered" : "Failed"}</span>
+              <code>{e.model}</code>
+              <time dateTime={e.created_at}>{ago(e.created_at)}</time>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
+export default function AgentPanel({ agent, days, generatedAt, onClose, live, recent = [] }: AgentPanelProps) {
   const look = AGENT_LOOKS[agent.agent];
   const mood = moodOf(agent.calls, agent.failure_rate);
   const moodText = {
@@ -110,7 +141,7 @@ export default function AgentPanel({ agent, days, generatedAt, onClose }: AgentP
         <button className="agent-panel__close" onClick={onClose} aria-label="Close metrics">×</button>
       </div>
       <p className="muted">{look.role}</p>
-      <p className={`agent-panel__mood agent-panel__mood--${mood}`}>{moodText}</p>
+      {live ? <LiveSection live={live} recent={recent} /> : <p className={`agent-panel__mood agent-panel__mood--${mood}`}>{moodText}</p>}
 
       <dl className="agent-stats">
         <div><dt>Calls</dt><dd>{number.format(agent.calls)}</dd></div>

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from langapp.domain import ParsedSentence
 from langapp.errors import ExternalSourceError
-from langapp.ingestion.concepts import ARTICLES, WORDS_PER_LESSON, build_concepts, core_word, plan_lessons
+from langapp.ingestion.concepts import ARTICLES, build_concepts, core_word, plan_lessons
 from langapp.ingestion.dictionary_parser import load_dictionary_file, pair_from_file_name
 from langapp.ingestion.parser import parse_page
 from langapp.repositories.concepts import ConceptRepository
@@ -44,11 +44,10 @@ class LessonBuildSummary:
 def import_concepts(
     paths: Sequence[Path],
     session_factory: sessionmaker[Session],
-    words_per_lesson: int = WORDS_PER_LESSON,
 ) -> ConceptImportSummary:
     pairs_by_file = {pair_from_file_name(path): load_dictionary_file(path)[0] for path in paths}
     concepts = build_concepts(pairs_by_file)
-    lessons = plan_lessons(concepts, words_per_lesson)
+    lessons = plan_lessons(concepts)
     with session_factory.begin() as session:
         ids = ConceptRepository(session).upsert_concepts(concepts)
         count = LessonRepository(session).upsert_lessons(lessons, ids)

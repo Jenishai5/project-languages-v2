@@ -8,11 +8,13 @@ from langapp.api.deps import (
     ConversationServiceDep,
     CurrentUser,
     LearnerServiceDep,
+    LiveStatusDep,
     PronunciationServiceDep,
     UsageReportDep,
     is_admin,
 )
 from langapp.api.schemas import (
+    AgentsLiveOut,
     AiUsageSummaryOut,
     AiUsageTodayOut,
     ConversationFinishIn,
@@ -52,6 +54,11 @@ def usage_summary(
     days: Annotated[int, Query(ge=1, le=90)] = 7,
 ) -> dict:
     return report.summary(days)
+
+
+@router.get("/live", response_model=AgentsLiveOut, responses={401: {"model": ErrorOut}, 403: {"model": ErrorOut}})
+def agents_live(_: AdminUser, live: LiveStatusDep) -> dict:
+    return live.view()
 
 
 @router.post("/grammar/check", response_model=GrammarCheckOut, responses=AGENT_ERRORS)
