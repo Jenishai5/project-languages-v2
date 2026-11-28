@@ -352,7 +352,7 @@ The page polls `GET /api/agents/live` every 4 seconds (paused while the tab is h
 
 Code: `frontend/src/components/controlroom/` — `animation/` (pose per state, the `Animator` state machine with blending, blinks and hair springs; unit tested), `three/` (characters, desks, scene) and the panels. Backend: `services/agent_activity.py` (in-memory tracker updated by `AgentOrchestrator.ask()`) and `services/live_status.py`.
 
-**Contract first.** `openapi.yaml` is the API contract and is checked with `npx @redocly/cli lint openapi.yaml`. It covers the sentence list (filters + `limit`/`offset` paging), one sentence, the picture cards (list + one write with validation) and the admin/agent endpoints. `tests/test_contract.py` checks that the code has the same parameters, request bodies and response fields as the contract, and API tests compare real responses with its schemas. Decisions are written in `docs/decisions/`.
+**Contract first.** `openapi.yaml` is the API contract and is checked with `npx @redocly/cli lint openapi.yaml`. It covers the sentence list (filters + `limit`/`offset` paging), one sentence, the picture cards (list + one write with validation) and the admin/agent endpoints. `POST /mnemonics` accepts an `Idempotency-Key` header: retrying with the same key returns the saved card without drawing a new picture (ADR 0005). `tests/test_contract.py` checks that the code has the same parameters, request bodies and response fields as the contract, and API tests compare real responses with its schemas. Decisions are written in `docs/decisions/`.
 
 **Timing logs.** Each agent call writes one log line, for example `agent=grammar model=... ok=true tokens=210 ms=1840`. The line has no user id, no words and no sentences, so logs are safe to share.
 

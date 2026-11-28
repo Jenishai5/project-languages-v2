@@ -226,6 +226,18 @@ class ImageGeneration(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class IdempotencyKey(Base):
+    __tablename__ = "idempotency_keys"
+    __table_args__ = (Index("ix_idempotency_keys_created", "created_at"),)
+
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    key: Mapped[str] = mapped_column(String(100), primary_key=True)
+    operation: Mapped[str] = mapped_column(String(64))
+    fingerprint: Mapped[str] = mapped_column(String(64))
+    result_id: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class LearningOutcome(Base):
     __tablename__ = "learning_outcomes"
     __table_args__ = (Index("ix_learning_outcomes_user_created", "user_id", "created_at"),)

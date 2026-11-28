@@ -38,7 +38,11 @@ def test_code_has_the_same_parameters_as_the_contract(path, method, operation):
     assert code_operation is not None, f"{method.upper()} {path} is in openapi.yaml but not in the code"
 
     contract_params = {(p["in"], p["name"]) for p in (resolve(CONTRACT, p) for p in operation.get("parameters", []))}
-    code_params = {(p["in"], p["name"]) for p in code_operation.get("parameters", []) if p["in"] in {"query", "path"}}
+    code_params = {
+        (p["in"], p["name"])
+        for p in code_operation.get("parameters", [])
+        if p["in"] in {"query", "path", "header"} and p["name"].lower() != "authorization"
+    }
     assert contract_params == code_params
 
 

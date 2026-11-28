@@ -14,6 +14,7 @@ from langapp.integrations.openrouter import OpenRouterClient
 from langapp.integrations.supabase_storage import SupabaseImageStore
 from langapp.repositories.ai_usage import AiUsageRepository
 from langapp.repositories.concepts import ConceptRepository
+from langapp.repositories.idempotency import IdempotencyRepository
 from langapp.repositories.import_runs import ImportRunRepository
 from langapp.repositories.lessons import LessonRepository
 from langapp.repositories.mnemonics import MnemonicRepository
@@ -33,6 +34,7 @@ from langapp.services.agents.orchestrator import AgentLimits, AgentOrchestrator,
 from langapp.services.agents.pronunciation import PronunciationAgent, PronunciationService
 from langapp.services.agents.vocabulary import VocabularyAgent
 from langapp.services.games import GameService
+from langapp.services.idempotency import IdempotentRequests
 from langapp.services.languages import LanguageCatalog
 from langapp.services.learner import LearnerService
 from langapp.services.lessons import LessonService
@@ -138,6 +140,7 @@ def get_mnemonic_service(
             daily_limit=settings.mnemonic_daily_limit,
             signed_url_seconds=settings.signed_url_seconds,
         ),
+        idempotency=IdempotentRequests(IdempotencyRepository(session)),
     )
 
 

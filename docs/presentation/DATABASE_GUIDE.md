@@ -1,6 +1,6 @@
 # 5. DATABASE GUIDE — База данных и поток данных
 
-> Источник истины: `src/langapp/db/models.py` (модели SQLAlchemy) и `migrations/versions/*.py` (6 миграций Alembic). **[VERIFIED]**
+> Источник истины: `src/langapp/db/models.py` (модели SQLAlchemy) и `migrations/versions/*.py` (7 миграций Alembic). **[VERIFIED]**
 > База: **PostgreSQL 17** в Docker (`docker-compose.yml`), порт **5433**, база `langapp`; для тестов — `langapp_test`.
 
 ---
@@ -13,7 +13,7 @@
 
 ---
 
-## 5.2. Все таблицы (16) по группам
+## 5.2. Все таблицы (17) по группам
 
 ### A. Контент из Tatoeba (импортируется CLI)
 | Таблица | Ответственность | Primary key | Важное |
@@ -46,6 +46,7 @@
 |---|---|---|---|
 | `ai_usage` | **Каждый** вызов агента: кто, какой агент, модель, успех, токены, время | `id` | индекс `(user_id, created_at)` — для дневного лимита |
 | `learning_outcomes` | **Результаты** работы агентов: ошибки, использованные слова, баллы произношения | `id` | `agent`, `kind`, `detail` (**JSONB**), FK `lesson_id`/`concept_id` → `ON DELETE SET NULL`; индекс `(user_id, created_at)` |
+| `idempotency_keys` | Ключи `Idempotency-Key` для `POST /mnemonics`: повтор с тем же ключом возвращает ту же карточку | `(user_id, key)` | `operation`, `fingerprint` (SHA-256 тела запроса), `result_id` (id карточки), `created_at` + индекс; живут 24 ч (ADR 0005) |
 
 Плюс служебная таблица `alembic_version` (какая миграция применена).
 
@@ -82,6 +83,7 @@ erDiagram
     USER_PROGRESS { uuid user_id PK string item_type PK string item_key PK int mastery_level datetime next_review_at }
     MNEMONICS { int id PK uuid user_id int concept_id FK string text string image_path }
     AI_USAGE { int id PK uuid user_id string agent string model bool succeeded int tokens }
+    IDEMPOTENCY_KEYS { uuid user_id PK string key PK string operation string fingerprint int result_id datetime created_at }
     LEARNING_OUTCOMES { int id PK uuid user_id string agent string kind jsonb detail }
 ```
 
@@ -155,6 +157,7 @@ next_review_at = now() + make_interval(days => 2 ** new_mastery)
 | `20261125_18d172320c46_learner_sentences_and_image_generation_….py` | `image_generations` + индекс `(user_id, created_at)` |
 | `20261125_c00d081a5639_add_mnemonics.py` | `mnemonics` |
 | `20261125_f623e316ff72_agent_outcomes_ai_usage_and_learner_….py` | `ai_usage`, `learning_outcomes` (с индексами) и колонку `user_settings.level` |
+| `20261128_7b1e4c2d9a10_idempotency_keys.py` | `idempotency_keys` + индекс `created_at` (проверено: upgrade → downgrade → upgrade) |
 
 **[VERIFIED]** по вызовам `op.create_table` / `op.add_column` в каждом файле. У каждой миграции есть `downgrade()` (откат). Запуск: `make migrate`.
 

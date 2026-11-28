@@ -57,7 +57,7 @@
 **Follow-up:** "Why one upsert?" → "To avoid a race condition between read and write."
 
 ### 9. Q: How do you change the database schema?
-**A:** "With Alembic migrations. There are six, and each one has a `downgrade`, so I can roll back."
+**A:** "With Alembic migrations. There are seven, and each one has a `downgrade`, so I can roll back."
 🇷🇺 Миграция = версионированное изменение схемы, как git для таблиц.
 
 ### 10. Q: What is a transaction and where do you use it?
@@ -125,6 +125,14 @@
 ### 25. Q: What's the difference between a timeout and a retry?
 **A:** "A timeout says how long I wait for one attempt. A retry says how many times I try again after a failure. Retries should use backoff, so I don't hammer a struggling service."
 
+### 25b. Q: What does idempotent mean, and is your write endpoint idempotent?
+*Смысл:* понимаете ли вы, как сделать повтор запроса безопасным.
+**A:** "Idempotent means doing a request twice has the same effect as doing it once. `POST /mnemonics` accepts an `Idempotency-Key` header. The first request with a key saves the card and remembers the card id. If the client retries with the same key and the same body — for example after a timeout — it gets the same card back with `Idempotent-Replayed: true`, and no second picture is drawn, so the daily limit isn't used. The same key with a different body returns 409."
+🇷🇺 Идемпотентность = повтор безопасен. GET, PUT, DELETE идемпотентны по определению; POST — нет, поэтому нужен ключ.
+`Code:` `services/idempotency.py: IdempotentRequests.run`, `repositories/idempotency.py: claim`, ADR 0005
+**Follow-up:** "What if two requests with the same key arrive at the same time?" → "The key row is inserted with `ON CONFLICT DO NOTHING` inside the request's transaction. The second insert waits until the first transaction commits, then reads the saved result and replays it. I have a test with two threads that checks only one picture is drawn."
+**Follow-up 2:** "Why not store the whole response?" → "The picture link inside is signed for one hour. I store the card id and build the answer again, so the link is always fresh."
+
 ### 26. Q: What is graceful degradation in your app?
 **A:** "If AI keys are missing or providers fail, the core still works: games, progress, picture cards with emoji. Agents show 'not set up' instead of crashing."
 
@@ -133,7 +141,7 @@
 ## E. Testing & delivery
 
 ### 27. Q: How do you test your app?
-**A:** "Backend: pytest, about 240 tests, including an architecture test, contract tests and agents tested with fake model clients. Frontend: Vitest, 36 tests. GitHub Actions runs ruff, pytest, Vitest and the build on every push."
+**A:** "Backend: pytest, about 245 tests, including an architecture test, contract tests, idempotency tests and agents tested with fake model clients. Frontend: Vitest, 42 tests. GitHub Actions runs ruff, pytest, Vitest and the build on every push."
 **Follow-up:** "How do you test code that calls an LLM?" → "I inject a fake client that returns a fixed JSON, and test parsing and error cases."
 
 ### 28. Q: What is your CI pipeline?

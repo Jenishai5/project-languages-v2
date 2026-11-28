@@ -145,7 +145,7 @@
 **3. Архитектура (60 с).**
 - **Frontend:** React 19 + TypeScript + Vite; маршруты в `App.tsx`; запросы через `fetch` в `lib/*Api.ts`.
 - **Backend:** FastAPI, слои `api/routes → services → repositories → PostgreSQL`; правило слоёв проверяется тестом `tests/test_architecture.py`.
-- **База:** PostgreSQL 17 в Docker, миграции Alembic (6 миграций), ORM SQLAlchemy 2.
+- **База:** PostgreSQL 17 в Docker, миграции Alembic (7 миграций), ORM SQLAlchemy 2.
 - **Агенты:** `AgentOrchestrator` + 5 агентов; OpenRouter (бесплатные модели), Azure Speech; лимит 30 AI-ответов в день на ученика, 4 одновременных вызова, кэш ответов.
 - **Наблюдаемость:** таблица `ai_usage`, эндпоинты `/agents/usage/summary` и `/agents/live`, 3D Control Room, read-only MCP-сервер, CI в GitHub Actions.
 
@@ -166,6 +166,6 @@
 | База данных | PostgreSQL 17 (Docker), Alembic | `docker-compose.yml`, `migrations/versions/*` |
 | Внешние сервисы | Tatoeba API, OpenRouter, Azure Speech, Supabase Auth + Storage | `src/langapp/ingestion/tatoeba_client.py`, `integrations/*` |
 | Инструменты разработчика | CLI, MCP-сервер, Makefile | `src/langapp/cli.py`, `mcp_server.py`, `Makefile` |
-| Качество | pytest (238 тестов, все проходят), Vitest (36 тестов), ruff, ESLint, GitHub Actions | `tests/*`, `.github/workflows/ci.yml` |
+| Качество | pytest (245 тестов, все проходят), Vitest (42 теста), ruff, ESLint, GitHub Actions | `tests/*`, `.github/workflows/ci.yml` |
 
 **Размер кода [VERIFIED]:** бэкенд ≈ 6 050 строк Python в `src/langapp`; 61 коммит в истории git (плюс незакоммиченные изменения последних дней).

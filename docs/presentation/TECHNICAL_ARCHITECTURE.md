@@ -31,9 +31,9 @@
 | **Web Speech API** (браузер) | `lib/speech.ts`, `hooks/useSpeechSynthesis.ts` | распознавание и синтез речи | Бесплатно в Chrome/Safari: «скажи слово», «озвучь» |
 | **GSAP** | `lib/useScrollReveal.ts`, лендинг | анимации | Плавное появление элементов при прокрутке |
 | **Three.js + React Three Fiber + drei** | `components/controlroom/three/*` | 3D-сцена | Control Room с 3D-агентами (только на странице админа) |
-| **pytest + respx** | `tests/*` (238 тестов) | тесты бэкенда | respx подменяет внешние HTTP-вызовы в тестах |
+| **pytest + respx** | `tests/*` (245 тестов) | тесты бэкенда | respx подменяет внешние HTTP-вызовы в тестах |
 | **jsonschema + PyYAML** | `tests/test_usage_summary.py` | контрактные тесты | Проверяют, что ответы совпадают с `openapi.yaml` |
-| **Vitest + Testing Library** | `frontend/src/**/*.test.tsx` (36 тестов) | тесты фронтенда | Рендерят компоненты в jsdom и кликают как пользователь |
+| **Vitest + Testing Library** | `frontend/src/**/*.test.tsx` (42 теста) | тесты фронтенда | Рендерят компоненты в jsdom и кликают как пользователь |
 | **ruff, ESLint** | `pyproject.toml`, `frontend/eslint.config.js` | линтеры | Стиль кода и типичные ошибки |
 | **GitHub Actions** | `.github/workflows/ci.yml` | CI | На каждый push: ruff + pytest (с Postgres), vitest + build |
 | **MCP (Model Context Protocol)** | `src/langapp/mcp_server.py` | инструменты для AI-ассистента разработчика | 5 инструментов только для чтения базы (уроки, слабые слова, использование AI) |

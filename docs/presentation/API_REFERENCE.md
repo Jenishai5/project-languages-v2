@@ -78,7 +78,7 @@
 | Метод | Путь | Доступ | Что делает | Ошибки |
 |---|---|---|---|---|
 | GET | `/mnemonics?learning&native` | 🔐 | Свои карточки + подписанные ссылки на картинки + сколько картинок ещё можно сегодня | 400 |
-| POST | `/mnemonics` | 🔐 | `{concept_id, learning, native, sentence (1–500)}` → создать/обновить карточку и нарисовать картинку | 400, 404, 429 |
+| POST | `/mnemonics` | 🔐 | `{concept_id, learning, native, sentence (1–500)}` → создать/обновить карточку и нарисовать картинку; необязательный заголовок `Idempotency-Key` | 400, 404, 409, 422, 429 |
 
 ### Agents (`routes/agents.py`)
 | Метод | Путь | Доступ | Что делает | Агент |
@@ -124,7 +124,8 @@
 | Output | `MnemonicOut`: id, слово, перевод, emoji, текст, `masked_sentence` (слово заменено на `___` для флешкарт), `image_url` |
 | Database | upsert в `mnemonics` (одна карточка на пользователя+слово+пару языков), запись в `image_generations` |
 | External | OpenRouter `/images` (генерация), Supabase Storage (сохранение, подпись ссылок) |
-| Errors | 404 слово не найдено/нет перевода; 400 предложение без слова; 429 лимит картинок в день |
+| Idempotency | Заголовок `Idempotency-Key` (8–100 символов, обычно UUID). Первый запрос с ключом делает работу; повтор с тем же ключом и тем же телом → та же карточка, `Idempotent-Replayed: true`, **без новой картинки и без расхода лимита**; тот же ключ с другим телом → 409. Ошибочные запросы не запоминаются. Ключ живёт 24 ч. **[VERIFIED]** `services/idempotency.py`, ADR 0005 |
+| Errors | 404 слово не найдено/нет перевода; 400 предложение без слова; 409 ключ уже использован для другого запроса; 422 неверная форма тела или ключа; 429 лимит картинок в день |
 
 ### `GET /agents/live` (админ)
 | Поле | Объяснение |
@@ -184,6 +185,7 @@ sequenceDiagram
 
 - В корне проекта есть `openapi.yaml` (OpenAPI 3.1) — **«контракт»**: описание, какие поля обязаны быть в ответе. **[VERIFIED]**
 - Правило проекта: «новые потребности сначала добавляются сюда, вместе с записью решения в `docs/decisions/`». **[VERIFIED]** — текст в `openapi.yaml`, раздел `info.description`.
+- `POST /mnemonics` в контракте описывает заголовок `Idempotency-Key`, ответ-заголовок `Idempotent-Replayed` и ответ 409 (ADR 0005). **[VERIFIED]**
 - В контракте **7 операций**: `GET /sentences` (фильтры `lang`, `translation_lang`, `q` + пагинация `limit`/`offset`, ответ с `total`), `GET /sentences/{sentence_id}`, `GET`/`POST /mnemonics` (запись с валидацией: 422 — форма тела, 400 — правило приложения, 429 — лимит), `/agents/usage`, `/agents/usage/summary`, `/agents/live`. Nullable-поля: `Sentence.license`, `Sentence.owner`, `Mnemonic.emoji`, `Mnemonic.image_url`. Решение записано в ADR 0004. **[VERIFIED]**
 - Остальные 26 эндпоинтов (уроки, игры, прогресс, агенты) пока только в автоматической документации FastAPI `/docs`. **[VERIFIED]**
 - Контракт проверяется линтером: `npx @redocly/cli lint openapi.yaml` — ошибок нет; добавлен в `make lint` и отдельной задачей в CI. **[VERIFIED]**

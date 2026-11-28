@@ -12,11 +12,13 @@ from langapp.domain import GeneratedImage
 from langapp.errors import ExternalSourceError, InvalidRequest, NotFound, RateLimited, UpstreamRateLimited
 from langapp.repositories.concepts import ConceptRepository
 from langapp.repositories.mnemonics import MnemonicRepository
+from langapp.services.idempotency import IdempotentRequests
 from langapp.services.languages import LanguageCatalog
 from langapp.services.ports import ImageModel, ImageStore
 
 logger = logging.getLogger(__name__)
 
+SAVE_OPERATION = "mnemonics.save"
 MIN_SENTENCE_LENGTH = 3
 MAX_SENTENCE_LENGTH = 200
 GAP = "___"
@@ -112,7 +114,9 @@ class MnemonicService:
         store: ImageStore | None,
         settings: MnemonicSettings,
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+        idempotency: IdempotentRequests | None = None,
     ) -> None:
+        self._idempotency = idempotency
         self._mnemonics = mnemonics
         self._concepts = concepts
         self._catalog = catalog
@@ -158,6 +162,28 @@ class MnemonicService:
         else:
             saved = self._mnemonics.add(user_id, concept_id, learning, native, text, image_path, None, image_model)
         return self._view(saved)
+
+    def save_once(
+        self,
+        user_id: uuid.UUID,
+        concept_id: int,
+        learning: str,
+        native: str,
+        sentence: str,
+        idempotency_key: str | None,
+    ) -> tuple[dict, bool]:
+        def perform() -> tuple[dict, int]:
+            card = self.save(user_id, concept_id, learning, native, sentence)
+            return card, card["id"]
+
+        def replay(mnemonic_id: int) -> dict | None:
+            mnemonic = self._mnemonics.get_for_user(user_id, mnemonic_id)
+            return self._view(mnemonic) if mnemonic else None
+
+        if self._idempotency is None:
+            return perform()[0], False
+        payload = {"concept_id": concept_id, "learning": learning, "native": native, "sentence": sentence}
+        return self._idempotency.run(user_id, idempotency_key, SAVE_OPERATION, payload, perform, replay)
 
     def _draw(
         self, user_id: uuid.UUID, concept_id: int, learning: str, native: str, sentence: str

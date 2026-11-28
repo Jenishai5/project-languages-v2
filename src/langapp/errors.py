@@ -18,6 +18,10 @@ class ExternalSourceError(AppError):
     status_code = 502
 
 
+class Conflict(AppError):
+    status_code = 409
+
+
 class RateLimited(AppError):
     status_code = 429
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import type { LangCode, LessonWord } from "../../lib/lessonsApi";
+import { attemptFor, type PendingSave } from "../../lib/idempotency";
 import { fetchMnemonics, saveMnemonic, type Mnemonic } from "../../lib/mnemonicsApi";
 import { StepCard } from "../lesson/shared";
 import MnemonicCard from "./MnemonicCard";
@@ -32,6 +33,7 @@ export default function MnemonicsPanel({ words, learning, native }: MnemonicsPan
   const [errors, setErrors]       = useState<Record<number, string>>({});
   const [order, setOrder]         = useState<number[]>(() => words.map(w => w.concept_id));
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSaves = useRef(new Map<number, PendingSave>());
 
   useEffect(() => {
     let cancelled = false;
@@ -65,11 +67,14 @@ export default function MnemonicsPanel({ words, learning, native }: MnemonicsPan
   const submit = async (conceptId: number, sentence: string) => {
     setBusy(conceptId);
     setErrors(prev => ({ ...prev, [conceptId]: "" }));
+    const attempt = attemptFor(pendingSaves.current.get(conceptId), sentence);
+    pendingSaves.current.set(conceptId, attempt);
     try {
-      const card = await saveMnemonic(conceptId, learning, native, sentence);
+      const { card, replayed } = await saveMnemonic(conceptId, learning, native, sentence, attempt.key);
+      pendingSaves.current.delete(conceptId);
       setSaved(prev => ({ ...prev, [conceptId]: card }));
       setEditing(null);
-      if (pictures) setRemaining(r => (r === null ? r : Math.max(0, r - 1)));
+      if (pictures && !replayed) setRemaining(r => (r === null ? r : Math.max(0, r - 1)));
       timer.current = setTimeout(() => {
         setOrder(prev => (prev[0] === conceptId ? [...prev.slice(1), conceptId] : prev));
       }, ADVANCE_AFTER_MS);

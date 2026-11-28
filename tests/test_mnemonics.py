@@ -1,5 +1,7 @@
+import threading
+import time
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,7 +11,9 @@ from langapp.api.main import app
 from langapp.domain import GeneratedImage, ParsedConcept
 from langapp.errors import ExternalSourceError, InvalidRequest, RateLimited, UpstreamRateLimited
 from langapp.repositories.concepts import ConceptRepository
+from langapp.repositories.idempotency import IdempotencyRepository
 from langapp.repositories.mnemonics import MnemonicRepository
+from langapp.services.idempotency import IdempotentRequests
 from langapp.services.languages import LanguageCatalog
 from langapp.services.mnemonics import MnemonicService, MnemonicSettings, image_path_for, mask_sentence, word_forms
 from tests.test_lessons import USER, FakeVerifier
@@ -58,7 +62,7 @@ def seed_concepts(session_factory) -> dict[str, int]:
         return ConceptRepository(session).upsert_concepts(concepts)
 
 
-def make_service(session, images=None, store=None, settings=SETTINGS) -> MnemonicService:
+def make_service(session, images=None, store=None, settings=SETTINGS, clock=lambda: datetime.now(UTC)) -> MnemonicService:
     return MnemonicService(
         MnemonicRepository(session),
         ConceptRepository(session),
@@ -67,6 +71,7 @@ def make_service(session, images=None, store=None, settings=SETTINGS) -> Mnemoni
         store=store,
         settings=settings,
         clock=lambda: datetime.now(UTC),
+        idempotency=IdempotentRequests(IdempotencyRepository(session), clock=clock),
     )
 
 
@@ -257,3 +262,120 @@ def test_api_answers_match_the_contract(api, session_factory):
     assert contract_validator("ValidationError").is_valid(shape.json())
     assert same_language.status_code == 400
     assert contract_validator("Error").is_valid(same_language.json())
+
+
+def remaining(api) -> int:
+    return api.get("/mnemonics", params={"learning": "eng", "native": "spa"}, headers=AUTH).json()["remaining_today"]
+
+
+def test_repeating_a_key_returns_the_same_card_without_a_new_picture(api, session_factory):
+    ids = seed_concepts(session_factory)
+    body = {"concept_id": ids["woman"], "learning": "eng", "native": "spa", "sentence": "The woman reads."}
+    headers = {**AUTH, "Idempotency-Key": "save-woman-0001"}
+
+    first = api.post("/mnemonics", json=body, headers=headers)
+    left_after_first = remaining(api)
+    again = api.post("/mnemonics", json=body, headers=headers)
+
+    assert first.status_code == again.status_code == 200
+    assert first.headers["Idempotent-Replayed"] == "false"
+    assert again.headers["Idempotent-Replayed"] == "true"
+    assert again.json()["id"] == first.json()["id"]
+    assert again.json()["sentence"] == "The woman reads."
+    assert remaining(api) == left_after_first == 1
+
+
+def test_a_key_cannot_be_reused_for_a_different_request(api, session_factory):
+    ids = seed_concepts(session_factory)
+    body = {"concept_id": ids["woman"], "learning": "eng", "native": "spa", "sentence": "The woman reads."}
+    headers = {**AUTH, "Idempotency-Key": "save-woman-0002"}
+
+    api.post("/mnemonics", json=body, headers=headers)
+    other = api.post("/mnemonics", json={**body, "sentence": "The woman sings."}, headers=headers)
+
+    assert other.status_code == 409
+    assert contract_validator("Error").is_valid(other.json())
+    assert remaining(api) == 1
+
+
+def test_without_a_key_every_save_draws_again(api, session_factory):
+    ids = seed_concepts(session_factory)
+    body = {"concept_id": ids["woman"], "learning": "eng", "native": "spa", "sentence": "The woman reads."}
+
+    first = api.post("/mnemonics", json=body, headers=AUTH)
+    api.post("/mnemonics", json=body, headers=AUTH)
+
+    assert "Idempotent-Replayed" not in first.headers
+    assert remaining(api) == 0
+
+
+def test_a_failed_request_is_not_remembered(api, session_factory):
+    ids = seed_concepts(session_factory)
+    base = {"concept_id": ids["woman"], "learning": "eng", "native": "spa"}
+    headers = {**AUTH, "Idempotency-Key": "save-woman-0003"}
+
+    wrong = api.post("/mnemonics", json={**base, "sentence": "No word here."}, headers=headers)
+    fixed = api.post("/mnemonics", json={**base, "sentence": "The woman reads."}, headers=headers)
+
+    assert wrong.status_code == 400
+    assert fixed.status_code == 200
+    assert fixed.headers["Idempotent-Replayed"] == "false"
+
+
+def test_a_badly_formed_key_is_rejected(api, session_factory):
+    ids = seed_concepts(session_factory)
+    body = {"concept_id": ids["woman"], "learning": "eng", "native": "spa", "sentence": "The woman reads."}
+
+    short = api.post("/mnemonics", json=body, headers={**AUTH, "Idempotency-Key": "abc"})
+    spaces = api.post("/mnemonics", json=body, headers={**AUTH, "Idempotency-Key": "has spaces in it"})
+
+    assert short.status_code == spaces.status_code == 422
+    assert contract_validator("ValidationError").is_valid(short.json())
+
+
+def test_a_key_expires_after_a_day(session_factory):
+    ids = seed_concepts(session_factory)
+    images = FakeImages()
+    now = datetime.now(UTC)
+    args = (USER.id, ids["woman"], "eng", "spa", "The woman reads.", "save-woman-0004")
+
+    tomorrow = now + timedelta(hours=25)
+    with session_factory.begin() as session:
+        _, replayed = make_service(session, images, FakeStore(), clock=lambda: now).save_once(*args)
+    with session_factory.begin() as session:
+        _, replayed_next_day = make_service(session, images, FakeStore(), clock=lambda: tomorrow).save_once(*args)
+
+    assert replayed is replayed_next_day is False
+    assert len(images.prompts) == 2
+
+
+def test_two_requests_with_the_same_key_at_the_same_time_draw_once(session_factory):
+    ids = seed_concepts(session_factory)
+    started = threading.Barrier(2)
+
+    class SlowImages(FakeImages):
+        def generate_image(self, model, prompt, user=None):
+            time.sleep(0.3)
+            return super().generate_image(model, prompt, user)
+
+    images = SlowImages()
+    results: list[tuple[dict, bool]] = []
+
+    def save() -> None:
+        started.wait()
+        with session_factory.begin() as session:
+            results.append(
+                make_service(session, images, FakeStore()).save_once(
+                    USER.id, ids["woman"], "eng", "spa", "The woman reads.", "save-woman-0005"
+                )
+            )
+
+    threads = [threading.Thread(target=save) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10)
+
+    assert len(images.prompts) == 1
+    assert sorted(replayed for _, replayed in results) == [False, True]
+    assert results[0][0]["id"] == results[1][0]["id"]

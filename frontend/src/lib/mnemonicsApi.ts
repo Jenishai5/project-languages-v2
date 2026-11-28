@@ -1,3 +1,4 @@
+import { errorMessage } from "./apiError";
 import { getJson, type LangCode } from "./lessonsApi";
 import { authHeaders } from "./progressService";
 
@@ -26,10 +27,24 @@ export async function fetchMnemonics(learning: LangCode, native: LangCode): Prom
   return getJson<MnemonicList>(`/api/mnemonics?${params}`, { headers: await authHeaders() });
 }
 
-export async function saveMnemonic(conceptId: number, learning: LangCode, native: LangCode, sentence: string): Promise<Mnemonic> {
-  return getJson<Mnemonic>("/api/mnemonics", {
+export interface SavedMnemonic {
+  card:     Mnemonic;
+  replayed: boolean;
+}
+
+export async function saveMnemonic(
+  conceptId: number,
+  learning: LangCode,
+  native: LangCode,
+  sentence: string,
+  idempotencyKey: string,
+): Promise<SavedMnemonic> {
+  const res = await fetch("/api/mnemonics", {
     method:  "POST",
-    headers: await authHeaders(),
+    headers: { ...(await authHeaders()), "Idempotency-Key": idempotencyKey },
     body:    JSON.stringify({ concept_id: conceptId, learning, native, sentence }),
   });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(errorMessage(data, res.status));
+  return { card: data as Mnemonic, replayed: res.headers.get("Idempotent-Replayed") === "true" };
 }
